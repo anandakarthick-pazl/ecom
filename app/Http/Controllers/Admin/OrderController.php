@@ -440,30 +440,30 @@ class OrderController extends Controller
     /**
      * Get order status message template
      */
-    // private function getOrderStatusMessage(Order $order, $oldStatus, $newStatus)
-    // {
-    //     // Get custom templates from settings or use defaults
-    //     $templates = [
-    //         'pending' => AppSetting::get('whatsapp_template_pending', 
-    //             "Hello {{customer_name}},\n\nYour order #{{order_number}} is now PENDING.\n\nWe have received your order and it's being processed.\n\nOrder Total: ₹{{total}}\nOrder Date: {{order_date}}\n\nThank you for choosing {{company_name}}!"),
+    private function getOrderStatusMessage(Order $order, $oldStatus, $newStatus)
+    {
+        // Get custom templates from settings or use defaults
+        $templates = [
+            'pending' => AppSetting::get('whatsapp_template_pending', 
+                "Hello {{customer_name}},\n\nYour order #{{order_number}} is now PENDING.\n\nWe have received your order and it's being processed.\n\nOrder Total: ₹{{total}}\nOrder Date: {{order_date}}\n\nThank you for choosing {{company_name}}!"),
             
-    //         'processing' => AppSetting::get('whatsapp_template_processing', 
-    //             "Hello {{customer_name}},\n\nGreat news! Your order #{{order_number}} is now PROCESSING.\n\nWe are preparing your items for shipment.\n\nOrder Total: ₹{{total}}\nExpected Processing: 1-2 business days\n\nThank you for your patience!\n\n{{company_name}}"),
+            'processing' => AppSetting::get('whatsapp_template_processing', 
+                "Hello {{customer_name}},\n\nGreat news! Your order #{{order_number}} is now PROCESSING.\n\nWe are preparing your items for shipment.\n\nOrder Total: ₹{{total}}\nExpected Processing: 1-2 business days\n\nThank you for your patience!\n\n{{company_name}}"),
             
-    //         'shipped' => AppSetting::get('whatsapp_template_shipped', 
-    //             "🚚 Hello {{customer_name}},\n\nExciting news! Your order #{{order_number}} has been SHIPPED!\n\nYour package is on its way to you.\n\nOrder Total: ₹{{total}}\nExpected Delivery: 2-5 business days\n\nTrack your order for real-time updates.\n\nThanks for shopping with {{company_name}}!"),
+            'shipped' => AppSetting::get('whatsapp_template_shipped', 
+                "🚚 Hello {{customer_name}},\n\nExciting news! Your order #{{order_number}} has been SHIPPED!\n\nYour package is on its way to you.\n\nOrder Total: ₹{{total}}\nExpected Delivery: 2-5 business days\n\nTrack your order for real-time updates.\n\nThanks for shopping with {{company_name}}!"),
             
-    //         'delivered' => AppSetting::get('whatsapp_template_delivered', 
-    //             "✅ Hello {{customer_name}},\n\nWonderful! Your order #{{order_number}} has been DELIVERED!\n\nWe hope you love your purchase.\n\nOrder Total: ₹{{total}}\nDelivered on: {{order_date}}\n\nPlease let us know if you have any questions or feedback.\n\nThank you for choosing {{company_name}}!"),
+            'delivered' => AppSetting::get('whatsapp_template_delivered', 
+                "✅ Hello {{customer_name}},\n\nWonderful! Your order #{{order_number}} has been DELIVERED!\n\nWe hope you love your purchase.\n\nOrder Total: ₹{{total}}\nDelivered on: {{order_date}}\n\nPlease let us know if you have any questions or feedback.\n\nThank you for choosing {{company_name}}!"),
             
-    //         'cancelled' => AppSetting::get('whatsapp_template_cancelled', 
-    //             "❌ Hello {{customer_name}},\n\nWe're sorry to inform you that your order #{{order_number}} has been CANCELLED.\n\nOrder Total: ₹{{total}}\nCancellation Date: {{order_date}}\n\nIf you have any questions about this cancellation, please contact our customer support.\n\nWe apologize for any inconvenience.\n\n{{company_name}}")
-    //     ];
+            'cancelled' => AppSetting::get('whatsapp_template_cancelled', 
+                "❌ Hello {{customer_name}},\n\nWe're sorry to inform you that your order #{{order_number}} has been CANCELLED.\n\nOrder Total: ₹{{total}}\nCancellation Date: {{order_date}}\n\nIf you have any questions about this cancellation, please contact our customer support.\n\nWe apologize for any inconvenience.\n\n{{company_name}}")
+        ];
 
-    //     $template = $templates[$newStatus] ?? $templates['processing'];
+        $template = $templates[$newStatus] ?? $templates['processing'];
         
-    //     return $this->replaceMessagePlaceholders($template, $order);
-    // }
+        return $this->replaceMessagePlaceholders($template, $order);
+    }
 
     /**
      * Get payment status message template
@@ -1064,5 +1064,53 @@ class OrderController extends Controller
         }
         
         return $recommendations;
+    }
+
+    /**
+     * Test WhatsApp message template replacement (for debugging)
+     */
+    public function testWhatsAppMessage(Request $request, Order $order)
+    {
+        try {
+            // Test order status message
+            $orderStatusMessage = $this->getOrderStatusMessage($order, 'pending', 'shipped');
+            
+            // Test payment status message  
+            $paymentStatusMessage = $this->getPaymentStatusMessage($order, 'pending', 'paid');
+            
+            // Test manual template
+            $manualTemplate = $request->input('template', 'Hello {{customer_name}}, your order #{{order_number}} for ₹{{total}} from {{company_name}} is ready!');
+            $manualMessage = $this->replaceMessagePlaceholders($manualTemplate, $order);
+            
+            return response()->json([
+                'success' => true,
+                'order_info' => [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'customer_name' => $order->customer_name,
+                    'total' => $order->total,
+                    'company_id' => $order->company_id
+                ],
+                'test_results' => [
+                    'order_status_message' => $orderStatusMessage,
+                    'payment_status_message' => $paymentStatusMessage,
+                    'manual_message' => $manualMessage,
+                    'manual_template' => $manualTemplate
+                ],
+                'message' => 'WhatsApp message templates tested successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('WhatsApp message test failed', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
