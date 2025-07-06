@@ -103,6 +103,9 @@
             @if($globalCompany->company_phone ?? false)
                 <div style="font-size: 10px;">Ph: {{ $globalCompany->company_phone }}</div>
             @endif
+            @if($globalCompany->gst_number ?? false)
+                <div style="font-size: 10px;">GST: {{ $globalCompany->gst_number }}</div>
+            @endif
         </div>
         
         <!-- Sale Info -->

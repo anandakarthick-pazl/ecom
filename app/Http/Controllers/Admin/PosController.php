@@ -44,7 +44,7 @@ class PosController extends Controller
             'customer_name' => 'nullable|string|max:255',
             'customer_phone' => 'nullable|string|max:20',
             'tax_amount' => 'nullable|numeric|min:0',
-            'custom_tax_enabled' => 'boolean',
+            // 'custom_tax_enabled' => 'nullable|boolean',
             'custom_tax_amount' => 'nullable|numeric|min:0',
             'tax_notes' => 'nullable|string|max:500',
             'discount_amount' => 'nullable|numeric|min:0',
@@ -59,7 +59,7 @@ class PosController extends Controller
             // Calculate totals and tax
             $subtotal = 0;
             $totalTax = 0;
-            $customTaxEnabled = $request->boolean('custom_tax_enabled');
+            $customTaxEnabled = $request->boolean('custom_tax_enabled', false); // Default to false if not provided
             
             foreach ($request->items as $item) {
                 $product = Product::findOrFail($item['product_id']);

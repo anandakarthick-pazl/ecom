@@ -229,8 +229,8 @@
                         @if($globalCompany->company_email ?? false)
                             Email: {{ $globalCompany->company_email }}<br>
                         @endif
-                        @if($globalCompany->company_gst_number ?? false)
-                            GST: {{ $globalCompany->company_gst_number }}
+                        @if($globalCompany->gst_number ?? false)
+                            GST: {{ $globalCompany->gst_number }}
                         @endif
                     </div>
                 </div>

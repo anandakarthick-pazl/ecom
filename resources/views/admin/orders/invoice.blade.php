@@ -43,6 +43,9 @@
                 @endif
                 <div>Email: {{ $globalCompany->company_email ?? 'info@herbalbliss.com' }}</div>
                 <div>Phone: {{ $globalCompany->company_phone ?? '+91 9876543210' }}</div>
+                @if($globalCompany->gst_number ?? false)
+                    <div><strong>GST No:</strong> {{ $globalCompany->gst_number }}</div>
+                @endif
             </div>
             <div style="text-align: right;">
                 <div class="invoice-title">INVOICE</div>

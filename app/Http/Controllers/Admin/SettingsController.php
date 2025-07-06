@@ -21,6 +21,15 @@ class SettingsController extends Controller
         // Get current company
         $company = $this->getCurrentCompany();
         
+        // Debug: Log company info
+        \Log::info('Settings page debug', [
+            'company_id' => $this->getCurrentTenantId(),
+            'company_exists' => $company ? true : false,
+            'company_data' => $company ? $company->toArray() : null,
+            'user_id' => auth()->id(),
+            'session_company' => session('selected_company_id')
+        ]);
+        
         // Get settings from app_settings table (for non-company settings)
         $appearanceSettings = AppSetting::getGroup('appearance');
         $themeSettings = AppSetting::getGroup('theme');
@@ -137,6 +146,13 @@ class SettingsController extends Controller
 
     public function updateCompany(Request $request)
     {
+        // Debug: Log all request data to identify any issues
+        \Log::info('Company update request data', [
+            'all_data' => $request->all(),
+            'user_id' => auth()->id(),
+            'company_id' => $this->getCurrentTenantId()
+        ]);
+        
         $request->validate([
             'company_name' => 'required|string|max:255',
             'company_email' => 'required|email|max:255',
@@ -145,7 +161,9 @@ class SettingsController extends Controller
             'company_city' => 'nullable|string|max:100',
             'company_state' => 'nullable|string|max:100',
             'company_postal_code' => 'nullable|string|max:20',
+            'gst_number' => 'nullable|string|max:15|regex:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[0-9A-Z]{1}Z[0-9A-Z]{1}$/',
             'company_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'custom_tax_enabled' => 'nullable|boolean',
         ]);
 
         // Get current company
@@ -174,6 +192,7 @@ class SettingsController extends Controller
         $company->city = $request->company_city;
         $company->state = $request->company_state;
         $company->postal_code = $request->company_postal_code;
+        $company->gst_number = $request->gst_number;
         $company->save();
 
         // Clear cache

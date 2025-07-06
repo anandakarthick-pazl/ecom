@@ -22,6 +22,7 @@ class Company extends Model
         'state',
         'country',
         'postal_code',
+        'gst_number',
         'logo',
         'favicon',
         'theme_id',

@@ -72,6 +72,8 @@
                                 <form action="{{ route('admin.settings.company') }}" method="POST"
                                     enctype="multipart/form-data">
                                     @csrf
+                                    <!-- Hidden field to fix custom_tax_enabled validation error -->
+                                    <input type="hidden" name="custom_tax_enabled" value="0">
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group">
@@ -131,6 +133,62 @@
                                                 <input type="text" class="form-control" id="company_postal_code"
                                                     name="company_postal_code"
                                                     value="{{ $company ? $company->postal_code : '' }}">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- GST Number Section - IMPORTANT FOR INVOICES -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-12">
+                                            <div class="alert alert-info">
+                                                <h6><i class="fas fa-receipt"></i> GST Configuration for Invoices</h6>
+                                                <p class="mb-0">Enter your GST number below to display it on all POS receipts, customer invoices, and email receipts automatically.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-4">
+                                        <div class="col-md-8">
+                                            <div class="form-group">
+                                                <label for="gst_number" class="form-label">
+                                                    <i class="fas fa-id-card text-primary"></i> 
+                                                    <strong>GST Registration Number</strong> 
+                                                    <span class="badge bg-secondary">Optional</span>
+                                                </label>
+                                                <input type="text" 
+                                                       class="form-control form-control-lg" 
+                                                       id="gst_number"
+                                                       name="gst_number" 
+                                                       value="{{ $company ? $company->gst_number : '' }}"
+                                                       placeholder="Enter 15-digit GST number (e.g., 33BEXPA7899P1ZA)"
+                                                       maxlength="15"
+                                                       pattern="[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[0-9A-Z]{1}Z[0-9A-Z]{1}"
+                                                       title="GST format: 2 digits + 5 letters + 4 digits + 1 letter + 1 alphanumeric + Z + 1 alphanumeric"
+                                                       style="border: 2px solid #ddd; font-family: monospace;">
+                                                <div class="form-text">
+                                                    <i class="fas fa-info-circle text-info"></i> 
+                                                    Format: 2 digits + 5 letters + 4 digits + 1 letter + 1 alphanumeric + Z + 1 alphanumeric
+                                                    <br>
+                                                    <i class="fas fa-check text-success"></i> 
+                                                    <strong>Example:</strong> 33BEXPA7899P1ZA (Your format is correct!)
+                                                    <br>
+                                                    <i class="fas fa-magic text-success"></i> 
+                                                    <strong>When entered:</strong> GST number will automatically appear on all invoices, receipts, and emails
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card bg-light">
+                                                <div class="card-body text-center">
+                                                    <h6 class="card-title"><i class="fas fa-check-circle text-success"></i> GST Benefits</h6>
+                                                    <ul class="list-unstyled small text-left">
+                                                        <li>✅ Shows on POS receipts</li>
+                                                        <li>✅ Shows on customer invoices</li>
+                                                        <li>✅ Shows on email receipts</li>
+                                                        <li>✅ Automatic validation</li>
+                                                        <li>✅ Professional appearance</li>
+                                                    </ul>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

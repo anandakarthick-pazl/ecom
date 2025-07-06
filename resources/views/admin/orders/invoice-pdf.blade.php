@@ -124,6 +124,13 @@
         @endif
         <h1 class="company-name">{{ $globalCompany->company_name ?? 'Herbal Bliss' }}</h1>
         <p style="margin: 5px 0; color: #666;">Natural & Organic Products</p>
+        @if($globalCompany->company_address ?? false)
+            <p style="margin: 5px 0; color: #666;">{{ $globalCompany->company_address }}</p>
+        @endif
+        <p style="margin: 5px 0; color: #666;">Email: {{ $globalCompany->company_email ?? 'info@herbalbliss.com' }} | Phone: {{ $globalCompany->company_phone ?? '+91 9876543210' }}</p>
+        @if($globalCompany->gst_number ?? false)
+            <p style="margin: 5px 0; color: #666;"><strong>GST No:</strong> {{ $globalCompany->gst_number }}</p>
+        @endif
         <h2 class="invoice-title">INVOICE</h2>
     </div>
 

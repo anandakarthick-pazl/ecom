@@ -108,6 +108,9 @@
                 @if($company['email'])
                     <p><strong>Email:</strong> {{ $company['email'] }}</p>
                 @endif
+                @if($company['gst_number'])
+                    <p><strong>GST No:</strong> {{ $company['gst_number'] }}</p>
+                @endif
             </div>
         </div>
         
@@ -125,6 +128,12 @@
                 @endif
                 @if($company['phone'])
                     Phone: {{ $company['phone'] }}
+                @endif
+                @if(($company['email'] || $company['phone']) && $company['gst_number'])
+                    <br>
+                @endif
+                @if($company['gst_number'])
+                    GST No: {{ $company['gst_number'] }}
                 @endif
             </p>
             <p style="margin-top: 15px; font-size: 12px; color: #999;">
