@@ -4,656 +4,33 @@
 @section('meta_description', 'Browse all our products. Find what you need from our complete product catalog.')
 
 @section('content')
-<style>
-    /* Enhanced Compact Product Design */
-    .products-container {
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .product-grid-enhanced {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 12px;
-        padding: 15px 0;
-    }
-    
-    .product-card-compact {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: hidden;
-        position: relative;
-        border: 1px solid #f0f0f0;
-    }
-    
-    .product-card-compact:hover {
-        transform: translateY(-8px) scale(1.02);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        border-color: var(--primary-color, #007bff);
-    }
-    
-    .product-image-container {
-        position: relative;
-        height: 120px;
-        overflow: hidden;
-        border-radius: 12px 12px 0 0;
-    }
-    
-    .product-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.4s ease;
-    }
-    
-    .product-card-compact:hover .product-image {
-        transform: scale(1.1);
-    }
-    
-    .product-badges {
-        position: absolute;
-        top: 8px;
-        left: 8px;
-        right: 8px;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        z-index: 2;
-    }
-    
-    .badge-compact {
-        padding: 2px 6px;
-        border-radius: 10px;
-        font-size: 8px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
-    
-    .product-content {
-        padding: 8px;
-    }
-    
-    .product-category {
-        font-size: 9px;
-        color: #666;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-        margin-bottom: 2px;
-    }
-    
-    .product-title-compact {
-        font-size: 12px;
-        font-weight: 600;
-        color: #333;
-        margin: 0 0 4px 0;
-        line-height: 1.2;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        min-height: 29px;
-    }
-    
-    .product-price-section {
-        margin: 4px 0;
-    }
-    
-    .price-current {
-        font-size: 14px;
-        font-weight: 700;
-        color: var(--primary-color, #007bff);
-    }
-    
-    .price-original {
-        font-size: 10px;
-        color: #999;
-        text-decoration: line-through;
-        margin-left: 4px;
-    }
-    
-    .product-actions-compact {
-        display: flex;
-        gap: 4px;
-        margin-top: 6px;
-    }
-    
-    .btn-compact {
-        padding: 4px 8px;
-        font-size: 10px;
-        border-radius: 4px;
-        flex: 1;
-        text-align: center;
-        transition: all 0.2s ease;
-    }
-    
-    .stock-indicator {
-        font-size: 9px;
-        padding: 1px 4px;
-        border-radius: 6px;
-        margin: 2px 0;
-    }
-    
-    .stock-low {
-        background: #fff3cd;
-        color: #856404;
-    }
-    
-    .stock-out {
-        background: #f8d7da;
-        color: #721c24;
-    }
-    
-    /* Enhanced Cracker/Fireworks Animation Styles */
-    .fireworks-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 9999;
-        overflow: hidden;
-    }
-    
-    .firework {
-        position: absolute;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        animation: firework-trail 1.2s ease-out forwards;
-        box-shadow: 0 0 10px currentColor;
-    }
-    
-    .firework::before {
-        content: '';
-        position: absolute;
-        top: -3px;
-        left: -3px;
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        background: inherit;
-        opacity: 0.4;
-        filter: blur(2px);
-    }
-    
-    .firework::after {
-        content: '';
-        position: absolute;
-        top: -1px;
-        left: -1px;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: white;
-        opacity: 0.8;
-        animation: glow-pulse 0.3s ease-out;
-    }
-    
-    .spark {
-        position: absolute;
-        width: 4px;
-        height: 4px;
-        border-radius: 50%;
-        animation: spark-explosion 1.5s ease-out forwards;
-        box-shadow: 0 0 6px currentColor;
-    }
-    
-    .spark::before {
-        content: '';
-        position: absolute;
-        top: -1px;
-        left: -1px;
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: white;
-        opacity: 0.6;
-        animation: spark-glow 0.2s ease-out;
-    }
-    
-    .cracker-burst {
-        position: absolute;
-        width: 4px;
-        height: 4px;
-        background: radial-gradient(circle, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
-        border-radius: 50%;
-        animation: cracker-burst 0.8s ease-out forwards;
-        box-shadow: 0 0 15px currentColor;
-    }
-    
-    .cracker-stream {
-        position: absolute;
-        width: 2px;
-        height: 20px;
-        background: linear-gradient(to bottom, #ffd700, #ff6b6b, transparent);
-        animation: cracker-stream 0.4s ease-out forwards;
-        border-radius: 1px;
-    }
-    
-    .celebration-star {
-        position: absolute;
-        width: 0;
-        height: 0;
-        border-left: 5px solid transparent;
-        border-right: 5px solid transparent;
-        border-bottom: 7px solid #ffd700;
-        animation: star-twinkle 1s ease-out forwards;
-        transform: rotate(35deg);
-    }
-    
-    .celebration-star::before {
-        content: '';
-        position: absolute;
-        left: -5px;
-        top: 3px;
-        width: 0;
-        height: 0;
-        border-left: 5px solid transparent;
-        border-right: 5px solid transparent;
-        border-bottom: 7px solid #ffd700;
-        transform: rotate(-70deg);
-    }
-    
-    .celebration-star::after {
-        content: '';
-        position: absolute;
-        left: -5px;
-        top: 3px;
-        width: 0;
-        height: 0;
-        border-left: 5px solid transparent;
-        border-right: 5px solid transparent;
-        border-bottom: 7px solid #ffd700;
-        transform: rotate(70deg);
-    }
-    
-    @keyframes firework-trail {
-        0% {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-            filter: brightness(1.5);
-        }
-        70% {
-            opacity: 0.8;
-            transform: scale(1.2) translateY(-80vh);
-        }
-        100% {
-            opacity: 0;
-            transform: scale(0.3) translateY(-100vh);
-            filter: brightness(0.5);
-        }
-    }
-    
-    @keyframes spark-explosion {
-        0% {
-            opacity: 1;
-            transform: scale(1) translate(0, 0) rotate(0deg);
-            filter: brightness(1.5);
-        }
-        50% {
-            opacity: 0.8;
-            transform: scale(1.5) translate(calc(var(--spark-x, 50px) * 0.7), calc(var(--spark-y, 50px) * 0.7)) rotate(180deg);
-        }
-        100% {
-            opacity: 0;
-            transform: scale(0.2) translate(var(--spark-x, 50px), var(--spark-y, 50px)) rotate(360deg);
-            filter: brightness(0.3);
-        }
-    }
-    
-    @keyframes cracker-burst {
-        0% {
-            opacity: 1;
-            transform: scale(0) rotate(0deg);
-            filter: brightness(2);
-        }
-        30% {
-            opacity: 1;
-            transform: scale(4) rotate(120deg);
-            filter: brightness(1.5);
-        }
-        60% {
-            opacity: 0.8;
-            transform: scale(6) rotate(240deg);
-        }
-        100% {
-            opacity: 0;
-            transform: scale(1) rotate(360deg);
-            filter: brightness(0.5);
-        }
-    }
-    
-    @keyframes cracker-stream {
-        0% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-        100% {
-            opacity: 0;
-            transform: translateY(30px) scale(0.3);
-        }
-    }
-    
-    @keyframes star-twinkle {
-        0% {
-            opacity: 1;
-            transform: rotate(35deg) scale(0);
-        }
-        50% {
-            opacity: 1;
-            transform: rotate(35deg) scale(1.5);
-        }
-        100% {
-            opacity: 0;
-            transform: rotate(35deg) scale(0.5);
-        }
-    }
-    
-    @keyframes glow-pulse {
-        0% {
-            opacity: 1;
-            transform: scale(1);
-        }
-        100% {
-            opacity: 0;
-            transform: scale(2);
-        }
-    }
-    
-    @keyframes spark-glow {
-        0% {
-            opacity: 0.8;
-            transform: scale(1);
-        }
-        100% {
-            opacity: 0;
-            transform: scale(1.5);
-        }
-    }
-    
-    .celebration-burst {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 120px;
-        height: 120px;
-        background: radial-gradient(circle, 
-            #ff6b6b 0%, 
-            #feca57 20%, 
-            #48dbfb 40%, 
-            #ff9ff3 60%, 
-            #54a0ff 80%,
-            #ffd700 100%);
-        border-radius: 50%;
-        animation: celebration-burst 1.2s ease-out forwards;
-        pointer-events: none;
-        z-index: 10000;
-        box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
-    }
-    
-    .celebration-burst::before {
-        content: '';
-        position: absolute;
-        top: -10px;
-        left: -10px;
-        width: 140px;
-        height: 140px;
-        background: radial-gradient(circle, 
-            transparent 30%,
-            rgba(255, 215, 0, 0.3) 40%,
-            rgba(255, 107, 107, 0.2) 60%,
-            transparent 80%);
-        border-radius: 50%;
-        animation: celebration-halo 1.2s ease-out forwards;
-    }
-    
-    @keyframes celebration-burst {
-        0% {
-            opacity: 0;
-            transform: translate(-50%, -50%) scale(0) rotate(0deg);
-            filter: brightness(2);
-        }
-        30% {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1.5) rotate(120deg);
-            filter: brightness(1.8);
-        }
-        60% {
-            opacity: 0.8;
-            transform: translate(-50%, -50%) scale(3) rotate(240deg);
-            filter: brightness(1.2);
-        }
-        100% {
-            opacity: 0;
-            transform: translate(-50%, -50%) scale(5) rotate(360deg);
-            filter: brightness(0.5);
-        }
-    }
-    
-    @keyframes celebration-halo {
-        0% {
-            opacity: 0;
-            transform: scale(0) rotate(-45deg);
-        }
-        40% {
-            opacity: 0.6;
-            transform: scale(1.2) rotate(0deg);
-        }
-        100% {
-            opacity: 0;
-            transform: scale(2) rotate(45deg);
-        }
-    }
-    
-    /* Enhanced Header Styles */
-    .page-header-enhanced {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 40px 0;
-        margin-bottom: 30px;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .page-header-enhanced::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="25" cy="25" r="2" fill="white" opacity="0.1"><animate attributeName="opacity" values="0.1;0.3;0.1" dur="3s" repeatCount="indefinite"/></circle><circle cx="75" cy="75" r="1.5" fill="white" opacity="0.1"><animate attributeName="opacity" values="0.1;0.4;0.1" dur="2s" repeatCount="indefinite"/></circle><circle cx="85" cy="25" r="1" fill="white" opacity="0.1"><animate attributeName="opacity" values="0.1;0.2;0.1" dur="4s" repeatCount="indefinite"/></circle></svg>');
-        animation: float 20s linear infinite;
-    }
-    
-    @keyframes float {
-        0% { transform: translate(0, 0) rotate(0deg); }
-        100% { transform: translate(-50px, -50px) rotate(360deg); }
-    }
-    
-    .header-content {
-        position: relative;
-        z-index: 1;
-    }
-    
-    .filter-section-enhanced {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        padding: 20px;
-        margin-bottom: 30px;
-    }
-    
-    .category-filter-enhanced {
-        padding: 8px 16px;
-        border: 2px solid #e9ecef;
-        border-radius: 25px;
-        background: white;
-        color: #666;
-        transition: all 0.3s ease;
-        margin: 4px;
-        font-weight: 500;
-    }
-    
-    .category-filter-enhanced:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        border-color: var(--primary-color, #007bff);
-    }
-    
-    .category-filter-enhanced.active {
-        background: var(--primary-color, #007bff);
-        border-color: var(--primary-color, #007bff);
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,123,255,0.3);
-    }
-    
-    /* Stats Section */
-    .stats-section {
-        background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
-        color: white;
-        padding: 40px 0;
-        margin-top: 50px;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .stats-card-enhanced {
-        text-align: center;
-        padding: 20px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 15px;
-        margin: 10px;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.2);
-    }
-    
-    .stats-icon {
-        font-size: 2.5rem;
-        margin-bottom: 15px;
-        opacity: 0.9;
-    }
-    
-    .stats-number {
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 5px;
-    }
-    
-    .stats-label {
-        font-size: 0.9rem;
-        opacity: 0.9;
-    }
-    
-    /* Loading Animation */
-    .loading-enhanced {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 60px 20px;
-    }
-    
-    .spinner-enhanced {
-        width: 50px;
-        height: 50px;
-        border: 4px solid #f3f3f3;
-        border-top: 4px solid var(--primary-color, #007bff);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin-bottom: 20px;
-    }
-    
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .product-grid-enhanced {
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 8px;
-        }
-        
-        .product-image-container {
-            height: 100px;
-        }
-        
-        .product-content {
-            padding: 6px;
-        }
-        
-        .page-header-enhanced {
-            padding: 20px 0;
-        }
-        
-        .filter-section-enhanced {
-            padding: 15px;
-        }
-    }
-    
-    @media (max-width: 576px) {
-        .product-grid-enhanced {
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 6px;
-        }
-        
-        .product-image-container {
-            height: 80px;
-        }
-        
-        .product-content {
-            padding: 4px;
-        }
-        
-        .category-filter-enhanced {
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-    }
-    
-    /* Animation Toggle */
-    .animations-disabled .fireworks-container,
-    .animations-disabled .cracker-burst,
-    .animations-disabled .celebration-burst {
-        display: none !important;
-    }
-</style>
-
-<div class="container-fluid px-0">
-    <!-- Enhanced Page Header -->
-    <div class="page-header-enhanced">
+<div class="products-page">
+    <!-- Page Header -->
+    <div class="page-header">
         <div class="container">
-            <div class="header-content text-center">
-                <h1 class="display-4 mb-3 fw-bold">
-                    <i class="fas fa-sparkles me-3"></i>
-                    Discover Amazing Products
+            <div class="header-content">
+                <h1 class="page-title">
+                    <i class="fas fa-box-open me-3"></i>
+                    All Products
                 </h1>
-                <p class="lead">Find exactly what you're looking for in our curated collection</p>
+                <p class="page-subtitle">Discover our complete collection of quality products</p>
             </div>
         </div>
     </div>
     
     <div class="container">
-        <!-- Enhanced Categories Filter -->
+        <!-- Category Filters -->
         @if($categories->count() > 0)
-        <div class="filter-section-enhanced">
-            <h6 class="mb-3 fw-bold text-dark">
+        <div class="filters-section">
+            <h6 class="filters-title">
                 <i class="fas fa-filter me-2"></i>Filter by Category
             </h6>
-            <div class="d-flex flex-wrap justify-content-center" id="category-filters">
-                <button class="btn category-filter-enhanced {{ request('category', 'all') === 'all' ? 'active' : '' }}" data-category="all">
+            <div class="filters-container" id="category-filters">
+                <button class="filter-btn {{ request('category', 'all') === 'all' ? 'active' : '' }}" data-category="all">
                     <i class="fas fa-th-large me-1"></i>All Products
                 </button>
                 @foreach($categories as $category)
-                <button class="btn category-filter-enhanced {{ request('category') === $category->slug ? 'active' : '' }}" data-category="{{ $category->slug }}">
+                <button class="filter-btn {{ request('category') === $category->slug ? 'active' : '' }}" data-category="{{ $category->slug }}">
                     <i class="fas fa-tag me-1"></i>{{ $category->name }}
                 </button>
                 @endforeach
@@ -662,477 +39,774 @@
         @endif
 
         <!-- Loading Spinner -->
-        <div class="loading-enhanced" id="loading-spinner" style="display: none;">
-            <div class="spinner-enhanced"></div>
-            <p class="text-muted">Loading amazing products...</p>
+        <div class="loading-container" id="loading-spinner" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Loading products...</p>
         </div>
 
-        <!-- Products Grid Container -->
+        <!-- Products Grid -->
         <div class="products-container" id="products-container">
-            @include('partials.products-grid-enhanced', ['products' => $products])
+            @if($products->count() > 0)
+                <div class="products-grid">
+                    @foreach($products as $product)
+                        @include('partials.product-card-modern', ['product' => $product])
+                    @endforeach
+                </div>
+                
+                <!-- Pagination -->
+                @if($enablePagination && method_exists($products, 'appends'))
+                <div class="pagination-container" id="pagination-container">
+                    {{ $products->appends(request()->query())->links() }}
+                </div>
+                @endif
+            @else
+                @include('partials.empty-state', [
+                    'icon' => 'box-open',
+                    'title' => 'No Products Found',
+                    'message' => 'Try adjusting your filters or check back later for new products.',
+                    'action' => 'Browse All',
+                    'actionUrl' => route('products')
+                ])
+            @endif
         </div>
 
-        <!-- Pagination -->
-        @if($enablePagination && isset($products) && method_exists($products, 'appends'))
-        <div class="d-flex justify-content-center mt-5" id="pagination-container">
-            {{ $products->appends(request()->query())->links() }}
+        <!-- Stats Section -->
+        @if($products->count() > 0)
+        <div class="stats-section">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-box-open"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">{{ $enablePagination && method_exists($products, 'total') ? $products->total() : $products->count() }}</div>
+                        <div class="stat-label">Products Available</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">{{ $categories->count() }}</div>
+                        <div class="stat-label">Categories</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-shipping-fast"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">Free</div>
+                        <div class="stat-label">Shipping on ₹500+</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number">24/7</div>
+                        <div class="stat-label">Customer Support</div>
+                    </div>
+                </div>
+            </div>
         </div>
         @endif
     </div>
 </div>
 
-<!-- Enhanced Product Stats Section -->
-@if($products->count() > 0)
-<div class="stats-section">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="stats-card-enhanced">
-                    <div class="stats-icon">
-                        <i class="fas fa-box-open"></i>
-                    </div>
-                    <div class="stats-number">{{ $enablePagination && method_exists($products, 'total') ? $products->total() : $products->count() }}</div>
-                    <div class="stats-label">Amazing Products</div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="stats-card-enhanced">
-                    <div class="stats-icon">
-                        <i class="fas fa-tags"></i>
-                    </div>
-                    <div class="stats-number">{{ $categories->count() }}</div>
-                    <div class="stats-label">Categories</div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="stats-card-enhanced">
-                    <div class="stats-icon">
-                        <i class="fas fa-shipping-fast"></i>
-                    </div>
-                    <div class="stats-number">Free</div>
-                    <div class="stats-label">Shipping on ₹500+</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-@endif
+@push('styles')
+<style>
+/* Modern Products Page Styles */
+.products-page {
+    min-height: 100vh;
+}
 
-<!-- Fireworks Container for Animations -->
-<div class="fireworks-container" id="fireworks-container"></div>
+/* Page Header */
+.page-header {
+    background: linear-gradient(135deg, {{ $globalCompany->primary_color ?? '#2563eb' }} 0%, {{ $globalCompany->secondary_color ?? '#10b981' }} 100%);
+    color: white;
+    padding: 2rem 0 1.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
 
-<script>
-// Enhanced Products JavaScript with Cracker Animations
-(function() {
-    // Animation settings from backend
-    const animationsEnabled = {{ \App\Models\AppSetting::get('frontend_animations_enabled', 'true') === 'true' ? 'true' : 'false' }};
-    const animationIntensity = {{ \App\Models\AppSetting::get('frontend_animation_intensity', '3') }};
-    const showCelebration = {{ \App\Models\AppSetting::get('frontend_celebration_enabled', 'true') === 'true' ? 'true' : 'false' }};
-            const fireworksEnabled = {{ \App\Models\AppSetting::get('frontend_fireworks_enabled', 'true') === 'true' ? 'true' : 'false' }};
-            const hoverEffectsEnabled = {{ \App\Models\AppSetting::get('frontend_hover_effects_enabled', 'true') === 'true' ? 'true' : 'false' }};
-            const welcomeAnimationEnabled = {{ \App\Models\AppSetting::get('frontend_welcome_animation', 'true') === 'true' ? 'true' : 'false' }};
-            const animationStyle = '{{ \App\Models\AppSetting::get('frontend_animation_style', 'crackers') }}';
-            const animationDuration = {{ \App\Models\AppSetting::get('animation_duration', '600') }};
-            const respectReducedMotion = {{ \App\Models\AppSetting::get('reduce_motion_respect', 'true') === 'true' ? 'true' : 'false' }};
-            
-            // Check for reduced motion preference
-            const prefersReducedMotion = respectReducedMotion && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            const effectiveAnimationsEnabled = animationsEnabled && !prefersReducedMotion;
-    
-    // Apply animation classes to body
-    if (!effectiveAnimationsEnabled) {
-    document.body.classList.add('animations-disabled');
-    } else {
-                document.body.classList.add('animations-enabled');
-                document.body.setAttribute('data-animation-style', animationStyle);
-                document.body.setAttribute('data-animation-intensity', animationIntensity);
-                
-                // Set CSS custom properties for animation duration
-                document.documentElement.style.setProperty('--animation-duration', animationDuration + 'ms');
-            }
-    
-    // Fireworks Animation System
-    class FireworksSystem {
-        constructor() {
-            this.container = document.getElementById('fireworks-container');
-            this.isActive = false;
-            this.colors = [
-                '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', 
-                '#54a0ff', '#5f27cd', '#00d2d3', '#ff9ff3',
-                '#ffa726', '#26c6da', '#ab47bc', '#ef5350'
-            ];
-        }
-        
-        createFirework(x, y) {
-            if (!effectiveAnimationsEnabled || !fireworksEnabled || !this.container) return;
-            
-            const firework = document.createElement('div');
-            firework.className = 'firework';
-            firework.style.left = x + 'px';
-            firework.style.top = y + 'px';
-            firework.style.background = this.colors[Math.floor(Math.random() * this.colors.length)];
-            firework.style.color = firework.style.background; // For box-shadow
-            
-            this.container.appendChild(firework);
-            
-            // Create trailing sparks during flight
-            for (let i = 0; i < 3; i++) {
-                setTimeout(() => {
-                    this.createTrailSpark(x + (Math.random() - 0.5) * 20, y + i * 30);
-                }, i * 100);
-            }
-            
-            // Create explosion after delay
-            setTimeout(() => {
-                this.createExplosion(x, y);
-                if (this.container.contains(firework)) {
-                    this.container.removeChild(firework);
-                }
-            }, 1200);
-        }
-        
-        createTrailSpark(x, y) {
-            if (!animationsEnabled || !this.container) return;
-            
-            const trail = document.createElement('div');
-            trail.className = 'cracker-stream';
-            trail.style.left = x + 'px';
-            trail.style.top = y + 'px';
-            
-            this.container.appendChild(trail);
-            
-            setTimeout(() => {
-                if (this.container.contains(trail)) {
-                    this.container.removeChild(trail);
-                }
-            }, 400);
-        }
-        
-        createExplosion(x, y) {
-            if (!effectiveAnimationsEnabled || !fireworksEnabled) return;
-            
-            const sparkCount = animationIntensity * 12;
-            const starCount = animationIntensity * 4;
-            
-            // Create main explosion sparks
-            for (let i = 0; i < sparkCount; i++) {
-                const spark = document.createElement('div');
-                spark.className = 'spark';
-                
-                const angle = (360 / sparkCount) * i + Math.random() * 15;
-                const distance = 40 + Math.random() * 120;
-                const sparkX = Math.cos(angle * Math.PI / 180) * distance;
-                const sparkY = Math.sin(angle * Math.PI / 180) * distance;
-                
-                spark.style.left = x + 'px';
-                spark.style.top = y + 'px';
-                const color = this.colors[Math.floor(Math.random() * this.colors.length)];
-                spark.style.background = color;
-                spark.style.color = color; // For box-shadow
-                spark.style.setProperty('--spark-x', sparkX + 'px');
-                spark.style.setProperty('--spark-y', sparkY + 'px');
-                
-                this.container.appendChild(spark);
-                
-                setTimeout(() => {
-                    if (this.container.contains(spark)) {
-                        this.container.removeChild(spark);
-                    }
-                }, 1500);
-            }
-            
-            // Create decorative stars
-            for (let i = 0; i < starCount; i++) {
-                setTimeout(() => {
-                    const star = document.createElement('div');
-                    star.className = 'celebration-star';
-                    
-                    const starX = x + (Math.random() - 0.5) * 80;
-                    const starY = y + (Math.random() - 0.5) * 80;
-                    
-                    star.style.left = starX + 'px';
-                    star.style.top = starY + 'px';
-                    
-                    this.container.appendChild(star);
-                    
-                    setTimeout(() => {
-                        if (this.container.contains(star)) {
-                            this.container.removeChild(star);
-                        }
-                    }, 1000);
-                }, i * 100);
-            }
-            
-            // Create cracker burst effect
-            const burst = document.createElement('div');
-            burst.className = 'cracker-burst';
-            burst.style.left = x + 'px';
-            burst.style.top = y + 'px';
-            burst.style.color = this.colors[Math.floor(Math.random() * this.colors.length)];
-            
-            this.container.appendChild(burst);
-            
-            setTimeout(() => {
-                if (this.container.contains(burst)) {
-                    this.container.removeChild(burst);
-                }
-            }, 800);
-        }
-        
-        createCelebrationBurst() {
-            if (!effectiveAnimationsEnabled || !showCelebration) return;
-            
-            const burst = document.createElement('div');
-            burst.className = 'celebration-burst';
-            document.body.appendChild(burst);
-            
-            setTimeout(() => {
-                document.body.removeChild(burst);
-            }, 1000);
-        }
-        
-        startRandomFireworks() {
-            if (!effectiveAnimationsEnabled || !fireworksEnabled) return;
-            
-            this.isActive = true;
-            const fireworkInterval = Math.max(500, 1500 / animationIntensity);
-            
-            const interval = setInterval(() => {
-                if (!this.isActive) {
-                    clearInterval(interval);
-                    return;
-                }
-                
-                // Create multiple fireworks for higher intensity
-                const burstCount = Math.max(1, Math.floor(animationIntensity / 2));
-                
-                for (let i = 0; i < burstCount; i++) {
-                    setTimeout(() => {
-                        const x = Math.random() * window.innerWidth;
-                        const startY = window.innerHeight + 50;
-                        const endY = Math.random() * (window.innerHeight * 0.4) + (window.innerHeight * 0.1);
-                        
-                        this.createFirework(x, startY);
-                    }, i * 100);
-                }
-            }, fireworkInterval);
-            
-            // Stop after duration based on intensity
-            const duration = 3000 + (animationIntensity * 1000);
-            setTimeout(() => {
-                this.isActive = false;
-            }, duration);
-        }
-        
-        triggerOnAction(element) {
-            if (!effectiveAnimationsEnabled) return;
-            
-            const rect = element.getBoundingClientRect();
-            const x = rect.left + rect.width / 2;
-            const y = rect.top + rect.height / 2;
-            
-            // Create immediate explosion at element
-            this.createExplosion(x, y);
-            
-            // Add some random fireworks nearby with staggered timing
-            for (let i = 0; i < animationIntensity; i++) {
-                setTimeout(() => {
-                    const offsetX = x + (Math.random() - 0.5) * 300;
-                    const offsetY = y + (Math.random() - 0.5) * 200;
-                    this.createFirework(offsetX, Math.max(50, offsetY - 100));
-                }, i * 200);
-            }
-            
-            // Add celebration burst for high-intensity animations
-            if (animationIntensity >= 3) {
-                setTimeout(() => {
-                    this.createCelebrationBurst();
-                }, 500);
-            }
-        }
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="white" opacity="0.1"/><circle cx="80" cy="80" r="1.5" fill="white" opacity="0.15"/><circle cx="90" cy="20" r="1" fill="white" opacity="0.1"/></svg>');
+    animation: float 20s linear infinite;
+}
+
+@keyframes float {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(-20px, -20px); }
+}
+
+.header-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.page-subtitle {
+    font-size: 1.125rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+/* Filters Section */
+.filters-section {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.filters-title {
+    color: #1f2937;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.filters-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.filter-btn {
+    background: #f9fafb;
+    border: 2px solid #e5e7eb;
+    color: #6b7280;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-btn:hover {
+    background: rgba(37, 99, 235, 0.05);
+    border-color: {{ $globalCompany->primary_color ?? '#2563eb' }};
+    color: {{ $globalCompany->primary_color ?? '#2563eb' }};
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+.filter-btn.active {
+    background: {{ $globalCompany->primary_color ?? '#2563eb' }};
+    border-color: {{ $globalCompany->primary_color ?? '#2563eb' }};
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Loading */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e5e7eb;
+    border-top: 3px solid {{ $globalCompany->primary_color ?? '#2563eb' }};
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* Products Grid */
+.products-container {
+    margin-bottom: 3rem;
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Product Card Styles */
+.product-card {
+    background: #ffffff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.product-image-container {
+    position: relative;
+    height: 150px;
+    overflow: hidden;
+}
+
+.product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-image {
+    transform: scale(1.05);
+}
+
+.product-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    font-size: 2rem;
+}
+
+.product-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+}
+
+.badge-discount {
+    background: linear-gradient(45deg, #ef4444, #dc2626);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-featured {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #f59e0b;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    z-index: 2;
+}
+
+.product-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 3;
+}
+
+.product-card:hover .product-overlay {
+    opacity: 1;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.quick-btn {
+    background: #ffffff;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: {{ $globalCompany->primary_color ?? '#2563eb' }};
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.quick-btn:hover {
+    background: {{ $globalCompany->primary_color ?? '#2563eb' }};
+    color: white;
+    transform: scale(1.1);
+}
+
+.product-content {
+    padding: 1rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-category {
+    font-size: 0.75rem;
+    color: {{ $globalCompany->primary_color ?? '#2563eb' }};
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.product-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+
+.product-title a {
+    color: #1f2937;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.product-title a:hover {
+    color: {{ $globalCompany->primary_color ?? '#2563eb' }};
+}
+
+.product-description {
+    font-size: 0.875rem;
+    color: #6b7280;
+    line-height: 1.4;
+    margin-bottom: 1rem;
+    flex: 1;
+}
+
+.product-footer {
+    margin-top: auto;
+}
+
+.price-section {
+    margin-bottom: 1rem;
+}
+
+.current-price {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: {{ $globalCompany->primary_color ?? '#2563eb' }};
+}
+
+.original-price {
+    font-size: 0.875rem;
+    text-decoration: line-through;
+    color: #6b7280;
+    margin-left: 0.5rem;
+}
+
+.product-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.qty-btn {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1f2937;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+}
+
+.qty-btn:hover {
+    background: {{ $globalCompany->primary_color ?? '#2563eb' }};
+    color: white;
+    border-color: {{ $globalCompany->primary_color ?? '#2563eb' }};
+}
+
+.qty-input {
+    width: 50px;
+    height: 32px;
+    text-align: center;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.btn-add-cart {
+    background: {{ $globalCompany->primary_color ?? '#2563eb' }};
+    color: white;
+    border: none;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-add-cart:hover {
+    background: {{ $globalCompany->secondary_color ?? '#10b981' }};
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.btn-add-cart.offer {
+    background: linear-gradient(45deg, #ef4444, #dc2626);
+}
+
+.btn-add-cart.offer:hover {
+    background: linear-gradient(45deg, #dc2626, #b91c1c);
+}
+
+.btn-out-stock {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Pagination */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+/* Stats Section */
+.stats-section {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    padding: 2rem;
+    margin: 3rem 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 12px;
+    background: #f9fafb;
+    transition: transform 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+}
+
+.stat-icon {
+    background: linear-gradient(45deg, {{ $globalCompany->primary_color ?? '#2563eb' }}, {{ $globalCompany->secondary_color ?? '#10b981' }});
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 2rem;
     }
     
-    // Initialize Fireworks System
-    const fireworks = new FireworksSystem();
+    .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1rem;
+    }
     
-    // Make fireworks available globally for the enhanced grid
-    window.fireworks = fireworks;
+    .filters-container {
+        justify-content: center;
+    }
     
-    // Product Filtering and Loading System
-    function initializeProductFilters() {
-        if (typeof $ === 'undefined') {
-            console.error('jQuery is not loaded. Product filters cannot be initialized.');
-            return;
-        }
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        let currentCategory = urlParams.get('category') || 'all';
-        let currentPage = parseInt(urlParams.get('page')) || 1;
-        let isLoading = false;
-        let enablePagination = {{ $enablePagination ? 'true' : 'false' }};
-        
-        // Set initial active filter
-        $('.category-filter-enhanced').removeClass('active');
-        $('.category-filter-enhanced[data-category="' + currentCategory + '"]').addClass('active');
-        
-        // Category filter click with fireworks
-        $('.category-filter-enhanced').on('click', function(e) {
-            e.preventDefault();
-            
+    .filter-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .stat-item {
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .products-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .page-header {
+        padding: 1.5rem 0 1rem;
+    }
+    
+    .filters-section {
+        padding: 1rem;
+    }
+    
+    .filter-btn {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+    }
+}
+
+/* Animation */
+.fade-in {
+    animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize product filtering
+    let isLoading = false;
+    const enablePagination = {{ $enablePagination ? 'true' : 'false' }};
+    
+    // Category filter functionality
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
             if (isLoading) return;
             
-            const category = $(this).data('category');
+            const category = this.dataset.category;
+            const currentCategory = document.querySelector('.filter-btn.active')?.dataset.category;
+            
             if (category === currentCategory) return;
             
-            // Trigger fireworks on category change
-            fireworks.triggerOnAction(this);
+            // Update active state
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
             
-            currentCategory = category;
-            currentPage = 1;
-            
-            $('.category-filter-enhanced').removeClass('active');
-            $(this).addClass('active');
-            
-            loadProducts(category, 1);
+            loadProducts(category);
         });
-        
-        // Pagination click
-        $(document).on('click', '#pagination-container .pagination a', function(e) {
+    });
+    
+    // Pagination click handling
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('#pagination-container .pagination a')) {
             e.preventDefault();
             
             if (isLoading || !enablePagination) return;
             
-            const url = $(this).attr('href');
-            const page = new URL(url).searchParams.get('page');
+            const url = e.target.closest('a').getAttribute('href');
+            const urlParams = new URLSearchParams(new URL(url).search);
+            const page = urlParams.get('page');
+            const category = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
             
-            if (page && page !== currentPage.toString()) {
-                currentPage = parseInt(page);
-                loadProducts(currentCategory, page);
+            if (page) {
+                loadProducts(category, page);
             }
-        });
+        }
+    });
+    
+    function loadProducts(category, page = 1) {
+        if (isLoading) return;
         
-        function loadProducts(category, page) {
-            if (isLoading) return;
-            
-            isLoading = true;
-            
-            $('#loading-spinner').show();
-            $('#products-container').hide();
-            if (enablePagination) {
-                $('#pagination-container').hide();
-            }
-            
-            let requestData = {};
-            if (category && category !== 'all') {
-                requestData.category = category;
-            }
-            if (enablePagination && page && page > 1) {
-                requestData.page = page;
-            }
-            
-            $.ajax({
-                url: '{{ route("products") }}',
-                method: 'GET',
-                data: requestData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                },
-                success: function(response) {
-                    if (response.html) {
-                        $('#products-container').html(response.html).show();
-                        
-                        if (enablePagination && response.pagination) {
-                            $('#pagination-container').html(response.pagination).show();
-                        } else if (enablePagination) {
-                            $('#pagination-container').hide();
-                        }
-                        
-                        // Trigger fireworks when products load
-                        if (effectiveAnimationsEnabled && fireworksEnabled) {
-                            setTimeout(() => {
-                                fireworks.startRandomFireworks();
-                            }, 500);
-                        }
-                        
-                        // Update page title
-                        let title = 'All Products';
-                        if (category !== 'all') {
-                            const categoryName = $('.category-filter-enhanced[data-category="' + category + '"]').text().trim();
-                            title = categoryName.replace(/.*\s/, '') + ' Products';
-                        }
-                        document.title = title + ' - {{ $globalCompany->company_name ?? "Your Store" }}';
-                        
-                        // Update URL
-                        let newUrl = '{{ route("products") }}';
-                        let params = [];
-                        if (category && category !== 'all') {
-                            params.push('category=' + encodeURIComponent(category));
-                        }
-                        if (enablePagination && page && page > 1) {
-                            params.push('page=' + page);
-                        }
-                        if (params.length > 0) {
-                            newUrl += '?' + params.join('&');
-                        }
-                        
-                        window.history.pushState({ category, page }, '', newUrl);
-                    }
-                    
-                    isLoading = false;
-                },
-                error: function(xhr) {
-                    $('#products-container').html(
-                        '<div class="alert alert-danger text-center">Error loading products. Please try again.</div>'
-                    ).show();
-                    
-                    isLoading = false;
-                },
-                complete: function() {
-                    $('#loading-spinner').hide();
-                }
-            });
+        isLoading = true;
+        
+        // Show loading
+        document.getElementById('loading-spinner').style.display = 'flex';
+        document.getElementById('products-container').style.display = 'none';
+        
+        // Prepare request data
+        const requestData = new URLSearchParams();
+        if (category && category !== 'all') {
+            requestData.append('category', category);
+        }
+        if (enablePagination && page && page > 1) {
+            requestData.append('page', page);
         }
         
-        // Handle browser back/forward
-        window.addEventListener('popstate', function(e) {
-            const state = e.state || {};
-            const urlParams = new URLSearchParams(window.location.search);
-            const category = state.category || urlParams.get('category') || 'all';
-            const page = state.page || parseInt(urlParams.get('page')) || 1;
-            
-            currentCategory = category;
-            currentPage = page;
-            
-            $('.category-filter-enhanced').removeClass('active');
-            $('.category-filter-enhanced[data-category="' + category + '"]').addClass('active');
-            
-            loadProducts(category, page);
+        // Make AJAX request
+        fetch('{{ route("products") }}?' + requestData.toString(), {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.html) {
+                document.getElementById('products-container').innerHTML = data.html;
+                document.getElementById('products-container').style.display = 'block';
+                
+                if (enablePagination && data.pagination) {
+                    const paginationContainer = document.getElementById('pagination-container');
+                    if (paginationContainer) {
+                        paginationContainer.innerHTML = data.pagination;
+                    }
+                }
+                
+                // Update page title
+                let title = 'All Products';
+                if (category !== 'all') {
+                    const categoryBtn = document.querySelector(`[data-category="${category}"]`);
+                    if (categoryBtn) {
+                        const categoryName = categoryBtn.textContent.trim().replace(/.*\s/, '');
+                        title = categoryName + ' Products';
+                    }
+                }
+                document.title = title + ' - {{ $globalCompany->company_name ?? "Your Store" }}';
+                
+                // Update URL
+                let newUrl = '{{ route("products") }}';
+                if (requestData.toString()) {
+                    newUrl += '?' + requestData.toString();
+                }
+                window.history.pushState({ category, page }, '', newUrl);
+                
+                // Add animations to new content
+                document.querySelectorAll('#products-container .product-card').forEach((card, index) => {
+                    setTimeout(() => {
+                        card.classList.add('fade-in');
+                    }, index * 100);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading products:', error);
+            document.getElementById('products-container').innerHTML = 
+                '<div class="alert alert-danger text-center">Error loading products. Please try again.</div>';
+            document.getElementById('products-container').style.display = 'block';
+        })
+        .finally(() => {
+            document.getElementById('loading-spinner').style.display = 'none';
+            isLoading = false;
         });
     }
     
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(initializeProductFilters, 100);
-            
-            // Start welcome fireworks after page load
-            if (effectiveAnimationsEnabled && welcomeAnimationEnabled) {
-                setTimeout(() => {
-                    fireworks.startRandomFireworks();
-                }, 1000);
-            }
-        });
-    } else {
-        setTimeout(initializeProductFilters, 100);
+    // Handle browser back/forward
+    window.addEventListener('popstate', function(e) {
+        const state = e.state || {};
+        const urlParams = new URLSearchParams(window.location.search);
+        const category = state.category || urlParams.get('category') || 'all';
+        const page = state.page || urlParams.get('page') || 1;
         
-        // Start welcome fireworks
-        if (effectiveAnimationsEnabled && welcomeAnimationEnabled) {
-            setTimeout(() => {
-                fireworks.startRandomFireworks();
-            }, 1000);
-        }
-    }
-})();
+        // Update active filter
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.category === category);
+        });
+        
+        loadProducts(category, page);
+    });
+    
+    // Add fade-in animation to existing products
+    document.querySelectorAll('.product-card').forEach((card, index) => {
+        setTimeout(() => {
+            card.classList.add('fade-in');
+        }, index * 100);
+    });
+});
 </script>
+@endpush
 @endsection

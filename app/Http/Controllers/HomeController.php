@@ -110,8 +110,29 @@ class HomeController extends Controller
                 $paginationHtml = $products->appends($request->query())->links()->render();
             }
             
+            $productsHtml = '';
+            if ($products->count() > 0) {
+                $productsHtml = '<div class="products-grid">';
+                foreach ($products as $product) {
+                    $productsHtml .= view('partials.product-card-modern', compact('product'))->render();
+                }
+                $productsHtml .= '</div>';
+                
+                if ($enablePagination && method_exists($products, 'appends')) {
+                    $productsHtml .= '<div class="pagination-container" id="pagination-container">' . $paginationHtml . '</div>';
+                }
+            } else {
+                $productsHtml = view('partials.empty-state', [
+                    'icon' => 'box-open',
+                    'title' => 'No Products Found',
+                    'message' => 'Try adjusting your filters or check back later for new products.',
+                    'action' => 'Browse All',
+                    'actionUrl' => route('products')
+                ])->render();
+            }
+            
             return response()->json([
-                'html' => view('partials.products-grid-enhanced', compact('products'))->render(),
+                'html' => $productsHtml,
                 'total' => $enablePagination ? $products->total() : $products->count(),
                 'pagination' => $paginationHtml
             ]);
@@ -164,8 +185,29 @@ class HomeController extends Controller
                 $paginationHtml = $products->appends($request->query())->links()->render();
             }
             
+            $productsHtml = '';
+            if ($products->count() > 0) {
+                $productsHtml = '<div class="products-grid offers">';
+                foreach ($products as $product) {
+                    $productsHtml .= view('partials.product-card-modern', ['product' => $product, 'offer' => true])->render();
+                }
+                $productsHtml .= '</div>';
+                
+                if ($enablePagination && method_exists($products, 'appends')) {
+                    $productsHtml .= '<div class="pagination-container" id="pagination-container">' . $paginationHtml . '</div>';
+                }
+            } else {
+                $productsHtml = view('partials.empty-state', [
+                    'icon' => 'fire',
+                    'title' => 'No Offers Available',
+                    'message' => 'Stay tuned for amazing deals and special offers.',
+                    'action' => 'Browse All Products',
+                    'actionUrl' => route('products')
+                ])->render();
+            }
+            
             return response()->json([
-                'html' => view('partials.offer-products-grid', compact('products'))->render(),
+                'html' => $productsHtml,
                 'total' => $enablePagination ? $products->total() : $products->count(),
                 'pagination' => $paginationHtml
             ]);

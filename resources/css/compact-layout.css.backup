@@ -1,0 +1,255 @@
+/* 
+ * Compact Layout CSS for E-commerce Site
+ * This file contains styles to reduce banner and product card sizes across all pages
+ * while maintaining functionality and visual appeal
+ */
+
+/* ==================== BANNER SIZING ==================== */
+
+/* Hero Banners - Reduced from 400px to 250px */
+.hero-section .carousel-item img,
+.banner-image,
+.hero-banner {
+    height: 250px !important;
+    object-fit: cover;
+}
+
+/* Category Images - Reduced from 200px to 150px */
+.category-image,
+.categories-section .card-img-top {
+    height: 150px !important;
+    object-fit: cover;
+}
+
+/* ==================== PRODUCT CARD SIZING ==================== */
+
+/* Product Images - Reduced from 200px to 150px */
+.product-image-container,
+.product-card-header,
+.product-image-wrapper {
+    height: 150px !important;
+}
+
+/* Product Grid Layout - More compact spacing */
+.products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important;
+    gap: 1.25rem !important;
+}
+
+/* Product Cards - Tighter column layout */
+.product-card-col,
+.col-lg-3.col-md-4,
+.col-lg-4.col-md-6 {
+    margin-bottom: 1rem !important;
+}
+
+/* ==================== PAGE HEADER SIZING ==================== */
+
+/* Page Headers - Reduced padding */
+.page-header {
+    padding: 2rem 0 1.5rem !important;
+}
+
+.page-title {
+    font-size: 2rem !important;
+}
+
+/* ==================== CART ITEM SIZING ==================== */
+
+/* Cart Product Images - Reduced from 80px to 60px */
+.cart-item img,
+.cart-product-image {
+    max-height: 60px !important;
+}
+
+.cart-item .product-placeholder {
+    height: 60px !important;
+}
+
+/* ==================== ADMIN PANEL SIZING ==================== */
+
+/* Admin Product Grid - More compact */
+.admin .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important;
+}
+
+.admin .product-card-header {
+    height: 100px !important;
+}
+
+/* Admin Banner Thumbnails */
+.admin .banner-thumbnail {
+    width: 50px !important;
+    height: 35px !important;
+}
+
+/* ==================== RESPONSIVE ADJUSTMENTS ==================== */
+
+/* Tablet View */
+@media (max-width: 768px) {
+    .hero-section .carousel-item img {
+        height: 200px !important;
+    }
+    
+    .products-grid {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
+        gap: 1rem !important;
+    }
+    
+    .page-header {
+        padding: 1.5rem 0 1rem !important;
+    }
+    
+    .page-title {
+        font-size: 1.75rem !important;
+    }
+}
+
+/* Mobile View */
+@media (max-width: 576px) {
+    .hero-section .carousel-item img {
+        height: 180px !important;
+    }
+    
+    .products-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+    }
+    
+    .product-image-container {
+        height: 120px !important;
+    }
+    
+    .category-image,
+    .categories-section .card-img-top {
+        height: 120px !important;
+    }
+    
+    .page-header {
+        padding: 1rem 0 0.75rem !important;
+    }
+    
+    .page-title {
+        font-size: 1.5rem !important;
+    }
+}
+
+/* ==================== ADDITIONAL OPTIMIZATIONS ==================== */
+
+/* Compact Product Actions */
+.product-actions {
+    padding: 0.75rem !important;
+}
+
+.product-actions .btn {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
+}
+
+/* Quantity Selector - More compact */
+.quantity-selector {
+    max-width: 120px !important;
+    margin: 0 auto !important;
+}
+
+.quantity-selector .btn {
+    padding: 0.25rem 0.5rem !important;
+}
+
+/* Price Section - Tighter spacing */
+.price-section {
+    margin-bottom: 0.75rem !important;
+}
+
+/* Category Cards - Reduced bottom margin */
+.categories-section .col-md-4 {
+    margin-bottom: 1.5rem !important;
+}
+
+/* Features Section - More compact */
+.features-section {
+    padding: 2rem 0 !important;
+    margin: 2rem 0 !important;
+}
+
+/* ==================== LOADING STATES ==================== */
+
+/* Skeleton/Loading states maintain compact sizes */
+.skeleton-image {
+    height: 150px !important;
+}
+
+.skeleton-banner {
+    height: 250px !important;
+}
+
+/* ==================== PRINT STYLES ==================== */
+
+@media print {
+    .hero-section,
+    .page-header {
+        height: auto !important;
+        padding: 1rem 0 !important;
+    }
+    
+    .product-image-container {
+        height: 100px !important;
+    }
+}
+
+/* ==================== HIGH DPI DISPLAYS ==================== */
+
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    /* Ensure images remain sharp on high-DPI displays */
+    .product-image,
+    .banner-image,
+    .category-image {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}
+
+/* ==================== ACCESSIBILITY ==================== */
+
+/* Ensure compact layout doesn't affect accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .product-card,
+    .banner-image {
+        transition: none !important;
+    }
+}
+
+/* Focus states remain visible in compact layout */
+.product-card:focus-within,
+.banner-image:focus {
+    outline: 2px solid #007bff !important;
+    outline-offset: 2px !important;
+}
+
+/* ==================== UTILITY CLASSES ==================== */
+
+/* Quick utility classes for one-off adjustments */
+.compact-banner {
+    height: 250px !important;
+    object-fit: cover !important;
+}
+
+.compact-product-image {
+    height: 150px !important;
+    object-fit: cover !important;
+}
+
+.compact-category-image {
+    height: 150px !important;
+    object-fit: cover !important;
+}
+
+.compact-spacing {
+    margin-bottom: 1rem !important;
+}
+
+.compact-padding {
+    padding: 1rem !important;
+}
+
+/* End of Compact Layout CSS */
