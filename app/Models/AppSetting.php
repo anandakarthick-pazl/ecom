@@ -173,7 +173,7 @@ class AppSetting extends Model
         $cacheKey = "setting:{$tenantId}:{$key}";
         
         $setting = Cache::remember($cacheKey, 3600, function () use ($key, $tenantId) {
-            return self::withoutTenantScope()
+            return self::withoutGlobalScope('tenant')
                 ->where('key', $key)
                 ->where('company_id', $tenantId)
                 ->first();
@@ -204,7 +204,7 @@ class AppSetting extends Model
             'company_id' => $tenantId
         ];
         
-        $setting = self::withoutTenantScope()->updateOrCreate(
+        $setting = self::withoutGlobalScope('tenant')->updateOrCreate(
             [
                 'key' => $key,
                 'company_id' => $tenantId
