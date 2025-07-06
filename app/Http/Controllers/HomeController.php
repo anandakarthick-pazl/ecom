@@ -28,6 +28,9 @@ class HomeController extends Controller
         
         $categories = Category::active()
                              ->parent()
+                             ->withCount(['products' => function($query) {
+                                 $query->active()->where('stock', '>', 0);
+                             }])
                              ->orderBy('sort_order')
                              ->limit(6)
                              ->get();
@@ -67,7 +70,7 @@ class HomeController extends Controller
                       : $query->get();
         }
 
-        return view('home', compact('banners', 'featuredProducts', 'categories', 'products', 'activeMenu', 'enablePagination'));
+        return view('home-enhanced', compact('banners', 'featuredProducts', 'categories', 'products', 'activeMenu', 'enablePagination'));
     }
 
     public function products(Request $request)
