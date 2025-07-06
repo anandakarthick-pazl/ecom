@@ -671,6 +671,47 @@ class OrderController extends Controller
     }
 
     /**
+     * Test WhatsApp media URL generation (debug endpoint)
+     */
+    public function testWhatsAppMediaUrl(Order $order)
+    {
+        try {
+            // Create a test PDF file
+            $billService = new BillPDFService();
+            $pdfResult = $billService->generateOrderBill($order);
+            
+            if (!$pdfResult['success']) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Failed to generate test PDF: ' . $pdfResult['error']
+                ]);
+            }
+            
+            // Test URL generation without actually sending
+            $whatsappService = new TwilioWhatsAppService();
+            $testUrl = $whatsappService->testUrlGeneration($pdfResult['file_path'], $order);
+            
+            // Clean up test file
+            if (file_exists($pdfResult['file_path'])) {
+                unlink($pdfResult['file_path']);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'test_url' => $testUrl,
+                'message' => 'URL generation test completed',
+                'order_number' => $order->order_number
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * Send bill PDF via WhatsApp
      */
     public function sendBillWhatsApp(Request $request, Order $order)
@@ -888,5 +929,106 @@ class OrderController extends Controller
             'tax_name' => AppSetting::getForTenant('tax_name', $companyId) ?? 'GST',
             'tax_rate' => AppSetting::getForTenant('tax_rate', $companyId) ?? 18,
         ];
+    }
+
+    /**
+     * Debug WhatsApp media URL configuration
+     */
+    public function debugWhatsAppMedia(Order $order)
+    {
+        try {
+            $tenantId = $this->getCurrentTenantId();
+            $whatsappConfig = WhatsAppConfig::where('company_id', $tenantId)->first();
+            
+            $debugInfo = [
+                'order_info' => [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'company_id' => $order->company_id
+                ],
+                'environment' => [
+                    'app_env' => config('app.env'),
+                    'app_url' => config('app.url'),
+                    'app_debug' => config('app.debug'),
+                    'request_url' => request()->url(),
+                    'request_host' => request()->getHost(),
+                    'request_scheme' => request()->getScheme()
+                ],
+                'storage' => [
+                    'public_path' => public_path('storage'),
+                    'storage_path' => storage_path('app/public'),
+                    'symlink_exists' => is_link(public_path('storage')),
+                    'storage_disk_url' => Storage::disk('public')->url('test.txt'),
+                    'asset_url' => asset('storage/test.txt')
+                ],
+                'whatsapp' => [
+                    'configured' => $whatsappConfig ? $whatsappConfig->isConfigured() : false,
+                    'enabled' => $whatsappConfig ? $whatsappConfig->is_enabled : false,
+                    'phone_number' => $whatsappConfig ? $whatsappConfig->getFormattedPhoneNumber() : null
+                ],
+                'directories' => [
+                    'whatsapp_bills_exists' => Storage::disk('public')->exists('whatsapp-bills'),
+                    'invoices_exists' => Storage::disk('public')->exists('invoices'),
+                    'receipts_exists' => Storage::disk('public')->exists('receipts')
+                ]
+            ];
+            
+            Log::info('WhatsApp Media Debug Info', $debugInfo);
+            
+            return response()->json([
+                'success' => true,
+                'debug_info' => $debugInfo,
+                'recommendations' => $this->getDebugRecommendations($debugInfo)
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('WhatsApp media debug failed', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get debug recommendations based on configuration
+     */
+    private function getDebugRecommendations($debugInfo)
+    {
+        $recommendations = [];
+        
+        if ($debugInfo['environment']['app_env'] === 'local') {
+            $recommendations[] = 'Set APP_ENV=production in .env file';
+        }
+        
+        if (str_contains($debugInfo['environment']['app_url'], 'localhost')) {
+            $recommendations[] = 'Update APP_URL to your production domain in .env file';
+        }
+        
+        if (!$debugInfo['storage']['symlink_exists']) {
+            $recommendations[] = 'Run: php artisan storage:link or php artisan storage:fix-setup';
+        }
+        
+        if (!$debugInfo['whatsapp']['configured']) {
+            $recommendations[] = 'Configure WhatsApp settings in super admin panel';
+        }
+        
+        if (!$debugInfo['whatsapp']['enabled']) {
+            $recommendations[] = 'Enable WhatsApp notifications in super admin panel';
+        }
+        
+        if (!$debugInfo['directories']['whatsapp_bills_exists']) {
+            $recommendations[] = 'Run: php artisan storage:fix-setup to create required directories';
+        }
+        
+        if (empty($recommendations)) {
+            $recommendations[] = 'Configuration looks good! Test WhatsApp bill sending.';
+        }
+        
+        return $recommendations;
     }
 }

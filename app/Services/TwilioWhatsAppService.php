@@ -225,45 +225,112 @@ class TwilioWhatsAppService
 
     /**
      * Upload PDF to public storage and return URL
-     * FIXED VERSION - Multiple solutions for public accessibility
+     * FIXED VERSION - Use deployed domain for public accessibility
      */
     protected function uploadToPublicStorage($pdfPath, Order $order)
     {
         $filename = 'bill_' . $order->order_number . '_' . time() . '.pdf';
+        $publicPath = 'whatsapp-bills/' . $filename;
         
-        // SOLUTION 1: Check if we're in production with a public domain
-        if ($this->isProductionEnvironment()) {
-            $publicPath = 'whatsapp-bills/' . $filename;
+        try {
+            // Store the file in public storage
             Storage::disk('public')->put($publicPath, file_get_contents($pdfPath));
-            return Storage::disk('public')->url($publicPath);
+            
+            // Get the base URL from config or detect from request
+            $baseUrl = $this->getPublicBaseUrl();
+            
+            // Generate the full public URL
+            $publicUrl = $baseUrl . '/storage/' . $publicPath;
+            
+            Log::info('File uploaded to public storage', [
+                'filename' => $filename,
+                'public_url' => $publicUrl,
+                'base_url' => $baseUrl
+            ]);
+            
+            return $publicUrl;
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to upload to public storage', [
+                'error' => $e->getMessage(),
+                'filename' => $filename
+            ]);
+            
+            // Fallback: Use temporary hosting only if public storage fails
+            return $this->uploadToTemporaryHosting($pdfPath, $filename);
+        }
+    }
+
+    /**
+     * Get the public base URL for file access
+     */
+    protected function getPublicBaseUrl()
+    {
+        // Priority 1: Check if APP_URL is set in config and is a public URL
+        $appUrl = config('app.url');
+        if ($appUrl && $this->isPublicUrl($appUrl)) {
+            return rtrim($appUrl, '/');
         }
         
-        // SOLUTION 2: Use a temporary file hosting service for development
-        return $this->uploadToTemporaryHosting($pdfPath, $filename);
-    }
-
-    /**
-     * Check if we're in a production environment with public URL
-     */
-    protected function isProductionEnvironment()
-    {
-        $appUrl = config('app.url');
+        // Priority 2: Detect from current request if available
+        if (request()) {
+            $scheme = request()->isSecure() ? 'https' : 'http';
+            $host = request()->getHost();
+            $detectedUrl = $scheme . '://' . $host;
+            
+            if ($this->isPublicUrl($detectedUrl)) {
+                return $detectedUrl;
+            }
+        }
         
-        // Check if URL is publicly accessible (not localhost, not 127.0.0.1, not local IPs)
-        return !str_contains($appUrl, 'localhost') && 
-               !str_contains($appUrl, '127.0.0.1') && 
-               !str_contains($appUrl, '192.168.') && 
-               !str_contains($appUrl, '10.0.') &&
-               !str_contains($appUrl, '172.16.') &&
-               config('app.env') !== 'local';
+        // Priority 3: Hardcode known production domains
+        $knownDomains = [
+            'https://test.pazl.info',
+            'https://pazl.info',
+            'https://www.pazl.info'
+        ];
+        
+        foreach ($knownDomains as $domain) {
+            if (request() && str_contains(request()->getHost(), parse_url($domain, PHP_URL_HOST))) {
+                return $domain;
+            }
+        }
+        
+        // Fallback to app.url even if it might be local
+        return rtrim($appUrl ?: 'https://test.pazl.info', '/');
+    }
+    
+    /**
+     * Check if URL is publicly accessible
+     */
+    protected function isPublicUrl($url)
+    {
+        if (!$url) return false;
+        
+        $host = parse_url($url, PHP_URL_HOST);
+        if (!$host) return false;
+        
+        // Check if it's NOT a local/private IP or localhost
+        return !str_contains($host, 'localhost') && 
+               !str_contains($host, '127.0.0.1') && 
+               !str_contains($host, '192.168.') && 
+               !str_contains($host, '10.0.') &&
+               !str_contains($host, '172.16.') &&
+               !str_contains($host, '.local');
     }
 
     /**
-     * Upload to temporary hosting service for development/testing
-     * Using file.io as a free temporary file hosting service
+     * Upload to temporary hosting service only as last resort
+     * This should rarely be used since we're deployed on a public server
      */
     protected function uploadToTemporaryHosting($pdfPath, $filename)
     {
+        Log::warning('Using temporary hosting as fallback - this should not happen in production', [
+            'filename' => $filename,
+            'app_url' => config('app.url'),
+            'request_host' => request() ? request()->getHost() : 'N/A'
+        ]);
+        
         try {
             // Option 1: Use file.io (free temporary file hosting)
             $response = $this->uploadToFileIo($pdfPath, $filename);
@@ -288,11 +355,12 @@ class TwilioWhatsAppService
         } catch (\Exception $e) {
             Log::error('Temporary file hosting failed', [
                 'error' => $e->getMessage(),
-                'file' => $filename
+                'file' => $filename,
+                'suggestion' => 'Check if storage/app/public is properly linked and accessible'
             ]);
             
-            // Fallback: Suggest using ngrok or similar tunneling service
-            throw new \Exception('Unable to create publicly accessible URL for media. For development, please use ngrok or deploy to a public server. Error: ' . $e->getMessage());
+            // More specific error message for deployed applications
+            throw new \Exception('Unable to create publicly accessible URL for media. Please ensure storage:link is properly configured and the public storage directory is accessible. Error: ' . $e->getMessage());
         }
     }
 
@@ -538,6 +606,99 @@ class TwilioWhatsAppService
                 'success' => false,
                 'error' => $e->getMessage()
             ];
+        }
+    }
+
+    /**
+     * Test URL generation without sending message (for debugging)
+     */
+    public function testUrlGeneration($pdfPath, Order $order)
+    {
+        try {
+            $filename = 'test_bill_' . $order->order_number . '_' . time() . '.pdf';
+            $publicPath = 'whatsapp-bills/' . $filename;
+            
+            // Store the file in public storage
+            Storage::disk('public')->put($publicPath, file_get_contents($pdfPath));
+            
+            // Get the base URL
+            $baseUrl = $this->getPublicBaseUrl();
+            
+            // Generate the full public URL
+            $publicUrl = $baseUrl . '/storage/' . $publicPath;
+            
+            Log::info('URL generation test completed', [
+                'order_number' => $order->order_number,
+                'filename' => $filename,
+                'public_url' => $publicUrl,
+                'base_url' => $baseUrl,
+                'file_exists' => Storage::disk('public')->exists($publicPath),
+                'file_size' => Storage::disk('public')->size($publicPath)
+            ]);
+            
+            // Test if URL is accessible
+            $isAccessible = $this->testUrlAccessibility($publicUrl);
+            
+            // Clean up test file
+            Storage::disk('public')->delete($publicPath);
+            
+            return [
+                'url' => $publicUrl,
+                'accessible' => $isAccessible,
+                'base_url' => $baseUrl,
+                'filename' => $filename,
+                'test_completed' => true
+            ];
+            
+        } catch (\Exception $e) {
+            Log::error('URL generation test failed', [
+                'error' => $e->getMessage(),
+                'order_number' => $order->order_number ?? 'unknown'
+            ]);
+            
+            throw $e;
+        }
+    }
+
+    /**
+     * Test if URL is accessible via HTTP
+     */
+    protected function testUrlAccessibility($url)
+    {
+        try {
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_NOBODY => true, // HEAD request only
+                CURLOPT_TIMEOUT => 10,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_SSL_VERIFYPEER => false, // For testing with self-signed certs
+                CURLOPT_USERAGENT => 'WhatsApp-Media-Test/1.0'
+            ]);
+            
+            curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+            curl_close($ch);
+            
+            $accessible = ($httpCode >= 200 && $httpCode < 300);
+            
+            Log::info('URL accessibility test', [
+                'url' => $url,
+                'http_code' => $httpCode,
+                'accessible' => $accessible,
+                'curl_error' => $error
+            ]);
+            
+            return $accessible;
+            
+        } catch (\Exception $e) {
+            Log::warning('URL accessibility test failed', [
+                'url' => $url,
+                'error' => $e->getMessage()
+            ]);
+            return false;
         }
     }
 }
