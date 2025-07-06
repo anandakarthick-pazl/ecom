@@ -204,11 +204,13 @@ class TwilioWhatsAppService
     }
 
     /**
-     * Prepare message text with order details
+     * Prepare message text with order details (DEPRECATED - use OrderController methods instead)
+     * This method is kept for backward compatibility with bill PDF sending
      */
     protected function prepareMessage(Order $order)
     {
-        $template = $this->config->getDefaultMessageTemplate();
+        // For bill PDF messages, use a simple template
+        $template = "Hello {{customer_name}},\n\nPlease find attached your bill for order #{{order_number}}.\n\nOrder Total: ₹{{total}}\nOrder Date: {{order_date}}\n\nThank you for your business!\n\n{{company_name}}";
         
         $placeholders = [
             '{{customer_name}}' => $order->customer_name,

@@ -11,6 +11,7 @@ use App\Mail\OrderStatusMail;
 use App\Mail\OrderInvoiceMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\SuperAdmin\WhatsAppConfig;
 use App\Services\TwilioWhatsAppService;
@@ -1030,5 +1031,146 @@ class OrderController extends Controller
         }
         
         return $recommendations;
+    }
+
+    /**
+     * Get order status message template with replaced placeholders
+     */
+    private function getOrderStatusMessage(Order $order, $oldStatus, $newStatus)
+    {
+        // Get custom templates from settings or use defaults
+        $templates = [
+            'pending' => AppSetting::get('whatsapp_template_pending', 
+                "Hello {{customer_name}},\n\nYour order #{{order_number}} is now PENDING.\n\nWe have received your order and it's being processed.\n\nOrder Total: ₹{{total}}\nOrder Date: {{order_date}}\n\nThank you for choosing {{company_name}}!"),
+            
+            'processing' => AppSetting::get('whatsapp_template_processing', 
+                "Hello {{customer_name}},\n\nGreat news! Your order #{{order_number}} is now PROCESSING.\n\nWe are preparing your items for shipment.\n\nOrder Total: ₹{{total}}\nExpected Processing: 1-2 business days\n\nThank you for your patience!\n\n{{company_name}}"),
+            
+            'shipped' => AppSetting::get('whatsapp_template_shipped', 
+                "🚚 Hello {{customer_name}},\n\nExciting news! Your order #{{order_number}} has been SHIPPED!\n\nYour package is on its way to you.\n\nOrder Total: ₹{{total}}\nExpected Delivery: 2-5 business days\n\nTrack your order for real-time updates.\n\nThanks for shopping with {{company_name}}!"),
+            
+            'delivered' => AppSetting::get('whatsapp_template_delivered', 
+                "✅ Hello {{customer_name}},\n\nWonderful! Your order #{{order_number}} has been DELIVERED!\n\nWe hope you love your purchase.\n\nOrder Total: ₹{{total}}\nDelivered on: {{order_date}}\n\nPlease let us know if you have any questions or feedback.\n\nThank you for choosing {{company_name}}!"),
+            
+            'cancelled' => AppSetting::get('whatsapp_template_cancelled', 
+                "❌ Hello {{customer_name}},\n\nWe're sorry to inform you that your order #{{order_number}} has been CANCELLED.\n\nOrder Total: ₹{{total}}\nCancellation Date: {{order_date}}\n\nIf you have any questions about this cancellation, please contact our customer support.\n\nWe apologize for any inconvenience.\n\n{{company_name}}")
+        ];
+
+        $template = $templates[$newStatus] ?? $templates['processing'];
+        
+        return $this->replaceMessagePlaceholders($template, $order);
+    }
+
+    /**
+     * Get payment status message template with replaced placeholders
+     */
+    private function getPaymentStatusMessage(Order $order, $oldPaymentStatus, $newPaymentStatus)
+    {
+        // Get custom template from settings or use default
+        $template = AppSetting::get('whatsapp_template_payment_confirmed', 
+            "💳 Hello {{customer_name}},\n\nGreat news! Your payment for order #{{order_number}} has been CONFIRMED!\n\nPayment Status: {{payment_status}}\nOrder Total: ₹{{total}}\nPayment Date: {{order_date}}\n\nYour order is now being processed and will be shipped soon.\n\nThank you for your payment!\n\n{{company_name}}");
+        
+        return $this->replaceMessagePlaceholders($template, $order);
+    }
+
+    /**
+     * Replace message placeholders with actual order data
+     */
+    private function replaceMessagePlaceholders($template, Order $order)
+    {
+        // Load company relationship if not already loaded
+        if (!$order->relationLoaded('company')) {
+            $order->load('company');
+        }
+
+        // Get company name from relationship or fallback to app setting
+        $companyName = $order->company->name ?? AppSetting::getForTenant('company_name', $order->company_id) ?? 'Our Store';
+        
+        $placeholders = [
+            '{{customer_name}}' => $order->customer_name,
+            '{{order_number}}' => $order->order_number,
+            '{{total}}' => number_format($order->total, 2),
+            '{{company_name}}' => $companyName,
+            '{{order_date}}' => $order->created_at->format('d M Y'),
+            '{{status}}' => ucfirst($order->status),
+            '{{payment_status}}' => ucfirst($order->payment_status ?? 'pending'),
+            '{{customer_mobile}}' => $order->customer_mobile,
+            '{{customer_email}}' => $order->customer_email ?? 'N/A',
+            '{{order_time}}' => $order->created_at->format('h:i A'),
+            '{{order_datetime}}' => $order->created_at->format('d M Y, h:i A'),
+            '{{currency}}' => '₹', // Can be made dynamic from settings
+            '{{items_count}}' => $order->items->count() ?? 0,
+            '{{total_formatted}}' => '₹' . number_format($order->total, 2)
+        ];
+
+        // Log the replacement for debugging
+        Log::debug('WhatsApp message placeholder replacement', [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'template_length' => strlen($template),
+            'placeholders_count' => count($placeholders),
+            'customer_name' => $order->customer_name,
+            'company_name' => $companyName
+        ]);
+
+        $message = str_replace(array_keys($placeholders), array_values($placeholders), $template);
+        
+        // Log the final message for debugging
+        Log::debug('WhatsApp message after replacement', [
+            'order_id' => $order->id,
+            'message_preview' => substr($message, 0, 100) . '...',
+            'message_length' => strlen($message),
+            'has_unreplaced_placeholders' => strpos($message, '{{') !== false
+        ]);
+        
+        return $message;
+    }
+
+    /**
+     * Test WhatsApp message template replacement (for debugging)
+     */
+    public function testWhatsAppMessage(Request $request, Order $order)
+    {
+        try {
+            // Test order status message
+            $orderStatusMessage = $this->getOrderStatusMessage($order, 'pending', 'shipped');
+            
+            // Test payment status message  
+            $paymentStatusMessage = $this->getPaymentStatusMessage($order, 'pending', 'paid');
+            
+            // Test manual template
+            $manualTemplate = $request->input('template', 'Hello {{customer_name}}, your order #{{order_number}} for ₹{{total}} from {{company_name}} is ready!');
+            $manualMessage = $this->replaceMessagePlaceholders($manualTemplate, $order);
+            
+            return response()->json([
+                'success' => true,
+                'order_info' => [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'customer_name' => $order->customer_name,
+                    'total' => $order->total,
+                    'company_id' => $order->company_id
+                ],
+                'test_results' => [
+                    'order_status_message' => $orderStatusMessage,
+                    'payment_status_message' => $paymentStatusMessage,
+                    'manual_message' => $manualMessage,
+                    'manual_template' => $manualTemplate
+                ],
+                'message' => 'WhatsApp message templates tested successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('WhatsApp message test failed', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
