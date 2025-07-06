@@ -195,23 +195,48 @@ class BaseAdminController extends Controller
     }
 
     /**
-     * Log admin activity
+     * Log admin activity - Enhanced version supporting both old and new signatures
      */
-    protected function logActivity($action, $resource, $resourceId = null, $details = [])
+    protected function logActivity($action, $resourceOrModel = null, $resourceIdOrDetails = null, $details = [])
     {
         try {
-            \DB::table('admin_activity_logs')->insert([
+            $logData = [
                 'user_id' => auth()->id(),
                 'company_id' => $this->getCurrentCompanyId(),
                 'action' => $action,
-                'resource' => $resource,
-                'resource_id' => $resourceId,
-                'details' => json_encode($details),
                 'ip_address' => request()->ip(),
                 'user_agent' => request()->userAgent(),
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]);
+            ];
+
+            // Handle different method signatures
+            if (is_object($resourceOrModel)) {
+                // New signature: logActivity($action, $model, $details)
+                $logData['resource_type'] = get_class($resourceOrModel);
+                $logData['resource_id'] = $resourceOrModel->id ?? null;
+                $logData['resource'] = class_basename($resourceOrModel);
+                
+                if (is_array($resourceIdOrDetails)) {
+                    $logData['details'] = json_encode($resourceIdOrDetails);
+                }
+            } else {
+                // Old signature: logActivity($action, $resource, $resourceId, $details)
+                $logData['resource'] = $resourceOrModel;
+                $logData['resource_id'] = $resourceIdOrDetails;
+                
+                if (!empty($details)) {
+                    $logData['details'] = json_encode($details);
+                }
+            }
+
+            // Check if admin_activity_logs table exists
+            if (\Schema::hasTable('admin_activity_logs')) {
+                \DB::table('admin_activity_logs')->insert($logData);
+            } else {
+                // Fallback to Laravel's default log
+                \Log::info("Admin Activity: {$action}", $logData);
+            }
         } catch (\Exception $e) {
             // Log the error but don't break the main functionality
             \Log::error('Failed to log admin activity: ' . $e->getMessage());
@@ -355,4 +380,97 @@ class BaseAdminController extends Controller
             \Storage::disk($disk)->delete($path);
         }
     }
+
+    /**
+     * Validate that a model belongs to the current tenant
+     */
+    protected function validateTenantOwnership($model)
+    {
+        $currentCompanyId = $this->getCurrentCompanyId();
+        
+        if (!$currentCompanyId) {
+            abort(403, 'Company context not found');
+        }
+        
+        if (!$model || $model->company_id != $currentCompanyId) {
+            abort(404, 'Resource not found or access denied');
+        }
+        
+        return true;
+    }
+
+    /**
+     * Get tenant-scoped unique validation rule
+     */
+    protected function getTenantUniqueRule($table, $column, $ignoreId = null)
+    {
+        $companyId = $this->getCurrentCompanyId();
+        
+        $rule = "unique:{$table},{$column}";
+        
+        if ($ignoreId) {
+            $rule .= ",{$ignoreId}";
+        }
+        
+        // Add company_id constraint
+        $rule .= ",id,company_id,{$companyId}";
+        
+        return $rule;
+    }
+
+    /**
+     * Get tenant-scoped exists validation rule
+     */
+    protected function getTenantExistsRule($table, $column = 'id')
+    {
+        $companyId = $this->getCurrentCompanyId();
+        
+        return function ($attribute, $value, $fail) use ($table, $column, $companyId) {
+            if ($value) {
+                $exists = \DB::table($table)
+                           ->where($column, $value)
+                           ->where('company_id', $companyId)
+                           ->exists();
+                
+                if (!$exists) {
+                    $fail("The selected {$attribute} is invalid for your company.");
+                }
+            }
+        };
+    }
+
+    /**
+     * Handle successful response with redirect
+     */
+    protected function handleSuccess($message, $redirectRoute = null, $data = [])
+    {
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'data' => $data
+            ]);
+        }
+
+        $redirect = $redirectRoute ? route($redirectRoute) : back();
+        return redirect($redirect)->with('success', $message);
+    }
+
+    /**
+     * Handle error response with redirect
+     */
+    protected function handleError($message, $redirectRoute = null, $errors = [])
+    {
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+                'errors' => $errors
+            ], 422);
+        }
+
+        $redirect = $redirectRoute ? route($redirectRoute) : back();
+        return redirect($redirect)->with('error', $message);
+    }
+
 }
