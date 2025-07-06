@@ -135,12 +135,24 @@
                     <div class="item-details">
                         <div class="bold">{{ $item->product->name ?? $item->product_name }}</div>
                         <div>{{ $item->quantity }} x ₹{{ number_format($item->unit_price, 2) }}</div>
-                        @if($item->tax_percentage > 0)
-                            <div style="font-size: 9px; color: #666;">Tax: {{ $item->tax_percentage }}%</div>
+                        @if(($item->discount_amount ?? 0) > 0)
+                            <div style="font-size: 9px; color: #d63384;">Item Disc: -₹{{ number_format($item->discount_amount, 2) }} ({{ number_format($item->discount_percentage ?? 0, 1) }}%)</div>
+                        @endif
+                        @if(($item->tax_percentage ?? 0) > 0)
+                            <div style="font-size: 9px; color: #666;">Tax: {{ $item->tax_percentage }}% = ₹{{ number_format($item->tax_amount ?? 0, 2) }}</div>
                         @endif
                     </div>
                     <div class="item-price">
-                        ₹{{ number_format(($item->quantity * $item->unit_price), 2) }}
+                        @php
+                            $itemGross = $item->quantity * $item->unit_price;
+                            $itemDiscount = $item->discount_amount ?? 0;
+                            $itemNet = $itemGross - $itemDiscount;
+                            $itemTotal = $itemNet + ($item->tax_amount ?? 0);
+                        @endphp
+                        @if($itemDiscount > 0)
+                            <div style="font-size: 9px; text-decoration: line-through; color: #999;">₹{{ number_format($itemGross, 2) }}</div>
+                        @endif
+                        ₹{{ number_format($itemTotal, 2) }}
                     </div>
                 </div>
             @endforeach
@@ -148,6 +160,25 @@
         
         <!-- Totals -->
         <div class="totals">
+            @php
+                $itemsSubtotal = $sale->items->sum(function($item) {
+                    return $item->quantity * $item->unit_price;
+                });
+                $totalItemDiscounts = $sale->items->sum('discount_amount');
+            @endphp
+            
+            @if($totalItemDiscounts > 0)
+                <div class="total-row">
+                    <span>Items Gross:</span>
+                    <span>₹{{ number_format($itemsSubtotal, 2) }}</span>
+                </div>
+                
+                <div class="total-row">
+                    <span>Item Discounts:</span>
+                    <span>-₹{{ number_format($totalItemDiscounts, 2) }}</span>
+                </div>
+            @endif
+            
             <div class="total-row">
                 <span>Subtotal:</span>
                 <span>₹{{ number_format($sale->subtotal, 2) }}</span>
@@ -169,7 +200,7 @@
             
             @if($sale->discount_amount > 0)
                 <div class="total-row">
-                    <span>Discount:</span>
+                    <span>Extra Discount:</span>
                     <span>-₹{{ number_format($sale->discount_amount, 2) }}</span>
                 </div>
             @endif
@@ -202,10 +233,17 @@
             <div>Products: {{ $sale->items->count() }}</div>
         </div>
         
+        @if($sale->custom_tax_enabled && $sale->tax_notes)
+            <div class="dashed-line"></div>
+            <div style="font-size: 10px;">
+                <strong>Tax Notes:</strong> {{ $sale->tax_notes }}
+            </div>
+        @endif
+        
         @if($sale->notes)
             <div class="dashed-line"></div>
             <div style="font-size: 10px;">
-                <strong>Notes:</strong> {{ $sale->notes }}
+                <strong>Sale Notes:</strong> {{ $sale->notes }}
             </div>
         @endif
         

@@ -251,6 +251,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
         Route::get('/sales/{sale}', [PosController::class, 'show'])->name('show');
         Route::get('/receipt/{sale}', [PosController::class, 'receipt'])->name('receipt');
         Route::get('/sales/{sale}/download-bill', [PosController::class, 'downloadBill'])->name('download-bill');
+        Route::get('/sales/{sale}/download-bill-debug', [PosController::class, 'downloadBillDebug'])->name('download-bill-debug');
+        Route::get('/sales/{sale}/view-bill-debug', [PosController::class, 'viewBillDebug'])->name('view-bill-debug');
         Route::get('/sales/{sale}/bill-formats', [PosController::class, 'getBillFormats'])->name('bill-formats');
         Route::post('/sales/{sale}/refund', [PosController::class, 'refund'])->name('refund');
         Route::get('/products/search', [PosController::class, 'searchProducts'])->name('products.search');

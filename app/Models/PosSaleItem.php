@@ -11,12 +11,16 @@ class PosSaleItem extends Model
 
     protected $fillable = [
         'pos_sale_id', 'product_id', 'product_name', 'quantity',
-        'unit_price', 'discount_amount', 'tax_percentage', 'tax_amount', 'total_amount'
+        'unit_price', 'discount_amount', 'discount_percentage', 'tax_percentage', 'tax_amount', 'total_amount', 'company_id'
     ];
+
+    // Add trait for multi-tenant support
+    use \App\Traits\BelongsToTenantEnhanced;
 
     protected $casts = [
         'unit_price' => 'decimal:2',
         'discount_amount' => 'decimal:2',
+        'discount_percentage' => 'decimal:2',
         'tax_percentage' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
@@ -37,9 +41,29 @@ class PosSaleItem extends Model
         return $this->unit_price - ($this->discount_amount / $this->quantity);
     }
 
-    public function getDiscountPercentageAttribute()
+    public function getCalculatedDiscountPercentageAttribute()
     {
         if ($this->unit_price == 0) return 0;
         return round(($this->discount_amount / ($this->unit_price * $this->quantity)) * 100, 2);
+    }
+
+    public function getNetAmountAttribute()
+    {
+        return ($this->unit_price * $this->quantity) - $this->discount_amount;
+    }
+
+    public function getTaxableAmountAttribute()
+    {
+        return $this->getNetAmountAttribute();
+    }
+
+    public function getSubtotalAttribute()
+    {
+        return $this->unit_price * $this->quantity;
+    }
+
+    public function getGrandTotalAttribute()
+    {
+        return $this->getNetAmountAttribute() + $this->tax_amount;
     }
 }

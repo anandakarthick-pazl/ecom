@@ -884,4 +884,64 @@ class BillPDFService
         self::$billConfigCache = [];
         Cache::flush(); // Clear Laravel cache as well
     }
+
+    /**
+     * Simple PDF generation method for backward compatibility
+     * This method provides a simple interface for generating PDFs
+     */
+    public function generateSimplePDF($model, $companyData, $viewName, $paperSize = 'A4')
+    {
+        try {
+            // Prepare view data
+            $viewData = [];
+            
+            if ($model instanceof PosSale) {
+                $viewData['sale'] = $model;
+                $viewData['globalCompany'] = $companyData;
+            } elseif ($model instanceof Order) {
+                $viewData['order'] = $model;
+                $viewData['company'] = $companyData;
+            } else {
+                throw new \Exception('Unsupported model type for PDF generation');
+            }
+            
+            // Check if view exists
+            if (!View::exists($viewName)) {
+                throw new \Exception("View template not found: {$viewName}");
+            }
+            
+            // Create PDF
+            $pdf = Pdf::loadView($viewName, $viewData);
+            
+            // Set paper size
+            if (is_array($paperSize)) {
+                // Custom paper size (for thermal)
+                $pdf->setPaper($paperSize, 'portrait');
+            } else {
+                // Standard paper size
+                $pdf->setPaper($paperSize, 'portrait');
+            }
+            
+            // Set optimized options
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => false,
+                'defaultFont' => 'Arial',
+                'dpi' => 96,
+                'isPhpEnabled' => false,
+                'isJavascriptEnabled' => false,
+                'debugKeepTemp' => false
+            ]);
+            
+            return $pdf;
+            
+        } catch (\Exception $e) {
+            Log::error('Simple PDF generation failed', [
+                'view' => $viewName,
+                'paper_size' => $paperSize,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
+        }
+    }
 }

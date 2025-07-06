@@ -4,15 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', '{{ $globalCompany->company_name ?? "Your Store" }} - E-commerce Store')</title>
+    @php
+        $pageTitle = $globalCompany->company_name ?? 'Your Store';
+        $pageDescription = 'Discover quality products at ' . ($globalCompany->company_name ?? 'Your Store') . '. Your trusted online shopping destination.';
+    @endphp
+    
+    <title>@yield('title', $pageTitle . ' - E-commerce Store')</title>
     
     <!-- SEO Meta Tags -->
-    <meta name="description" content="@yield('meta_description', 'Discover quality products at {{ $globalCompany->company_name ?? "Your Store" }}. Your trusted online shopping destination.')">
-    <meta name="keywords" content="@yield('meta_keywords', 'ecommerce, online shopping, products, {{ strtolower($globalCompany->company_name ?? "online store") }}')">
+    <meta name="description" content="@yield('meta_description', $pageDescription)">
+    <meta name="keywords" content="@yield('meta_keywords', 'ecommerce, online shopping, products, ' . strtolower($globalCompany->company_name ?? 'online store'))">
     
     <!-- Open Graph Tags -->
-    <meta property="og:title" content="@yield('og_title', '{{ $globalCompany->company_name ?? "Your Store" }} - E-commerce Store')">
-    <meta property="og:description" content="@yield('og_description', 'Discover quality products at {{ $globalCompany->company_name ?? "Your Store" }}. Your trusted online shopping destination.')">
+    <meta property="og:title" content="@yield('og_title', $pageTitle . ' - E-commerce Store')">
+    <meta property="og:description" content="@yield('og_description', $pageDescription)">
     <meta property="og:image" content="@yield('og_image', asset('images/logo.png'))">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:type" content="website">

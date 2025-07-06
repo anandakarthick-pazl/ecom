@@ -278,6 +278,7 @@
                     <th>Item</th>
                     <th class="text-center">Qty</th>
                     <th class="text-right">Rate</th>
+                    <th class="text-right">Discount</th>
                     <th class="text-right">Tax</th>
                     <th class="text-right">Amount</th>
                 </tr>
@@ -294,14 +295,33 @@
                     <td class="text-center">{{ $item->quantity }}</td>
                     <td class="text-right">₹{{ number_format($item->unit_price, 2) }}</td>
                     <td class="text-right">
-                        @if($item->tax_percentage > 0)
+                        @if(($item->discount_amount ?? 0) > 0)
+                            -₹{{ number_format($item->discount_amount, 2) }}<br>
+                            <small>({{ number_format($item->discount_percentage ?? 0, 1) }}%)</small>
+                        @else
+                            -
+                        @endif
+                    </td>
+                    <td class="text-right">
+                        @if(($item->tax_percentage ?? 0) > 0)
                             {{ $item->tax_percentage }}%<br>
                             <small>₹{{ number_format($item->tax_amount ?? 0, 2) }}</small>
                         @else
                             -
                         @endif
                     </td>
-                    <td class="text-right">₹{{ number_format(($item->quantity * $item->unit_price), 2) }}</td>
+                    <td class="text-right">
+                        @php
+                            $itemGross = $item->quantity * $item->unit_price;
+                            $itemDiscount = $item->discount_amount ?? 0;
+                            $itemNet = $itemGross - $itemDiscount;
+                            $itemTotal = $itemNet + ($item->tax_amount ?? 0);
+                        @endphp
+                        @if($itemDiscount > 0)
+                            <span style="text-decoration: line-through; color: #999; font-size: 10px;">₹{{ number_format($itemGross, 2) }}</span><br>
+                        @endif
+                        <strong>₹{{ number_format($itemTotal, 2) }}</strong>
+                    </td>
                 </tr>
                 @endforeach
             </tbody>
@@ -310,6 +330,25 @@
         <!-- Totals -->
         <div class="totals-section">
             <table class="totals-table">
+                @php
+                    $itemsSubtotal = $sale->items->sum(function($item) {
+                        return $item->quantity * $item->unit_price;
+                    });
+                    $totalItemDiscounts = $sale->items->sum('discount_amount');
+                @endphp
+                
+                @if($totalItemDiscounts > 0)
+                <tr>
+                    <td class="total-label">Items Gross Total:</td>
+                    <td class="total-amount">₹{{ number_format($itemsSubtotal, 2) }}</td>
+                </tr>
+                
+                <tr>
+                    <td class="total-label">Item-level Discounts:</td>
+                    <td class="total-amount">-₹{{ number_format($totalItemDiscounts, 2) }}</td>
+                </tr>
+                @endif
+                
                 <tr>
                     <td class="total-label">Subtotal:</td>
                     <td class="total-amount">₹{{ number_format($sale->subtotal, 2) }}</td>
@@ -331,7 +370,7 @@
                 
                 @if($sale->discount_amount > 0)
                 <tr>
-                    <td class="total-label">Discount:</td>
+                    <td class="total-label">Additional Discount:</td>
                     <td class="total-amount">-₹{{ number_format($sale->discount_amount, 2) }}</td>
                 </tr>
                 @endif
@@ -360,9 +399,46 @@
             </div>
         </div>
         
+        <!-- Discount Summary -->
+        @php
+            $hasDiscounts = $sale->items->sum('discount_amount') > 0 || $sale->discount_amount > 0;
+        @endphp
+        @if($hasDiscounts)
+        <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; margin-top: 20px;">
+            <h4 style="color: #2c3e50; margin-bottom: 10px;">Discount Summary</h4>
+            <div style="display: flex; justify-content: space-between;">
+                <div>
+                    @if($sale->items->sum('discount_amount') > 0)
+                        <strong>Item-level Discounts:</strong> ₹{{ number_format($sale->items->sum('discount_amount'), 2) }}<br>
+                    @endif
+                    @if($sale->discount_amount > 0)
+                        <strong>Additional Sale Discount:</strong> ₹{{ number_format($sale->discount_amount, 2) }}<br>
+                    @endif
+                    <strong>Total Savings:</strong> ₹{{ number_format($sale->items->sum('discount_amount') + $sale->discount_amount, 2) }}
+                </div>
+                <div style="text-align: right;">
+                    @php
+                        $originalTotal = $sale->items->sum(function($item) {
+                            return $item->quantity * $item->unit_price;
+                        }) + $sale->tax_amount;
+                        $savingsPercent = $originalTotal > 0 ? (($sale->items->sum('discount_amount') + $sale->discount_amount) / $originalTotal) * 100 : 0;
+                    @endphp
+                    <strong>You Saved:</strong><br>
+                    <span style="color: #27ae60; font-size: 16px; font-weight: bold;">{{ number_format($savingsPercent, 1) }}%</span>
+                </div>
+            </div>
+        </div>
+        @endif
+        
+        @if($sale->custom_tax_enabled && $sale->tax_notes)
+        <div style="margin-top: 20px; padding: 10px; background-color: #e3f2fd; border-left: 4px solid #2196f3;">
+            <strong>Tax Notes:</strong> {{ $sale->tax_notes }}
+        </div>
+        @endif
+        
         @if($sale->notes)
         <div style="margin-top: 20px; padding: 10px; background-color: #fff3cd; border-left: 4px solid #ffc107;">
-            <strong>Notes:</strong> {{ $sale->notes }}
+            <strong>Sale Notes:</strong> {{ $sale->notes }}
         </div>
         @endif
         

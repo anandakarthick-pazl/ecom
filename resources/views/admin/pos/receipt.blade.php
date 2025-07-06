@@ -119,14 +119,26 @@
             @foreach($sale->items as $item)
                 <div class="item-row">
                     <div class="item-details">
-                        <div class="bold">{{ $item->product->name }}</div>
+                        <div class="bold">{{ $item->product->name ?? $item->product_name }}</div>
                         <div>{{ $item->quantity }} x ₹{{ number_format($item->unit_price, 2) }}</div>
-                        @if($item->tax_percentage > 0)
-                            <div style="font-size: 10px; color: #666;">Tax: {{ $item->tax_percentage }}% = ₹{{ number_format($item->tax_amount, 2) }}</div>
+                        @if(($item->discount_amount ?? 0) > 0)
+                            <div style="font-size: 10px; color: #dc3545;">Item Discount: -₹{{ number_format($item->discount_amount, 2) }} ({{ number_format($item->discount_percentage ?? 0, 1) }}%)</div>
+                        @endif
+                        @if(($item->tax_percentage ?? 0) > 0)
+                            <div style="font-size: 10px; color: #666;">Tax: {{ $item->tax_percentage }}% = ₹{{ number_format($item->tax_amount ?? 0, 2) }}</div>
                         @endif
                     </div>
                     <div class="item-price">
-                        ₹{{ number_format(($item->quantity*$item->unit_price), 2) }}
+                        @php
+                            $itemGross = $item->quantity * $item->unit_price;
+                            $itemDiscount = $item->discount_amount ?? 0;
+                            $itemNet = $itemGross - $itemDiscount;
+                            $itemTotal = $itemNet + ($item->tax_amount ?? 0);
+                        @endphp
+                        @if($itemDiscount > 0)
+                            <div style="font-size: 10px; text-decoration: line-through; color: #999;">₹{{ number_format($itemGross, 2) }}</div>
+                        @endif
+                        ₹{{ number_format($itemTotal, 2) }}
                     </div>
                 </div>
             @endforeach
@@ -185,10 +197,17 @@
             <div>Products: {{ $sale->items->count() }}</div>
         </div>
         
+        @if($sale->custom_tax_enabled && $sale->tax_notes)
+            <div class="dashed-line"></div>
+            <div>
+                <strong>Tax Notes:</strong> {{ $sale->tax_notes }}
+            </div>
+        @endif
+        
         @if($sale->notes)
             <div class="dashed-line"></div>
             <div>
-                <strong>Notes:</strong> {{ $sale->notes }}
+                <strong>Sale Notes:</strong> {{ $sale->notes }}
             </div>
         @endif
         

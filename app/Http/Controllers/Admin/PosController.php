@@ -59,16 +59,21 @@ class PosController extends Controller
             // Calculate totals and tax
             $subtotal = 0;
             $totalTax = 0;
-            $customTaxEnabled = $request->boolean('custom_tax_enabled', false); // Default to false if not provided
+            $customTaxEnabled = $request->boolean('custom_tax_enabled', false);
             
             foreach ($request->items as $item) {
                 $product = Product::findOrFail($item['product_id']);
-                $itemSubtotal = ($item['quantity'] * $item['unit_price']) - ($item['discount_amount'] ?? 0);
-                $subtotal += $itemSubtotal;
+                
+                // Calculate item amounts properly
+                $itemGrossAmount = $item['quantity'] * $item['unit_price'];
+                $itemDiscountAmount = $item['discount_amount'] ?? 0;
+                $itemNetAmount = $itemGrossAmount - $itemDiscountAmount;
+                
+                $subtotal += $itemNetAmount; // Subtotal is net amount after item-level discounts
                 
                 // Calculate tax for this item only if not using custom tax
                 if (!$customTaxEnabled) {
-                    $itemTax = ($itemSubtotal * $product->tax_percentage) / 100;
+                    $itemTax = ($itemNetAmount * $product->tax_percentage) / 100;
                     $totalTax += $itemTax;
                 }
             }
@@ -123,19 +128,32 @@ class PosController extends Controller
             foreach ($request->items as $item) {
                 $product = Product::findOrFail($item['product_id']);
                 
-                $itemSubtotal = ($item['quantity'] * $item['unit_price']) - ($item['discount_amount'] ?? 0);
-                $itemTax = ($itemSubtotal * $product->tax_percentage) / 100;
+                // Calculate item amounts
+                $itemSubtotal = $item['quantity'] * $item['unit_price'];
+                $discountAmount = $item['discount_amount'] ?? 0;
+                $discountPercentage = $itemSubtotal > 0 ? round(($discountAmount / $itemSubtotal) * 100, 2) : 0;
+                $netAmount = $itemSubtotal - $discountAmount;
+                
+                // Calculate tax based on net amount (after discount)
+                $itemTax = 0;
+                if (!$customTaxEnabled) {
+                    $itemTax = ($netAmount * $product->tax_percentage) / 100;
+                }
+                
+                $totalAmount = $netAmount + $itemTax;
                 
                 PosSaleItem::create([
                     'pos_sale_id' => $sale->id,
                     'product_id' => $item['product_id'],
-                    'product_name' => $product->name, // Fix: Added missing product_name
+                    'product_name' => $product->name,
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
-                    'discount_amount' => $item['discount_amount'] ?? 0, // Fix: Added discount_amount handling
+                    'discount_amount' => $discountAmount,
+                    'discount_percentage' => $discountPercentage,
                     'tax_percentage' => $product->tax_percentage,
                     'tax_amount' => $itemTax,
-                    'total_amount' => $itemSubtotal + $itemTax // Fix: Changed to total_amount with tax
+                    'total_amount' => $totalAmount,
+                    'company_id' => $companyId
                 ]);
 
                 // Update product stock
@@ -202,8 +220,47 @@ class PosController extends Controller
 
     public function receipt(PosSale $sale)
     {
-        $sale->load(['items.product', 'cashier']);
-        return view('admin.pos.receipt', compact('sale'));
+        try {
+            // Load sale relationships with all necessary data
+            $sale->load([
+                'items' => function($query) {
+                    $query->select(['id', 'pos_sale_id', 'product_id', 'product_name', 'quantity', 'unit_price', 'discount_amount', 'discount_percentage', 'tax_percentage', 'tax_amount', 'total_amount']);
+                },
+                'items.product' => function($query) {
+                    $query->select(['id', 'name', 'sku', 'tax_percentage']);
+                },
+                'cashier' => function($query) {
+                    $query->select(['id', 'name', 'email']);
+                }
+            ]);
+            
+            // Get company data - simplified approach
+            $globalCompany = $this->getSimpleCompanyData();
+            
+            return view('admin.pos.receipt', compact('sale', 'globalCompany'));
+            
+        } catch (\Exception $e) {
+            Log::error('Receipt display failed', [
+                'sale_id' => $sale->id,
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+            
+            // Simple fallback - load basic data and use minimal company info
+            $sale->load(['items.product', 'cashier']);
+            
+            $globalCompany = (object) [
+                'company_name' => 'Green Valley Herbs',
+                'company_address' => 'Natural & Organic Products Store',
+                'company_phone' => '',
+                'company_email' => '',
+                'gst_number' => '',
+                'company_logo' => null
+            ];
+            
+            return view('admin.pos.receipt', compact('sale', 'globalCompany'));
+        }
     }
 
     public function refund(Request $request, PosSale $sale)
@@ -319,112 +376,146 @@ class PosController extends Controller
     }
 
     /**
-     * Generate and download bill PDF with advanced optimization and timeout protection
+     * Generate and download bill PDF - Simplified Working Version
      */
     public function downloadBill(PosSale $sale)
     {
-        // Immediate timeout and memory optimization
-        set_time_limit(0); // Remove execution time limit for this operation
-        ini_set('memory_limit', '1G'); // Increase memory limit significantly
-        ignore_user_abort(true); // Continue execution even if user disconnects
-        
-        $startTime = microtime(true);
-        
         try {
-            // Pre-validation with early exit
-            if (!$sale || !$sale->exists) {
-                Log::error('Invalid POS sale for bill download', ['sale_id' => $sale->id ?? 'null']);
-                return redirect()->back()->with('error', 'Sale record not found.');
-            }
-            
-            if (!$sale->company_id) {
-                Log::error('POS sale missing company_id', ['sale_id' => $sale->id]);
-                return redirect()->back()->with('error', 'Invalid sale record - missing company information.');
-            }
-
-            Log::info('Starting optimized POS bill download', [
+            Log::info('POS bill download started', [
                 'sale_id' => $sale->id,
-                'invoice_number' => $sale->invoice_number,
-                'company_id' => $sale->company_id,
-                'start_time' => $startTime,
-                'memory_start' => $this->formatBytes(memory_get_usage(true))
+                'invoice_number' => $sale->invoice_number
             ]);
-
-            // Use chunked loading for relationships to prevent memory issues
-            if (!$sale->relationLoaded('items') || !$sale->relationLoaded('cashier')) {
-                $sale->load([
-                    'items' => function($query) {
-                        $query->select(['id', 'pos_sale_id', 'product_id', 'product_name', 'quantity', 'unit_price', 'discount_amount', 'tax_percentage', 'tax_amount', 'total_amount']);
-                    },
-                    'items.product' => function($query) {
-                        $query->select(['id', 'name', 'sku', 'tax_percentage']);
-                    },
-                    'cashier' => function($query) {
-                        $query->select(['id', 'name', 'email']);
-                    }
-                ]);
-            }
-
-            // Get format with fallback
+            
+            // Load sale relationships with all necessary data
+            $sale->load([
+                'items' => function($query) {
+                    $query->select(['id', 'pos_sale_id', 'product_id', 'product_name', 'quantity', 'unit_price', 'discount_amount', 'discount_percentage', 'tax_percentage', 'tax_amount', 'total_amount']);
+                },
+                'items.product' => function($query) {
+                    $query->select(['id', 'name', 'sku', 'tax_percentage']);
+                },
+                'cashier' => function($query) {
+                    $query->select(['id', 'name', 'email']);
+                }
+            ]);
+            
+            // Get format from request (convert 'a4' to 'a4_sheet' for compatibility)
             $format = request()->get('format', 'a4_sheet');
-            
-            // Initialize service with enhanced caching
-            $billPDFService = app(BillPDFService::class);
-            
-            // Use optimized generation method
-            $result = $this->generateOptimizedPDF($billPDFService, $sale, $format);
-            
-            $endTime = microtime(true);
-            $executionTime = $endTime - $startTime;
-            
-            Log::info('Optimized POS bill generation completed', [
-                'sale_id' => $sale->id,
-                'execution_time' => round($executionTime, 2) . 's',
-                'memory_peak' => $this->formatBytes(memory_get_peak_usage(true)),
-                'format' => $format,
-                'success' => $result['success']
-            ]);
-            
-            if (!$result['success']) {
-                return redirect()->back()->with('error', $result['error']);
+            if ($format === 'a4') {
+                $format = 'a4_sheet';
             }
             
-            return $result['response'];
+            Log::info('POS bill data loaded', [
+                'sale_id' => $sale->id,
+                'items_count' => $sale->items->count(),
+                'format' => $format
+            ]);
+            
+            // Get company data using the simple method
+            $globalCompany = $this->getSimpleCompanyData();
+            
+            // Try direct PDF generation first (most reliable)
+            try {
+                Log::info('Attempting direct PDF generation');
+                
+                // Select view based on format
+                $viewName = ($format === 'thermal') ? 'admin.pos.receipt-pdf' : 'admin.pos.receipt-a4';
+                
+                // Generate PDF directly using dompdf
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, compact('sale', 'globalCompany'));
+                
+                // Set paper size based on format
+                if ($format === 'thermal') {
+                    $pdf->setPaper([0, 0, 226.77, 841.89], 'portrait'); // 80mm thermal width
+                } else {
+                    $pdf->setPaper('A4', 'portrait');
+                }
+                
+                // Set optimized options
+                $pdf->setOptions([
+                    'isHtml5ParserEnabled' => true,
+                    'isRemoteEnabled' => false,
+                    'defaultFont' => 'DejaVu Sans',
+                    'dpi' => 96,
+                    'isPhpEnabled' => false,
+                    'isJavascriptEnabled' => false,
+                    'debugKeepTemp' => false
+                ]);
+                
+                // Generate PDF output
+                $pdfOutput = $pdf->output();
+                
+                // Verify it's a valid PDF
+                if (substr($pdfOutput, 0, 4) !== '%PDF') {
+                    throw new \Exception('Generated content is not a valid PDF');
+                }
+                
+                // Generate filename
+                $filename = 'bill_' . $sale->invoice_number . '_' . date('Y-m-d_H-i-s') . '.pdf';
+                
+                Log::info('Direct PDF generation successful', [
+                    'sale_id' => $sale->id,
+                    'pdf_size' => strlen($pdfOutput),
+                    'filename' => $filename
+                ]);
+                
+                // Return PDF with proper headers
+                return response($pdfOutput, 200, [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                    'Content-Length' => strlen($pdfOutput),
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                    'Pragma' => 'no-cache',
+                    'Expires' => '0'
+                ]);
+                
+            } catch (\Exception $directError) {
+                Log::warning('Direct PDF generation failed, trying BillPDFService', [
+                    'sale_id' => $sale->id,
+                    'error' => $directError->getMessage()
+                ]);
+                
+                // Fallback to BillPDFService methods
+                try {
+                    $billService = app(BillPDFService::class);
+                    
+                    // Try ultra-fast generation
+                    try {
+                        Log::info('Trying BillPDFService ultra-fast generation');
+                        return $billService->generateUltraFastPDF($sale, $format);
+                    } catch (\Exception $e) {
+                        Log::warning('Ultra-fast PDF failed, trying fast method', ['error' => $e->getMessage()]);
+                        
+                        try {
+                            Log::info('Trying BillPDFService fast generation');
+                            return $billService->downloadPosSaleBillFast($sale, $format);
+                        } catch (\Exception $e2) {
+                            Log::warning('Fast PDF failed, trying standard method', ['error' => $e2->getMessage()]);
+                            
+                            Log::info('Trying BillPDFService standard generation');
+                            return $billService->downloadPosSaleBill($sale, $format);
+                        }
+                    }
+                } catch (\Exception $serviceError) {
+                    Log::error('All BillPDFService methods failed', [
+                        'sale_id' => $sale->id,
+                        'error' => $serviceError->getMessage()
+                    ]);
+                    throw $serviceError;
+                }
+            }
             
         } catch (\Throwable $e) {
-            $endTime = microtime(true);
-            $executionTime = $endTime - $startTime;
-            
-            Log::error('Optimized POS bill download failed', [
-                'sale_id' => $sale->id ?? null,
-                'invoice_number' => $sale->invoice_number ?? 'unknown',
+            Log::error('POS bill download failed completely', [
+                'sale_id' => $sale->id,
                 'error' => $e->getMessage(),
-                'execution_time' => round($executionTime, 2) . 's',
-                'memory_peak' => $this->formatBytes(memory_get_peak_usage(true)),
                 'file' => $e->getFile(),
                 'line' => $e->getLine()
             ]);
             
-            // Clean up memory
-            gc_collect_cycles();
-            
-            // Handle specific error types
-            if (strpos($e->getMessage(), 'timeout') !== false || 
-                strpos($e->getMessage(), 'time limit') !== false ||
-                strpos($e->getMessage(), 'Maximum execution time') !== false) {
-                return redirect()->back()->with('error', 'PDF generation timed out. The system is processing your request in the background. Please try downloading again in a few moments.');
-            }
-            
-            if (strpos($e->getMessage(), 'memory') !== false || 
-                strpos($e->getMessage(), 'Memory limit') !== false) {
-                return redirect()->back()->with('error', 'Insufficient memory to generate PDF. Please contact support or try again later.');
-            }
-            
-            // Generic error with helpful message
-            return redirect()->back()->with('error', 'Unable to generate bill PDF at this time. Please try again in a few moments or contact support if the issue persists.');
-        } finally {
-            // Always clean up memory
-            gc_collect_cycles();
+            // Final fallback: redirect to web receipt with error message
+            return redirect()->route('admin.pos.receipt', $sale->id)
+                           ->with('error', 'PDF download failed: ' . $e->getMessage() . '. Showing web receipt instead.');
         }
     }
 
@@ -663,6 +754,96 @@ class PosController extends Controller
     }
 
     /**
+     * Get simple company data with minimal dependencies
+     */
+    private function getSimpleCompanyData()
+    {
+        try {
+            // Try to get company from session first
+            $companyId = session('selected_company_id', 1);
+            
+            // Basic company data without complex dependencies
+            $company = null;
+            if (class_exists('\App\Models\SuperAdmin\Company')) {
+                $company = \App\Models\SuperAdmin\Company::find($companyId);
+            }
+            
+            if ($company) {
+                return (object) [
+                    'company_name' => $company->name ?? 'Green Valley Herbs',
+                    'company_address' => $company->address ?? 'Natural & Organic Products Store',
+                    'company_phone' => $company->phone ?? '',
+                    'company_email' => $company->email ?? '',
+                    'gst_number' => $company->gst_number ?? '',
+                    'company_logo' => $company->logo ?? null
+                ];
+            }
+            
+        } catch (\Exception $e) {
+            Log::warning('Simple company data fetch failed', [
+                'error' => $e->getMessage()
+            ]);
+        }
+        
+        // Final fallback with default data
+        return (object) [
+            'company_name' => 'Green Valley Herbs',
+            'company_address' => 'Natural & Organic Products Store',
+            'company_phone' => '',
+            'company_email' => '',
+            'gst_number' => '',
+            'company_logo' => null
+        ];
+    }
+
+    /**
+     * Get company data for receipt/bill display (legacy method)
+     */
+    private function getCompanyData($companyId)
+    {
+        try {
+            // Check if we have a BillPDFService available
+            if (class_exists('\App\Services\BillPDFService')) {
+                $billService = app(BillPDFService::class);
+                $companySettings = $billService->getCompanySettingsCache($companyId);
+                return (object) $companySettings;
+            }
+            
+            // Fallback: Get company data directly
+            $company = Cache::remember("company_data_{$companyId}", 300, function() use ($companyId) {
+                return \App\Models\SuperAdmin\Company::find($companyId);
+            });
+            
+            if ($company) {
+                return (object) [
+                    'company_name' => $company->name ?? 'Store',
+                    'company_address' => $company->address ?? '',
+                    'company_phone' => $company->phone ?? '',
+                    'company_email' => $company->email ?? '',
+                    'gst_number' => $company->gst_number ?? '',
+                    'company_logo' => $company->logo ?? null
+                ];
+            }
+            
+        } catch (\Exception $e) {
+            Log::warning('Failed to get company data', [
+                'company_id' => $companyId,
+                'error' => $e->getMessage()
+            ]);
+        }
+        
+        // Final fallback
+        return (object) [
+            'company_name' => 'Green Valley Herbs',
+            'company_address' => 'Natural & Organic Products Store',
+            'company_phone' => '',
+            'company_email' => '',
+            'gst_number' => '',
+            'company_logo' => null
+        ];
+    }
+
+    /**
      * Format bytes for logging
      */
     private function formatBytes($bytes, $precision = 2)
@@ -674,5 +855,141 @@ class PosController extends Controller
         }
         
         return round($bytes, $precision) . ' ' . $units[$i];
+    }
+
+    /**
+     * Debug version of downloadBill method for testing
+     * Temporary method to help diagnose PDF issues
+     */
+    public function downloadBillDebug(PosSale $sale)
+    {
+        try {
+            Log::info('Debug: downloadBillDebug started', ['sale_id' => $sale->id]);
+            
+            // Load sale relationships
+            $sale->load(['items.product', 'cashier']);
+            
+            // Get simple company data
+            $globalCompany = (object) [
+                'company_name' => 'Green Valley Herbs',
+                'company_address' => 'Natural & Organic Products Store',
+                'company_phone' => '',
+                'company_email' => '',
+                'gst_number' => '',
+                'company_logo' => null
+            ];
+            
+            Log::info('Debug: Data prepared', [
+                'sale_id' => $sale->id,
+                'items_count' => $sale->items->count(),
+                'company_name' => $globalCompany->company_name
+            ]);
+            
+            // Test view rendering first
+            try {
+                $html = view('admin.pos.receipt-a4', compact('sale', 'globalCompany'))->render();
+                Log::info('Debug: View rendered successfully', ['html_length' => strlen($html)]);
+            } catch (\Exception $e) {
+                Log::error('Debug: View rendering failed', ['error' => $e->getMessage()]);
+                return response('View rendering failed: ' . $e->getMessage(), 500);
+            }
+            
+            // Test PDF generation
+            try {
+                Log::info('Debug: Starting PDF generation');
+                
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.pos.receipt-a4', compact('sale', 'globalCompany'));
+                $pdf->setPaper('A4', 'portrait');
+                
+                // Set PDF options for better compatibility
+                $pdf->setOptions([
+                    'isHtml5ParserEnabled' => true,
+                    'isRemoteEnabled' => false,
+                    'defaultFont' => 'DejaVu Sans',
+                    'dpi' => 96,
+                    'debugKeepTemp' => false,
+                    'isPhpEnabled' => false,
+                    'isJavascriptEnabled' => false
+                ]);
+                
+                Log::info('Debug: PDF object created, generating output');
+                
+                $pdfOutput = $pdf->output();
+                
+                Log::info('Debug: PDF output generated', [
+                    'size' => strlen($pdfOutput),
+                    'is_pdf' => substr($pdfOutput, 0, 4) === '%PDF'
+                ]);
+                
+                if (substr($pdfOutput, 0, 4) !== '%PDF') {
+                    Log::error('Debug: Generated content is not a valid PDF', [
+                        'first_100_chars' => substr($pdfOutput, 0, 100)
+                    ]);
+                    return response('Invalid PDF generated', 500);
+                }
+                
+                // Generate filename
+                $filename = 'debug_bill_' . $sale->invoice_number . '_' . date('Y-m-d_H-i-s') . '.pdf';
+                
+                Log::info('Debug: Returning PDF response', ['filename' => $filename]);
+                
+                // Return PDF with explicit headers
+                return response($pdfOutput, 200, [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                    'Content-Length' => strlen($pdfOutput),
+                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                    'Pragma' => 'no-cache',
+                    'Expires' => '0',
+                    'X-PDF-Debug' => 'true'
+                ]);
+                
+            } catch (\Exception $e) {
+                Log::error('Debug: PDF generation failed', [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]);
+                return response('PDF generation failed: ' . $e->getMessage(), 500);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Debug: downloadBillDebug failed completely', [
+                'sale_id' => $sale->id,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            
+            return response('Complete failure: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Test method to return just the HTML view
+     * Temporary method for debugging
+     */
+    public function viewBillDebug(PosSale $sale)
+    {
+        try {
+            // Load sale relationships
+            $sale->load(['items.product', 'cashier']);
+            
+            // Get simple company data
+            $globalCompany = (object) [
+                'company_name' => 'Green Valley Herbs',
+                'company_address' => 'Natural & Organic Products Store',
+                'company_phone' => '',
+                'company_email' => '',
+                'gst_number' => '',
+                'company_logo' => null
+            ];
+            
+            // Return just the HTML view for testing
+            return view('admin.pos.receipt-a4', compact('sale', 'globalCompany'));
+            
+        } catch (\Exception $e) {
+            return response('View debug failed: ' . $e->getMessage(), 500);
+        }
     }
 }

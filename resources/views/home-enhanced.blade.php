@@ -1,7 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Home - {{ $globalCompany->company_name ?? "Your Store" }}')
-@section('meta_description', 'Discover quality products at {{ $globalCompany->company_name ?? "Your Store" }}. Shop our curated collection with confidence.')
+@section('title')
+    Home - {{ $globalCompany->company_name ?? 'Your Store' }}
+@endsection
+
+@section('meta_description')
+    Discover quality products at {{ $globalCompany->company_name ?? 'Your Store' }}. Shop our curated collection with confidence.
+@endsection
 
 @section('content')
 <!-- Compact Hero Section -->
@@ -27,35 +32,7 @@
                     @endif
                     <div class="hero-overlay"></div>
                     <div class="hero-content">
-                        <div class="hero-text">
-                            @if($banner->title && !str_contains(strtolower($banner->title), 'dfrfhdfg'))
-                                <h1 class="hero-title-compact">{{ $banner->title }}</h1>
-                            @else
-                                <h1 class="hero-title-compact">Welcome to {{ $globalCompany->company_name ?? 'Our Store' }}</h1>
-                            @endif
-                            @if($banner->description && !str_contains(strtolower($banner->description), 'dfrfhdfg'))
-                                <p class="hero-subtitle-compact">{{ $banner->description }}</p>
-                            @else
-                                <p class="hero-subtitle-compact">Discover quality products curated just for you</p>
-                            @endif
-                            <div class="hero-actions-compact">
-                                @if($banner->link_url)
-                                    <a href="{{ $banner->link_url }}" class="btn-hero-compact primary">
-                                        <span>Shop Now</span>
-                                        <i class="fas fa-arrow-right"></i>
-                                    </a>
-                                @else
-                                    <a href="{{ route('products') }}" class="btn-hero-compact primary">
-                                        <span>Shop Now</span>
-                                        <i class="fas fa-arrow-right"></i>
-                                    </a>
-                                @endif
-                                <a href="{{ route('offer.products') }}" class="btn-hero-compact secondary">
-                                    <span>View Offers</span>
-                                    <i class="fas fa-fire"></i>
-                                </a>
-                            </div>
-                        </div>
+                        
                     </div>
                 </div>
             </div>

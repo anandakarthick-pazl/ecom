@@ -606,6 +606,62 @@
     </div>
 </div>
 
+<!-- Item Discount Modal -->
+<div class="modal fade" id="itemDiscountModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-percent"></i> Edit Item Discount
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <h6 id="itemDiscountItemName" class="text-primary">Product Name</h6>
+                    <div class="row text-sm">
+                        <div class="col-6">Unit Price: ₹<span id="itemDiscountUnitPrice">0.00</span></div>
+                        <div class="col-6">Quantity: <span id="itemDiscountQuantity">0</span></div>
+                    </div>
+                    <div class="text-muted">Subtotal: ₹<span id="itemDiscountSubtotal">0.00</span></div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label class="form-label">Discount Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₹</span>
+                            <input type="number" class="form-control" id="itemDiscountAmount" 
+                                   min="0" step="0.01" placeholder="0.00">
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Discount Percentage</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="itemDiscountPercentage" 
+                                   min="0" max="100" step="0.01" placeholder="0.00">
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <div class="d-flex justify-content-between">
+                        <strong>Net Amount:</strong>
+                        <span>₹<span id="itemDiscountNetAmount">0.00</span></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="applyItemDiscountBtn">
+                    <i class="fas fa-check"></i> Apply Discount
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast Container -->
 <div class="toast-container position-fixed top-0 end-0 p-3">
     <div id="liveToast" class="toast" role="alert">
@@ -857,7 +913,9 @@ $(document).ready(function() {
                 price: product.price, // Already converted to number
                 quantity: quantity,
                 stock: product.stock,
-                tax_percentage: product.tax_percentage || 0
+                tax_percentage: product.tax_percentage || 0,
+                discount_amount: 0, // Initialize item-level discount
+                discount_percentage: 0
             });
         }
         
@@ -877,16 +935,24 @@ $(document).ready(function() {
             cartContainer.empty();
             
             cart.forEach((item, index) => {
+                const itemSubtotal = item.price * item.quantity;
+                const itemDiscountAmount = item.discount_amount || 0;
+                const itemNetAmount = itemSubtotal - itemDiscountAmount;
+                
                 const cartItemHtml = `
                     <div class="cart-item">
                         <div class="cart-item-name">${item.name}</div>
                         <div class="cart-item-details">
                             <span>₹${item.price.toFixed(2)} × ${item.quantity}</span>
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="editItemDiscount(${index})" title="Edit Discount">
+                                <i class="fas fa-percent"></i>
+                            </button>
                             <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFromCart(${index})">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
-                        <div class="cart-item-total">₹${(item.price * item.quantity).toFixed(2)}</div>
+                        ${itemDiscountAmount > 0 ? `<div class="text-success small">Discount: -₹${itemDiscountAmount.toFixed(2)}</div>` : ''}
+                        <div class="cart-item-total">₹${itemNetAmount.toFixed(2)}</div>
                     </div>
                 `;
                 cartContainer.append(cartItemHtml);
@@ -899,9 +965,16 @@ $(document).ready(function() {
     }
     
     function updateCalculations() {
-        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        // Calculate subtotal considering item-level discounts
+        let subtotal = 0;
+        cart.forEach(item => {
+            const itemGross = item.price * item.quantity;
+            const itemDiscount = item.discount_amount || 0;
+            subtotal += (itemGross - itemDiscount);
+        });
+        
         const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-        const discount = parseFloat($('#discountAmount').val()) || 0;
+        const additionalDiscount = parseFloat($('#discountAmount').val()) || 0; // Sale-level discount
         
         let totalTax = 0;
         
@@ -910,10 +983,12 @@ $(document).ready(function() {
             // Use manual tax amount
             totalTax = parseFloat($('#taxAmount').val()) || 0;
         } else {
-            // Calculate tax based on products' tax percentages
+            // Calculate tax based on products' tax percentages (after item discounts)
             cart.forEach(item => {
-                const itemSubtotal = item.price * item.quantity;
-                const itemTax = (itemSubtotal * item.tax_percentage) / 100;
+                const itemGross = item.price * item.quantity;
+                const itemDiscount = item.discount_amount || 0;
+                const itemNet = itemGross - itemDiscount;
+                const itemTax = (itemNet * item.tax_percentage) / 100;
                 totalTax += itemTax;
             });
             
@@ -923,11 +998,11 @@ $(document).ready(function() {
         
         const cgst = totalTax / 2;
         const sgst = totalTax / 2;
-        const total = subtotal - discount + totalTax;
+        const total = subtotal - additionalDiscount + totalTax;
         
         $('#totalItems').text(totalItems);
         $('#subtotal').text(subtotal.toFixed(2));
-        $('#discountDisplay').text(discount.toFixed(2));
+        $('#discountDisplay').text(additionalDiscount.toFixed(2));
         $('#cgstDisplay').text(cgst.toFixed(2));
         $('#sgstDisplay').text(sgst.toFixed(2));
         $('#totalAmount').text(total.toFixed(2));
@@ -978,7 +1053,8 @@ $(document).ready(function() {
             items: cart.map(item => ({
                 product_id: item.product_id,
                 quantity: item.quantity,
-                unit_price: item.price // Already a number
+                unit_price: item.price, // Already a number
+                discount_amount: item.discount_amount || 0 // Include item-level discount
             })),
             customer_name: $('#customerName').val(),
             customer_phone: $('#customerPhone').val(),
@@ -1046,6 +1122,77 @@ $(document).ready(function() {
         updateCartDisplay();
         showToast('Item removed from cart', 'success');
     };
+    
+    window.editItemDiscount = function(index) {
+        const item = cart[index];
+        if (!item) return;
+        
+        $('#itemDiscountModal .modal-title').html(`<i class="fas fa-percent"></i> Edit Discount - ${item.name}`);
+        $('#itemDiscountItemName').text(item.name);
+        $('#itemDiscountUnitPrice').text(item.price.toFixed(2));
+        $('#itemDiscountQuantity').text(item.quantity);
+        $('#itemDiscountSubtotal').text((item.price * item.quantity).toFixed(2));
+        
+        $('#itemDiscountAmount').val(item.discount_amount || 0);
+        $('#itemDiscountPercentage').val(item.discount_percentage || 0);
+        
+        $('#itemDiscountModal').data('item-index', index).modal('show');
+        updateItemDiscountPreview();
+    };
+    
+    function updateItemDiscountPreview() {
+        const index = $('#itemDiscountModal').data('item-index');
+        const item = cart[index];
+        if (!item) return;
+        
+        const subtotal = item.price * item.quantity;
+        const discountAmount = parseFloat($('#itemDiscountAmount').val()) || 0;
+        const discountPercentage = parseFloat($('#itemDiscountPercentage').val()) || 0;
+        
+        let finalDiscountAmount = discountAmount;
+        
+        // If percentage is being used, calculate amount
+        if (discountPercentage > 0 && $('#itemDiscountPercentage').is(':focus')) {
+            finalDiscountAmount = (subtotal * discountPercentage) / 100;
+            $('#itemDiscountAmount').val(finalDiscountAmount.toFixed(2));
+        }
+        
+        // If amount is being used, calculate percentage
+        if (discountAmount > 0 && $('#itemDiscountAmount').is(':focus')) {
+            const calculatedPercentage = subtotal > 0 ? (discountAmount / subtotal) * 100 : 0;
+            $('#itemDiscountPercentage').val(calculatedPercentage.toFixed(2));
+        }
+        
+        const netAmount = subtotal - finalDiscountAmount;
+        $('#itemDiscountNetAmount').text(netAmount.toFixed(2));
+    }
+    
+    function applyItemDiscount() {
+        const index = $('#itemDiscountModal').data('item-index');
+        const item = cart[index];
+        if (!item) return;
+        
+        const discountAmount = parseFloat($('#itemDiscountAmount').val()) || 0;
+        const discountPercentage = parseFloat($('#itemDiscountPercentage').val()) || 0;
+        
+        const maxDiscount = item.price * item.quantity;
+        
+        if (discountAmount > maxDiscount) {
+            showToast('Discount amount cannot exceed item total!', 'error');
+            return;
+        }
+        
+        cart[index].discount_amount = discountAmount;
+        cart[index].discount_percentage = discountPercentage;
+        
+        updateCartDisplay();
+        $('#itemDiscountModal').modal('hide');
+        showToast('Item discount applied successfully!', 'success');
+    }
+    
+    // Item discount modal event handlers
+    $('#itemDiscountAmount, #itemDiscountPercentage').on('input', updateItemDiscountPreview);
+    $('#applyItemDiscountBtn').click(applyItemDiscount);
     
     // Update paid amount calculation
     $('#paidAmount').on('input', updateCheckoutCalculations);
