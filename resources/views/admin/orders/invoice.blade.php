@@ -37,7 +37,7 @@
                     <div style="font-size: 32px; margin-bottom: 10px;">🌿</div>
                 @endif
                 <div class="company-name">{{ $globalCompany->company_name ?? 'Herbal Bliss' }}</div>
-                <div style="color: #666; margin-bottom: 10px;">Natural & Organic Products</div>
+                {{-- <div style="color: #666; margin-bottom: 10px;">Natural & Organic Products</div> --}}
                 @if($globalCompany->company_address ?? false)
                     <div>{{ $globalCompany->company_address }}</div>
                 @endif

@@ -82,7 +82,7 @@
                 <div style="font-size: 20px;">🌿</div>
             @endif
             <div class="bold" style="font-size: 16px;">{{ strtoupper($globalCompany->company_name ?? 'HERBAL BLISS') }}</div>
-            <div>Natural & Organic Products</div>
+            {{-- <div>Natural & Organic Products</div> --}}
             @if($globalCompany->company_address ?? false)
                 <div>{{ $globalCompany->company_address }}</div>
             @endif

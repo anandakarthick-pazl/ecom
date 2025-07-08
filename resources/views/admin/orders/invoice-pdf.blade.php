@@ -123,7 +123,7 @@
             <div style="font-size: 48px; margin-bottom: 10px;">🌿</div>
         @endif
         <h1 class="company-name">{{ $globalCompany->company_name ?? 'Herbal Bliss' }}</h1>
-        <p style="margin: 5px 0; color: #666;">Natural & Organic Products</p>
+        {{-- <p style="margin: 5px 0; color: #666;">Natural & Organic Products</p> --}}
         @if($globalCompany->company_address ?? false)
             <p style="margin: 5px 0; color: #666;">{{ $globalCompany->company_address }}</p>
         @endif
