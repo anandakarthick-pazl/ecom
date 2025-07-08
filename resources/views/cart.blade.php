@@ -16,7 +16,7 @@
                         <div class="row align-items-center">
                             <div class="col-md-2">
                                 @if($item->product->featured_image)
-                                    <img src="{{ Storage::url($item->product->featured_image) }}" class="img-fluid rounded" alt="{{ $item->product->name }}">
+                                    <img src="{{ $item->product->featured_image_url }}" class="img-fluid rounded" alt="{{ $item->product->name }}">
                                 @else
                                     <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 60px;">
                                         <i class="fas fa-image text-muted"></i>

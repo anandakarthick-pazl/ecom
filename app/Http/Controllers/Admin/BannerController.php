@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Traits\DynamicStorage;
 
 class BannerController extends Controller
 {
+    use DynamicStorage;
     public function index()
     {
         $banners = Banner::orderBy('position')
@@ -41,7 +43,8 @@ class BannerController extends Controller
         
         // Handle checkbox value
         $data['is_active'] = $request->input('is_active', 0) == '1';
-        $data['image'] = $request->file('image')->store('banners', 'public');
+        $uploadResult = $this->storeFileDynamically($request->file('image'), 'banners', 'banners');
+        $data['image'] = $uploadResult['file_path'];
 
         Banner::create($data);
 
@@ -80,9 +83,10 @@ class BannerController extends Controller
 
         if ($request->hasFile('image')) {
             if ($banner->image) {
-                Storage::disk('public')->delete($banner->image);
+                $this->deleteFileDynamically($banner->image);
             }
-            $data['image'] = $request->file('image')->store('banners', 'public');
+            $uploadResult = $this->storeFileDynamically($request->file('image'), 'banners', 'banners');
+            $data['image'] = $uploadResult['file_path'];
         }
 
         $banner->update($data);
@@ -94,7 +98,7 @@ class BannerController extends Controller
     public function destroy(Banner $banner)
     {
         if ($banner->image) {
-            Storage::disk('public')->delete($banner->image);
+            $this->deleteFileDynamically($banner->image);
         }
 
         $banner->delete();

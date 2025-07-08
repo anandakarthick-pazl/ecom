@@ -19,7 +19,7 @@
         <div class="col-md-6">
             <div class="product-images">
                 @if($product->featured_image)
-                    <img src="{{ Storage::url($product->featured_image) }}" class="img-fluid rounded main-image" alt="{{ $product->name }}" id="mainImage">
+                    <img src="{{ $product->featured_image_url }}" class="img-fluid rounded main-image" alt="{{ $product->name }}" id="mainImage">
                 @else
                     <div class="bg-light d-flex align-items-center justify-content-center rounded" style="height: 400px;">
                         <i class="fas fa-image fa-4x text-muted"></i>
@@ -30,12 +30,12 @@
                 <div class="row mt-3">
                     @if($product->featured_image)
                         <div class="col-3">
-                            <img src="{{ Storage::url($product->featured_image) }}" class="img-fluid rounded thumb-image active" alt="{{ $product->name }}" onclick="changeMainImage(this)">
+                            <img src="{{ $product->featured_image_url }}" class="img-fluid rounded thumb-image active" alt="{{ $product->name }}" onclick="changeMainImage(this)">
                         </div>
                     @endif
-                    @foreach($product->images as $image)
+                    @foreach($product->image_urls as $imageUrl)
                         <div class="col-3">
-                            <img src="{{ Storage::url($image) }}" class="img-fluid rounded thumb-image" alt="{{ $product->name }}" onclick="changeMainImage(this)">
+                            <img src="{{ $imageUrl }}" class="img-fluid rounded thumb-image" alt="{{ $product->name }}" onclick="changeMainImage(this)">
                         </div>
                     @endforeach
                 </div>
@@ -154,7 +154,7 @@
                 <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
                     <div class="card h-100 border-0 shadow-sm product-card">
                         @if($relatedProduct->featured_image)
-                            <img src="{{ Storage::url($relatedProduct->featured_image) }}" class="card-img-top" alt="{{ $relatedProduct->name }}" style="height: 200px; object-fit: cover;">
+                            <img src="{{ $relatedProduct->featured_image_url }}" class="card-img-top" alt="{{ $relatedProduct->name }}" style="height: 200px; object-fit: cover;">
                         @endif
                         
                         <div class="card-body d-flex flex-column">

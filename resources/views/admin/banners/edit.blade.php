@@ -30,7 +30,7 @@
                     <div class="mb-3">
                         <label for="image" class="form-label">Banner Image</label>
                         <div class="mb-2">
-                            <img src="{{ Storage::url($banner->image) }}" class="img-thumbnail" style="max-height: 150px;" alt="{{ $banner->title }}">
+                            <img src="{{ $banner->image_url }}" class="img-thumbnail" style="max-height: 150px;" alt="{{ $banner->title }}">
                             <small class="d-block text-muted">Current banner image</small>
                         </div>
                         <input type="file" class="form-control @error('image') is-invalid @enderror" 

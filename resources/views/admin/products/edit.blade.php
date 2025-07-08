@@ -9,6 +9,43 @@
 </a>
 @endsection
 
+@section('scripts')
+<script>
+function removeImage(imageIndex) {
+    if (confirm('Are you sure you want to remove this image?')) {
+        // Create a form to submit the removal request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ route("admin.products.remove-image", $product) }}';
+        
+        // Add CSRF token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = '{{ csrf_token() }}';
+        form.appendChild(csrfInput);
+        
+        // Add method field for DELETE
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.value = 'DELETE';
+        form.appendChild(methodInput);
+        
+        // Add image index
+        const indexInput = document.createElement('input');
+        indexInput.type = 'hidden';
+        indexInput.name = 'image_index';
+        indexInput.value = imageIndex;
+        form.appendChild(indexInput);
+        
+        // Submit the form
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+
 @section('content')
 <div class="row">
     <div class="col-md-8">
@@ -140,7 +177,7 @@
                         <label for="featured_image" class="form-label">Featured Image</label>
                         @if($product->featured_image)
                             <div class="mb-2">
-                                <img src="{{ Storage::url($product->featured_image) }}" class="img-thumbnail" style="max-width: 150px;">
+                                <img src="{{ $product->featured_image_url }}" class="img-thumbnail" style="max-width: 150px;">
                                 <small class="d-block text-muted">Current featured image</small>
                             </div>
                         @endif
@@ -157,13 +194,20 @@
                         @if($product->images && count($product->images) > 0)
                             <div class="mb-2">
                                 <div class="row">
-                                    @foreach($product->images as $image)
+                                    @foreach($product->image_urls as $index => $imageUrl)
                                         <div class="col-3 mb-2">
-                                            <img src="{{ Storage::url($image) }}" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
+                                            <div class="position-relative">
+                                                <img src="{{ $imageUrl }}" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
+                                                <button type="button" class="btn btn-danger btn-sm position-absolute top-0 end-0" 
+                                                        onclick="removeImage({{ $index }})" 
+                                                        style="transform: translate(25%, -25%); font-size: 10px; padding: 2px 6px;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     @endforeach
                                 </div>
-                                <small class="d-block text-muted">Current additional images</small>
+                                <small class="d-block text-muted">Current additional images (click × to remove)</small>
                             </div>
                         @endif
                         <input type="file" class="form-control @error('images.*') is-invalid @enderror" 

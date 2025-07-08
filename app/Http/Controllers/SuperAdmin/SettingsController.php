@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 
 class SettingsController extends Controller
 {
@@ -501,6 +502,56 @@ class SettingsController extends Controller
         ];
 
         return view('super-admin.settings.cache', compact('cacheStatus', 'cacheInfo', 'settings'));
+    }
+
+    public function storage()
+    {
+        // Get current storage configuration
+        $currentStorageType = \DB::table('app_settings')
+            ->where('key', 'primary_storage_type')
+            ->whereNull('company_id')
+            ->value('value') ?? env('STORAGE_TYPE', 'local');
+
+        $storageConfig = [
+            'current_type' => $currentStorageType,
+            'aws_access_key_id' => config('filesystems.disks.s3.key'),
+            'aws_secret_access_key' => config('filesystems.disks.s3.secret'),
+            'aws_default_region' => config('filesystems.disks.s3.region'),
+            'aws_bucket' => config('filesystems.disks.s3.bucket'),
+            'aws_url' => config('filesystems.disks.s3.url'),
+            'local_path' => storage_path('app/public')
+        ];
+
+        // Get storage statistics
+        $storageService = app(\App\Services\StorageManagementService::class);
+        $storageStats = $storageService->getStorageStats();
+
+        return view('super-admin.settings.storage', compact('storageConfig', 'storageStats'));
+    }
+
+    public function updateStorage(Request $request)
+    {
+        $request->validate([
+            'storage_type' => 'required|in:local,s3',
+            'aws_access_key_id' => 'nullable|string',
+            'aws_secret_access_key' => 'nullable|string',
+            'aws_default_region' => 'nullable|string',
+            'aws_bucket' => 'nullable|string',
+            'aws_url' => 'nullable|url',
+        ]);
+
+        try {
+            $storageService = app(\App\Services\StorageManagementService::class);
+            $storageService->updateStorageConfig($request->all());
+
+            return redirect()->route('super-admin.settings.storage')
+                            ->with('success', 'Storage configuration updated successfully!');
+                            
+        } catch (\Exception $e) {
+            return redirect()->back()
+                            ->withInput()
+                            ->withErrors(['error' => 'Failed to update storage configuration: ' . $e->getMessage()]);
+        }
     }
 
     public function clearCache()

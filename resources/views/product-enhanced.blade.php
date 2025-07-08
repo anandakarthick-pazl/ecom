@@ -56,7 +56,7 @@
             <div class="product-images-enhanced animate-fade-in">
                 <div class="main-image-container">
                     @if($product->featured_image)
-                        <img src="{{ Storage::url($product->featured_image) }}" 
+                        <img src="{{ $product->featured_image_url }}" 
                              class="main-image-enhanced" 
                              alt="{{ $product->name }}" 
                              id="mainImage">
@@ -97,15 +97,15 @@
                 <div class="thumbnail-gallery">
                     @if($product->featured_image)
                         <div class="thumbnail-item">
-                            <img src="{{ Storage::url($product->featured_image) }}" 
+                            <img src="{{ $product->featured_image_url }}" 
                                  class="thumbnail-image active" 
                                  alt="{{ $product->name }}" 
                                  onclick="changeMainImage(this)">
                         </div>
                     @endif
-                    @foreach($product->images ?? [] as $image)
+                    @foreach($product->image_urls ?? [] as $imageUrl)
                         <div class="thumbnail-item">
-                            <img src="{{ Storage::url($image) }}" 
+                            <img src="{{ $imageUrl }}" 
                                  class="thumbnail-image" 
                                  alt="{{ $product->name }}" 
                                  onclick="changeMainImage(this)">

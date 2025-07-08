@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use App\Traits\BelongsToTenantEnhanced;
+use App\Traits\DynamicStorageUrl;
 
 class Product extends Model
 {
-    use HasFactory, BelongsToTenantEnhanced;
+    use HasFactory, BelongsToTenantEnhanced, DynamicStorageUrl;
 
     protected $fillable = [
         'name', 'slug', 'description', 'short_description', 'price', 'discount_price',
@@ -150,5 +151,133 @@ class Product extends Model
     {
         $basePrice = $price ?: $this->final_price;
         return round($basePrice + $this->getTaxAmount($basePrice), 2);
+    }
+
+    /**
+     * Get featured image URL with fallback
+     */
+    public function getFeaturedImageUrlAttribute()
+    {
+        return $this->getImageUrlWithFallback($this->featured_image, 'products');
+    }
+
+    /**
+     * Get all product images URLs
+     */
+    public function getImageUrlsAttribute()
+    {
+        if (empty($this->images) || !is_array($this->images)) {
+            return [];
+        }
+
+        return $this->getMultipleFileUrls($this->images);
+    }
+
+    /**
+     * Get first available image URL
+     */
+    public function getImageUrlAttribute()
+    {
+        // Try featured image first
+        if ($this->featured_image) {
+            return $this->featured_image_url;
+        }
+
+        // Try first image from images array
+        if (!empty($this->images) && is_array($this->images)) {
+            $firstImage = $this->images[0] ?? null;
+            if ($firstImage) {
+                return $this->getImageUrlWithFallback($firstImage, 'products');
+            }
+        }
+
+        // Return fallback
+        return $this->getFallbackImageUrl('products');
+    }
+
+    /**
+     * Get optimized image URL for specific size
+     */
+    public function getOptimizedImageUrl($width = null, $height = null, $quality = 85)
+    {
+        $imagePath = $this->featured_image ?: ($this->images[0] ?? null);
+        
+        if (!$imagePath) {
+            return $this->getFallbackImageUrl('products');
+        }
+
+        return $this->getOptimizedImageUrl($imagePath, $width, $height, $quality);
+    }
+
+    /**
+     * Add image to product
+     */
+    public function addImage($imagePath, $isFeatured = false)
+    {
+        if ($isFeatured) {
+            $this->featured_image = $imagePath;
+        }
+
+        $images = $this->images ?: [];
+        if (!in_array($imagePath, $images)) {
+            $images[] = $imagePath;
+            $this->images = $images;
+        }
+
+        $this->save();
+    }
+
+    /**
+     * Remove image from product
+     */
+    public function removeImage($imagePath)
+    {
+        // Remove from featured image
+        if ($this->featured_image === $imagePath) {
+            $this->featured_image = null;
+        }
+
+        // Remove from images array
+        if ($this->images && is_array($this->images)) {
+            $images = array_filter($this->images, function($img) use ($imagePath) {
+                return $img !== $imagePath;
+            });
+            $this->images = array_values($images);
+        }
+
+        $this->save();
+
+        // Optionally delete the actual file
+        // delete_from_storage($imagePath);
+    }
+
+    /**
+     * Get all images (featured + gallery)
+     */
+    public function getAllImages()
+    {
+        $allImages = [];
+
+        if ($this->featured_image) {
+            $allImages[] = $this->featured_image;
+        }
+
+        if ($this->images && is_array($this->images)) {
+            foreach ($this->images as $image) {
+                if ($image !== $this->featured_image) {
+                    $allImages[] = $image;
+                }
+            }
+        }
+
+        return $allImages;
+    }
+
+    /**
+     * Get image count
+     */
+    public function getImageCountAttribute()
+    {
+        return count($this->getAllImages());
     }
 }

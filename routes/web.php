@@ -158,6 +158,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
     Route::resource('products', ProductController::class);
     Route::patch('products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
     Route::patch('products/{product}/toggle-featured', [ProductController::class, 'toggleFeatured'])->name('products.toggle-featured');
+    Route::delete('products/{product}/remove-image', [ProductController::class, 'removeImage'])->name('products.remove-image');
+    Route::post('products/bulk-action', [ProductController::class, 'bulkAction'])->name('products.bulk-action');
     
     // Customer Orders
     // IMPORTANT: Specific routes must come BEFORE resource routes with parameters
@@ -554,4 +556,14 @@ if (app()->environment('local')) {
         
         return $html;
     });
+}
+
+// Include debug routes in development
+if (config('app.debug')) {
+    require __DIR__ . '/debug.php';
+    
+    // Temporary test route for storage
+    Route::get('/super-admin/storage-test', [\App\Http\Controllers\SuperAdmin\StorageTestController::class, 'index'])
+        ->middleware(['auth', 'super.admin'])
+        ->name('super-admin.storage.test');
 }

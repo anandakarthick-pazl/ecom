@@ -11,7 +11,7 @@
         <div class="carousel-inner">
             @foreach($banners as $banner)
             <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
-                <img src="{{ Storage::url($banner->image) }}" class="d-block w-100" alt="{{ $banner->alt_text ?: $banner->title }}" style="height: 250px; object-fit: cover;">
+                <img src="{{ $banner->image_url }}" class="d-block w-100" alt="{{ $banner->alt_text ?: $banner->title }}" style="height: 250px; object-fit: cover;">
                 <div class="carousel-caption d-none d-md-block">
                     <h5>{{ $banner->title }}</h5>
                     @if($banner->link_url)
@@ -43,7 +43,7 @@
             <div class="col-md-4 col-sm-6 mb-4">
                 <div class="card h-100 border-0 shadow-sm">
                     @if($category->image)
-                        <img src="{{ Storage::url($category->image) }}" class="card-img-top" alt="{{ $category->name }}" style="height: 150px; object-fit: cover;">
+                        <img src="{{ $category->image_url }}" class="card-img-top" alt="{{ $category->name }}" style="height: 150px; object-fit: cover;">
                     @else
                         <div class="card-img-top bg-light-green d-flex align-items-center justify-content-center" style="height: 150px;">
                             <i class="fas fa-leaf fa-3x text-success"></i>
@@ -103,7 +103,7 @@
                     <div class="col-lg-4 col-md-6 col-sm-6 mb-3">
                         <div class="card h-100 border-0 shadow-sm product-card">
                             @if($product->featured_image)
-                                <img src="{{ Storage::url($product->featured_image) }}" class="card-img-top" alt="{{ $product->name }}" style="height: 180px; object-fit: cover;">
+                                <img src="{{ $product->featured_image_url }}" class="card-img-top" alt="{{ $product->name }}" style="height: 180px; object-fit: cover;">
                             @else
                                 <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
                                     <i class="fas fa-image fa-2x text-muted"></i>

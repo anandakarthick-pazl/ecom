@@ -1,3 +1,6 @@
+@php
+    use App\Services\SuperAdminMenuService;
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -207,6 +210,7 @@
             margin-left: 280px; /* Adjusted for new sidebar width */
             min-height: 100vh;
             background: #f8f9fa;
+            padding: 0;
         }
         
         .navbar {
@@ -214,6 +218,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             margin-bottom: 0;
             border: none;
+            padding: 0.5rem 1rem;
         }
         
         .card {
@@ -273,7 +278,7 @@
         }
         
         .content-wrapper {
-            padding: 2rem;
+            padding: 1rem;
         }
         
         .alert {
@@ -357,7 +362,7 @@
             }
             
             .content-wrapper {
-                padding: 1rem;
+                padding: 0.5rem;
             }
             
             .sidebar-overlay {
@@ -503,398 +508,623 @@
         <div class="sidebar-nav-container" id="sidebarNavContainer">
             <nav class="nav flex-column">
                 <!-- Main Dashboard -->
+                @if(SuperAdminMenuService::isMenuEnabled('dashboard'))
                 <a class="nav-link {{ request()->routeIs('super-admin.dashboard') ? 'active' : '' }} priority-high" href="{{ route('super-admin.dashboard') }}">
                     <i class="fas fa-tachometer-alt"></i> Main Dashboard
                 </a>
+                @endif
                 
+                @if(SuperAdminMenuService::isMenuEnabled('analytics_overview'))
                 <a class="nav-link {{ request()->routeIs('super-admin.analytics.*') ? 'active' : '' }} priority-high" href="{{ route('super-admin.analytics.index') }}">
                     <i class="fas fa-chart-line"></i> Analytics Overview
                 </a>
+                @endif
                 
                 <!-- Company & Tenant Management -->
+                @if(SuperAdminMenuService::isMenuEnabled('companies') || SuperAdminMenuService::isMenuEnabled('subscriptions') || SuperAdminMenuService::isMenuEnabled('subscriptions_expiring') || SuperAdminMenuService::isMenuEnabled('packages') || SuperAdminMenuService::isMenuEnabled('domain_management') || SuperAdminMenuService::isMenuEnabled('multi_tenant_config') || SuperAdminMenuService::isMenuEnabled('resource_allocation'))
                 <div class="nav-section">🏢 Company & Tenant Management</div>
+                @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('companies'))
             <a class="nav-link {{ request()->routeIs('super-admin.companies.*') ? 'active' : '' }} priority-high" href="{{ route('super-admin.companies.index') }}">
                 <i class="fas fa-building"></i> Companies
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('subscriptions'))
             <a class="nav-link {{ request()->routeIs('super-admin.subscriptions.*') ? 'active' : '' }} priority-high" href="{{ route('super-admin.subscriptions.index') }}">
                 <i class="fas fa-calendar-check"></i> Subscriptions
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('subscriptions_expiring'))
             <a class="nav-link {{ request()->routeIs('super-admin.subscriptions.expiring-soon') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.subscriptions.expiring-soon') }}">
                 <i class="fas fa-exclamation-triangle text-warning"></i> Expiring Soon
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('packages'))
             <a class="nav-link {{ request()->routeIs('super-admin.packages.*') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.packages.index') }}">
                 <i class="fas fa-box"></i> Packages & Plans
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('domain_management'))
             <a class="nav-link {{ request()->routeIs('super-admin.companies.domains') ? 'active' : '' }} priority-medium" href="#">
                 <i class="fas fa-globe"></i> Domain Management
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('multi_tenant_config'))
             <a class="nav-link {{ request()->routeIs('super-admin.companies.multi-tenant') ? 'active' : '' }} priority-medium" href="#">
                 <i class="fas fa-network-wired"></i> Multi-Tenant Config
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('resource_allocation'))
             <a class="nav-link {{ request()->routeIs('super-admin.companies.resources') ? 'active' : '' }} priority-low" href="#">
                 <i class="fas fa-server"></i> Resource Allocation
             </a>
+            @endif
             
             <!-- Financial & Billing Management -->
+            @if(SuperAdminMenuService::isMenuEnabled('billing_management') || SuperAdminMenuService::isMenuEnabled('billing_reports') || SuperAdminMenuService::isMenuEnabled('invoice_generator') || SuperAdminMenuService::isMenuEnabled('revenue_analytics') || SuperAdminMenuService::isMenuEnabled('payment_gateway') || SuperAdminMenuService::isMenuEnabled('subscription_billing') || SuperAdminMenuService::isMenuEnabled('tax_configuration') || SuperAdminMenuService::isMenuEnabled('discount_management') || SuperAdminMenuService::isMenuEnabled('currency_settings'))
             <div class="nav-section">💰 Financial & Billing Management</div>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('billing_management'))
             <a class="nav-link {{ request()->routeIs('super-admin.billing.*') ? 'active' : '' }} priority-high" href="{{ route('super-admin.billing.index') }}">
                 <i class="fas fa-credit-card"></i> Billing Management
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('billing_reports'))
             <a class="nav-link {{ request()->routeIs('super-admin.billing.reports') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.billing.reports') }}">
                 <i class="fas fa-chart-bar"></i> Billing Reports
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('invoice_generator'))
             <a class="nav-link {{ request()->routeIs('super-admin.finance.invoices') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.finance.invoices') }}">
                 <i class="fas fa-receipt"></i> Invoice Generator
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('revenue_analytics'))
             <a class="nav-link {{ request()->routeIs('super-admin.finance.revenue') ? 'active' : '' }} priority-low" href="{{ route('super-admin.finance.revenue') }}">
                 <i class="fas fa-chart-line"></i> Revenue Analytics
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('payment_gateway'))
             <a class="nav-link {{ request()->routeIs('super-admin.finance.payment-gateway') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.finance.payment-gateway') }}">
                 <i class="fas fa-coins"></i> Payment Gateway
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('subscription_billing'))
             <a class="nav-link {{ request()->routeIs('super-admin.finance.subscriptions') ? 'active' : '' }} priority-medium" href="#">
                 <i class="fas fa-credit-card"></i> Subscription Billing
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('tax_configuration'))
             <a class="nav-link {{ request()->routeIs('super-admin.finance.taxes') ? 'active' : '' }} priority-low" href="#">
                 <i class="fas fa-calculator"></i> Tax Configuration
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('discount_management'))
             <a class="nav-link {{ request()->routeIs('super-admin.finance.discounts') ? 'active' : '' }} priority-low" href="#">
                 <i class="fas fa-percentage"></i> Discount Management
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('currency_settings'))
             <a class="nav-link {{ request()->routeIs('super-admin.finance.currency') ? 'active' : '' }} priority-low" href="#">
                 <i class="fas fa-dollar-sign"></i> Currency Settings
             </a>
+            @endif
             
             <!-- Theme & Design Management -->
+            @if(SuperAdminMenuService::isMenuEnabled('theme_library') || SuperAdminMenuService::isMenuEnabled('theme_assignment') || SuperAdminMenuService::isMenuEnabled('theme_statistics') || SuperAdminMenuService::isMenuEnabled('theme_reports'))
             <div class="nav-section">🎨 Design & Themes</div>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('theme_library'))
             <a class="nav-link {{ request()->routeIs('super-admin.themes.*') ? 'active' : '' }} priority-high" href="{{ route('super-admin.themes.index') }}">
                 <i class="fas fa-palette"></i> Theme Library
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('theme_assignment'))
             <a class="nav-link {{ request()->routeIs('super-admin.theme-assignments.*') ? 'active' : '' }} priority-high" href="{{ route('super-admin.theme-assignments.index') }}">
                 <i class="fas fa-paintbrush"></i> Theme Assignment
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('theme_statistics'))
             <a class="nav-link {{ request()->routeIs('super-admin.theme-assignments.stats') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.theme-assignments.stats') }}">
                 <i class="fas fa-chart-pie"></i> Theme Statistics
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('theme_reports'))
             <a class="nav-link {{ request()->routeIs('super-admin.theme-assignments.report') ? 'active' : '' }} priority-low" href="{{ route('super-admin.theme-assignments.report') }}">
                 <i class="fas fa-file-chart"></i> Theme Reports
             </a>
+            @endif
             
             <!-- Data Management & Transfer -->
+            @if(SuperAdminMenuService::isMenuEnabled('data_import') || SuperAdminMenuService::isMenuEnabled('import_history') || SuperAdminMenuService::isMenuEnabled('data_export') || SuperAdminMenuService::isMenuEnabled('database_manager') || SuperAdminMenuService::isMenuEnabled('backup_management') || SuperAdminMenuService::isMenuEnabled('data_migration') || SuperAdminMenuService::isMenuEnabled('data_synchronization') || SuperAdminMenuService::isMenuEnabled('bulk_operations') || SuperAdminMenuService::isMenuEnabled('data_cleanup') || SuperAdminMenuService::isMenuEnabled('storage_management') || SuperAdminMenuService::isMenuEnabled('local_storage') || SuperAdminMenuService::isMenuEnabled('s3_storage'))
             <div class="nav-section">📊 Data Management & Transfer</div>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('storage_management'))
+            <a class="nav-link {{ request()->routeIs('super-admin.storage.*') ? 'active' : '' }} priority-high" href="{{ route('super-admin.storage.index') }}">
+                <i class="fas fa-cloud"></i> Storage Management
+            </a>
+            @endif
+            
+            @if(SuperAdminMenuService::isMenuEnabled('local_storage'))
+            <a class="nav-link {{ request()->routeIs('super-admin.storage.local') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.storage.local') }}">
+                <i class="fas fa-hdd"></i> Local File Storage
+            </a>
+            @endif
+            
+            @if(SuperAdminMenuService::isMenuEnabled('s3_storage'))
+            <a class="nav-link {{ request()->routeIs('super-admin.storage.s3') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.storage.s3') }}">
+                <i class="fab fa-aws"></i> AWS S3 Storage
+            </a>
+            @endif
+            
+            @if(SuperAdminMenuService::isMenuEnabled('data_import'))
             <a class="nav-link {{ request()->routeIs('super-admin.data-import.*') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.data-import.index') }}">
                 <i class="fas fa-file-import"></i> Data Import
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('import_history'))
             <a class="nav-link {{ request()->routeIs('super-admin.data-import.history') ? 'active' : '' }} priority-low" href="{{ route('super-admin.data-import.history') }}">
                 <i class="fas fa-history"></i> Import History
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('data_export'))
             <a class="nav-link {{ request()->routeIs('super-admin.analytics.export') ? 'active' : '' }} priority-low" href="{{ route('super-admin.analytics.export') }}">
                 <i class="fas fa-download"></i> Data Export
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('database_manager'))
             <a class="nav-link {{ request()->routeIs('super-admin.dev.database') ? 'active' : '' }} priority-low" href="{{ route('super-admin.dev.database') }}">
                 <i class="fas fa-database"></i> Database Manager
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('backup_management'))
             <a class="nav-link {{ request()->routeIs('super-admin.settings.backup') ? 'active' : '' }} priority-high" href="{{ route('super-admin.settings.backup') }}">
                 <i class="fas fa-hdd"></i> Backup Management
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('data_migration'))
             <a class="nav-link {{ request()->routeIs('super-admin.data.migration') ? 'active' : '' }} priority-medium" href="#">
                 <i class="fas fa-exchange-alt"></i> Data Migration
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('data_synchronization'))
             <a class="nav-link {{ request()->routeIs('super-admin.data.sync') ? 'active' : '' }} priority-medium" href="#">
                 <i class="fas fa-sync"></i> Data Synchronization
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('bulk_operations'))
             <a class="nav-link {{ request()->routeIs('super-admin.data.bulk') ? 'active' : '' }} priority-low" href="#">
                 <i class="fas fa-layer-group"></i> Bulk Operations
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('data_cleanup'))
             <a class="nav-link {{ request()->routeIs('super-admin.data.cleanup') ? 'active' : '' }} priority-low" href="#">
                 <i class="fas fa-broom"></i> Data Cleanup
             </a>
+            @endif
             
             <!-- Customer Support & Communication -->
+            @if(SuperAdminMenuService::isMenuEnabled('support_tickets') || SuperAdminMenuService::isMenuEnabled('whatsapp_config') || SuperAdminMenuService::isMenuEnabled('email_settings') || SuperAdminMenuService::isMenuEnabled('email_templates') || SuperAdminMenuService::isMenuEnabled('notifications') || SuperAdminMenuService::isMenuEnabled('live_chat_config') || SuperAdminMenuService::isMenuEnabled('sms_configuration') || SuperAdminMenuService::isMenuEnabled('push_notifications') || SuperAdminMenuService::isMenuEnabled('social_media_integration') || SuperAdminMenuService::isMenuEnabled('marketing_automation'))
             <div class="nav-section">🎧 Support & Communication</div>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('support_tickets'))
             <a class="nav-link {{ request()->routeIs('super-admin.support.*') ? 'active' : '' }} priority-high" href="{{ route('super-admin.support.index') }}">
                 <i class="fas fa-headset"></i> Support Tickets
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('whatsapp_config'))
             <a class="nav-link {{ request()->routeIs('super-admin.whatsapp.*') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.whatsapp.index') }}">
                 <i class="fab fa-whatsapp"></i> WhatsApp Config
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('email_settings'))
             <a class="nav-link {{ request()->routeIs('super-admin.settings.email') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.settings.email') }}">
                 <i class="fas fa-envelope"></i> Email Settings
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('email_templates'))
             <a class="nav-link {{ request()->routeIs('super-admin.content.templates.email') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.content.templates.email') }}">
                 <i class="fas fa-envelope-open"></i> Email Templates
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('notifications'))
             <a class="nav-link {{ request()->routeIs('super-admin.mobile.push-notifications') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.mobile.push-notifications') }}">
                 <i class="fas fa-bell"></i> Notifications
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('live_chat_config'))
             <a class="nav-link" href="#">
                 <i class="fas fa-comments"></i> Live Chat Config
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('sms_configuration'))
             <a class="nav-link {{ request()->routeIs('super-admin.communication.sms') ? 'active' : '' }} priority-medium" href="#">
                 <i class="fas fa-sms"></i> SMS Configuration
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('push_notifications'))
             <a class="nav-link {{ request()->routeIs('super-admin.communication.push') ? 'active' : '' }} priority-medium" href="#">
                 <i class="fas fa-bell"></i> Push Notifications
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('social_media_integration'))
             <a class="nav-link {{ request()->routeIs('super-admin.communication.social') ? 'active' : '' }} priority-low" href="#">
                 <i class="fas fa-share-alt"></i> Social Media Integration
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('marketing_automation'))
             <a class="nav-link {{ request()->routeIs('super-admin.communication.automation') ? 'active' : '' }} priority-low" href="#">
                 <i class="fas fa-robot"></i> Marketing Automation
             </a>
+            @endif
             
             <!-- Content & Website Management -->
+            @if(SuperAdminMenuService::hasAnyMenuEnabled(['landing_page', 'hero_section', 'features_section', 'pricing_section', 'contact_section', 'blog_management', 'media_library']))
             <div class="nav-section">🌐 Content & Website</div>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('landing_page'))
             <a class="nav-link {{ request()->routeIs('super-admin.landing-page.*') ? 'active' : '' }} priority-high" href="{{ route('super-admin.landing-page.index') }}">
                 <i class="fas fa-globe"></i> Landing Page
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('hero_section'))
             <a class="nav-link {{ request()->routeIs('super-admin.landing-page.hero') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.landing-page.hero') }}">
                 <i class="fas fa-star"></i> Hero Section
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('features_section'))
             <a class="nav-link {{ request()->routeIs('super-admin.landing-page.features') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.landing-page.features') }}">
                 <i class="fas fa-list-ul"></i> Features Section
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('pricing_section'))
             <a class="nav-link {{ request()->routeIs('super-admin.landing-page.pricing') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.landing-page.pricing') }}">
                 <i class="fas fa-dollar-sign"></i> Pricing Section
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('contact_section'))
             <a class="nav-link {{ request()->routeIs('super-admin.landing-page.contact') ? 'active' : '' }} priority-low" href="{{ route('super-admin.landing-page.contact') }}">
                 <i class="fas fa-phone"></i> Contact Section
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('blog_management'))
             <a class="nav-link {{ request()->routeIs('super-admin.content.blog') ? 'active' : '' }} priority-low" href="{{ route('super-admin.content.blog') }}">
                 <i class="fas fa-blog"></i> Blog Management
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('media_library'))
             <a class="nav-link {{ request()->routeIs('super-admin.content.media') ? 'active' : '' }} priority-low" href="{{ route('super-admin.content.media') }}">
                 <i class="fas fa-images"></i> Media Library
             </a>
+            @endif
             
             <!-- User & Security Management -->
+            @if(SuperAdminMenuService::hasAnyMenuEnabled(['user_management', 'admin_users', 'blocked_users', 'api_keys', 'security_settings', 'access_control', 'role_management']))
             <div class="nav-section">🔐 Users & Security</div>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('user_management'))
             <a class="nav-link {{ request()->routeIs('super-admin.users.*') ? 'active' : '' }} priority-high" href="{{ route('super-admin.users.index') }}">
                 <i class="fas fa-users"></i> User Management
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('admin_users'))
             <a class="nav-link {{ request()->routeIs('super-admin.users.admins') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.users.admins') }}">
                 <i class="fas fa-user-shield"></i> Admin Users
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('blocked_users'))
             <a class="nav-link {{ request()->routeIs('super-admin.users.blocked') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.users.blocked') }}">
                 <i class="fas fa-user-times"></i> Blocked Users
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('api_keys'))
             <a class="nav-link {{ request()->routeIs('super-admin.api.keys') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.api.keys') }}">
                 <i class="fas fa-key"></i> API Keys
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('security_settings'))
             <a class="nav-link {{ request()->routeIs('super-admin.security.*') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.security.index') }}">
                 <i class="fas fa-shield-alt"></i> Security Settings
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('access_control'))
             <a class="nav-link {{ request()->routeIs('super-admin.security.access-control') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.security.access-control') }}">
                 <i class="fas fa-lock"></i> Access Control
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('role_management'))
             <a class="nav-link {{ request()->routeIs('super-admin.security.roles') ? 'active' : '' }} priority-low" href="{{ route('super-admin.security.roles') }}">
                 <i class="fas fa-user-tag"></i> Role Management
             </a>
+            @endif
             
             <!-- System Configuration -->
             <div class="nav-section">⚙️ System Configuration</div>
             
+            @if(SuperAdminMenuService::isMenuEnabled('system_settings'))
             <a class="nav-link {{ request()->routeIs('super-admin.settings.*') ? 'active' : '' }} priority-high" href="{{ route('super-admin.settings.index') }}">
                 <i class="fas fa-cog"></i> System Settings
             </a>
+            @endif
             
+            <!-- Menu Management - Always visible for super admin -->
+            @if(Route::has('super-admin.menu-management.index'))
+            <a class="nav-link {{ request()->routeIs('super-admin.menu-management.*') ? 'active' : '' }} priority-high" href="{{ route('super-admin.menu-management.index') }}">
+                <i class="fas fa-list-ul"></i> Menu Management
+            </a>
+            @endif
+            
+            @if(SuperAdminMenuService::isMenuEnabled('general_settings'))
             <a class="nav-link {{ request()->routeIs('super-admin.settings.general') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.settings.general') }}">
                 <i class="fas fa-sliders-h"></i> General Settings
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('cache_management'))
             <a class="nav-link {{ request()->routeIs('super-admin.settings.cache') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.settings.cache') }}">
                 <i class="fas fa-server"></i> Cache Management
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('system_health'))
             <a class="nav-link {{ request()->routeIs('super-admin.system.health') ? 'active' : '' }} priority-high" href="{{ route('super-admin.system.health') }}">
                 <i class="fas fa-heartbeat"></i> System Health
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('performance_monitor'))
             <a class="nav-link {{ request()->routeIs('super-admin.system.performance') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.system.performance') }}">
                 <i class="fas fa-chart-area"></i> Performance Monitor
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('task_scheduler'))
             <a class="nav-link {{ request()->routeIs('super-admin.system.scheduler') ? 'active' : '' }} priority-low" href="{{ route('super-admin.system.scheduler') }}">
                 <i class="fas fa-tasks"></i> Task Scheduler
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('queue_monitor'))
             <a class="nav-link {{ request()->routeIs('super-admin.system.queue') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.system.queue') }}">
                 <i class="fas fa-sync-alt"></i> Queue Monitor
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('application_config'))
             <a class="nav-link {{ request()->routeIs('super-admin.config.app') ? 'active' : '' }} priority-high" href="#">
                 <i class="fas fa-cogs"></i> Application Config
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('environment_settings'))
             <a class="nav-link {{ request()->routeIs('super-admin.config.environment') ? 'active' : '' }} priority-high" href="#">
                 <i class="fas fa-layer-group"></i> Environment Settings
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('feature_flags'))
             <a class="nav-link {{ request()->routeIs('super-admin.config.features') ? 'active' : '' }} priority-medium" href="#">
                 <i class="fas fa-toggle-on"></i> Feature Flags
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('maintenance_mode'))
             <a class="nav-link {{ request()->routeIs('super-admin.config.maintenance') ? 'active' : '' }} priority-medium" href="#">
                 <i class="fas fa-tools"></i> Maintenance Mode
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('localization'))
             <a class="nav-link {{ request()->routeIs('super-admin.config.localization') ? 'active' : '' }} priority-low" href="#">
                 <i class="fas fa-language"></i> Localization
             </a>
+            @endif
             
             <!-- Logs & Monitoring -->
+            @if(SuperAdminMenuService::hasAnyMenuEnabled(['system_logs', 'error_logs', 'security_logs', 'activity_logs']))
             <div class="nav-section">📋 Logs & Monitoring</div>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('system_logs'))
             <a class="nav-link {{ request()->routeIs('super-admin.system.logs') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.system.logs') }}">
                 <i class="fas fa-file-alt"></i> System Logs
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('error_logs'))
             <a class="nav-link {{ request()->routeIs('super-admin.system.error-logs') ? 'active' : '' }} priority-high" href="{{ route('super-admin.system.error-logs') }}">
                 <i class="fas fa-bug"></i> Error Logs
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('security_logs'))
             <a class="nav-link {{ request()->routeIs('super-admin.system.security-logs') ? 'active' : '' }} priority-high" href="{{ route('super-admin.system.security-logs') }}">
                 <i class="fas fa-shield-virus"></i> Security Logs
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('activity_logs'))
             <a class="nav-link {{ request()->routeIs('super-admin.system.activity-logs') ? 'active' : '' }} priority-low" href="{{ route('super-admin.system.activity-logs') }}">
                 <i class="fas fa-history"></i> Activity Logs
             </a>
+            @endif
             
             <!-- Integration & Third-Party Services -->
+            @if(SuperAdminMenuService::hasAnyMenuEnabled(['api_management', 'api_documentation', 'api_webhooks', 'integrations', 'mobile_app_settings']))
             <div class="nav-section">🔌 Integration & API</div>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('api_management'))
             <a class="nav-link {{ request()->routeIs('super-admin.api.*') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.api.index') }}">
                 <i class="fas fa-plug"></i> API Management
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('api_documentation'))
             <a class="nav-link {{ request()->routeIs('super-admin.api.documentation') ? 'active' : '' }} priority-low" href="{{ route('super-admin.api.documentation') }}">
                 <i class="fas fa-code"></i> API Documentation
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('api_webhooks'))
             <a class="nav-link {{ request()->routeIs('super-admin.api.webhooks') ? 'active' : '' }} priority-low" href="{{ route('super-admin.api.webhooks') }}">
                 <i class="fas fa-webhook"></i> Webhooks
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('integrations'))
             <a class="nav-link" href="#">
                 <i class="fas fa-puzzle-piece"></i> Integrations
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('mobile_app_settings'))
             <a class="nav-link {{ request()->routeIs('super-admin.mobile.*') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.mobile.index') }}">
                 <i class="fas fa-mobile-alt"></i> Mobile App Settings
             </a>
+            @endif
             
             <!-- Reports & Analytics -->
+            @if(SuperAdminMenuService::hasAnyMenuEnabled(['analytics_dashboard', 'user_analytics', 'sales_reports', 'growth_metrics', 'custom_reports']))
             <div class="nav-section">📈 Reports & Analytics</div>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('analytics_dashboard'))
             <a class="nav-link {{ request()->routeIs('super-admin.analytics.*') ? 'active' : '' }} priority-high" href="{{ route('super-admin.analytics.index') }}">
                 <i class="fas fa-chart-bar"></i> Analytics Dashboard
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('user_analytics'))
             <a class="nav-link {{ request()->routeIs('super-admin.analytics.users') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.analytics.users') }}">
                 <i class="fas fa-users-cog"></i> User Analytics
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('sales_reports'))
             <a class="nav-link {{ request()->routeIs('super-admin.analytics.sales') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.analytics.sales') }}">
                 <i class="fas fa-shopping-cart"></i> Sales Reports
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('growth_metrics'))
             <a class="nav-link {{ request()->routeIs('super-admin.analytics.growth') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.analytics.growth') }}">
                 <i class="fas fa-chart-line"></i> Growth Metrics
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('custom_reports'))
             <a class="nav-link {{ request()->routeIs('super-admin.analytics.custom') ? 'active' : '' }} priority-low" href="{{ route('super-admin.analytics.custom') }}">
                 <i class="fas fa-file-csv"></i> Custom Reports
             </a>
+            @endif
             
             <!-- System Debug & Development -->
+            @if(SuperAdminMenuService::hasAnyMenuEnabled(['debug_console', 'artisan_commands', 'database_query_builder', 'version_info']))
             <div class="nav-section">🛠️ Debug & Development</div>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('debug_console'))
             <a class="nav-link {{ request()->routeIs('super-admin.debug.*') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.debug.console') }}">
                 <i class="fas fa-tools"></i> Debug Console
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('artisan_commands'))
             <a class="nav-link {{ request()->routeIs('super-admin.dev.artisan') ? 'active' : '' }} priority-low" href="{{ route('super-admin.dev.artisan') }}">
                 <i class="fas fa-terminal"></i> Artisan Commands
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('database_query_builder'))
             <a class="nav-link {{ request()->routeIs('super-admin.dev.database') ? 'active' : '' }} priority-low" href="{{ route('super-admin.dev.database') }}">
                 <i class="fas fa-database"></i> DB Query Builder
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('version_info'))
             <a class="nav-link {{ request()->routeIs('super-admin.dev.version') ? 'active' : '' }} priority-low" href="{{ route('super-admin.dev.version') }}">
                 <i class="fas fa-code-branch"></i> Version Info
             </a>
+            @endif
             
             <!-- Quick Actions -->
+            @if(SuperAdminMenuService::hasAnyMenuEnabled(['view_main_site', 'quick_setup_wizard', 'deployment_tools']))
             <div class="nav-section">⚡ Quick Actions</div>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('view_main_site'))
             <a class="nav-link" href="{{ url('/') }}" target="_blank">
                 <i class="fas fa-external-link-alt"></i> View Main Site
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('quick_setup_wizard'))
             <a class="nav-link {{ request()->routeIs('super-admin.dev.setup-wizard') ? 'active' : '' }} priority-medium" href="{{ route('super-admin.dev.setup-wizard') }}">
                 <i class="fas fa-magic"></i> Quick Setup Wizard
             </a>
+            @endif
             
+            @if(SuperAdminMenuService::isMenuEnabled('deployment_tools'))
             <a class="nav-link {{ request()->routeIs('super-admin.dev.deployment') ? 'active' : '' }} priority-low" href="{{ route('super-admin.dev.deployment') }}">
                 <i class="fas fa-rocket"></i> Deployment Tools
             </a>
+            @endif
             
-            <!-- Logout -->
+            <!-- Logout - Always visible -->
             <hr class="my-3" style="border-color: rgba(255,255,255,0.2);">
             
                 <form action="{{ route('super-admin.logout') }}" method="POST" class="mt-2">

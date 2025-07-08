@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use App\Traits\BelongsToTenantEnhanced;
+use App\Traits\DynamicStorageUrl;
 
 class Category extends Model
 {
-    use HasFactory, BelongsToTenantEnhanced;
+    use HasFactory, BelongsToTenantEnhanced, DynamicStorageUrl;
 
     protected $fillable = [
         'name', 'slug', 'description', 'image', 'parent_id',
@@ -60,5 +61,13 @@ class Category extends Model
     public function getRouteKeyName()
     {
         return 'slug';
+    }
+
+    /**
+     * Get image URL with fallback
+     */
+    public function getImageUrlAttribute()
+    {
+        return $this->getImageUrlWithFallback($this->image, 'categories');
     }
 }

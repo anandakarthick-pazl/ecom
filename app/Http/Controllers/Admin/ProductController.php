@@ -6,9 +6,11 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Traits\DynamicStorage;
 
 class ProductController extends BaseAdminController
 {
+    use DynamicStorage;
     public function index(Request $request)
     {
         $query = Product::with('category');
@@ -116,15 +118,17 @@ class ProductController extends BaseAdminController
         $data['is_active'] = $request->input('is_active', 0) == '1';
         $data['is_featured'] = $request->input('is_featured', 0) == '1';
 
-        // Handle file uploads
+        // Handle file uploads using dynamic storage
         if ($request->hasFile('featured_image')) {
-            $data['featured_image'] = $request->file('featured_image')->store('products', 'public');
+            $uploadResult = $this->storeFileDynamically($request->file('featured_image'), 'products', 'products');
+            $data['featured_image'] = $uploadResult['file_path'];
         }
 
         $images = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $images[] = $image->store('products', 'public');
+                $uploadResult = $this->storeFileDynamically($image, 'products', 'products');
+                $images[] = $uploadResult['file_path'];
             }
         }
         $data['images'] = $images;
@@ -198,19 +202,21 @@ class ProductController extends BaseAdminController
         $data['is_active'] = $request->input('is_active', 0) == '1';
         $data['is_featured'] = $request->input('is_featured', 0) == '1';
 
-        // Handle featured image upload
+        // Handle featured image upload using dynamic storage
         if ($request->hasFile('featured_image')) {
             if ($product->featured_image) {
-                Storage::disk('public')->delete($product->featured_image);
+                $this->deleteFileDynamically($product->featured_image);
             }
-            $data['featured_image'] = $request->file('featured_image')->store('products', 'public');
+            $uploadResult = $this->storeFileDynamically($request->file('featured_image'), 'products', 'products');
+            $data['featured_image'] = $uploadResult['file_path'];
         }
 
-        // Handle additional images
+        // Handle additional images using dynamic storage
         $images = $product->images ?? [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $images[] = $image->store('products', 'public');
+                $uploadResult = $this->storeFileDynamically($image, 'products', 'products');
+                $images[] = $uploadResult['file_path'];
             }
         }
         $data['images'] = $images;
@@ -236,14 +242,14 @@ class ProductController extends BaseAdminController
             );
         }
 
-        // Delete associated files
+        // Delete associated files using dynamic storage
         if ($product->featured_image) {
-            Storage::disk('public')->delete($product->featured_image);
+            $this->deleteFileDynamically($product->featured_image);
         }
 
         if ($product->images) {
             foreach ($product->images as $image) {
-                Storage::disk('public')->delete($image);
+                $this->deleteFileDynamically($image);
             }
         }
 
@@ -268,7 +274,10 @@ class ProductController extends BaseAdminController
         
         $this->logActivity("Product {$status}", $product, ['name' => $product->name]);
         
-        return $this->handleSuccess("Product {$status} successfully!");
+        // Clean the message to ensure no newline characters
+        $message = trim("Product {$status} successfully!");
+        
+        return $this->handleSuccess($message, 'admin.products.index');
     }
 
     public function toggleFeatured(Product $product)
@@ -281,7 +290,10 @@ class ProductController extends BaseAdminController
         
         $this->logActivity("Product {$status}", $product, ['name' => $product->name]);
         
-        return $this->handleSuccess("Product {$status} successfully!");
+        // Clean the message to ensure no newline characters
+        $message = trim("Product {$status} successfully!");
+        
+        return $this->handleSuccess($message, 'admin.products.index');
     }
 
     /**
@@ -295,7 +307,7 @@ class ProductController extends BaseAdminController
         $images = $product->images ?? [];
         
         if (isset($images[$imageIndex])) {
-            Storage::disk('public')->delete($images[$imageIndex]);
+            $this->deleteFileDynamically($images[$imageIndex]);
             unset($images[$imageIndex]);
             $product->update(['images' => array_values($images)]);
             
@@ -346,14 +358,14 @@ class ProductController extends BaseAdminController
                     return $this->handleError('Cannot delete products with order history!');
                 }
 
-                // Delete files and products
+                // Delete files and products using dynamic storage
                 foreach ($products as $product) {
                     if ($product->featured_image) {
-                        Storage::disk('public')->delete($product->featured_image);
+                        $this->deleteFileDynamically($product->featured_image);
                     }
                     if ($product->images) {
                         foreach ($product->images as $image) {
-                            Storage::disk('public')->delete($image);
+                            $this->deleteFileDynamically($image);
                         }
                     }
                 }

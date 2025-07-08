@@ -61,7 +61,7 @@
                     
                     <div class="col-md-4">
                         @if($category->image)
-                            <img src="{{ Storage::url($category->image) }}" class="img-fluid rounded" alt="{{ $category->name }}">
+                            <img src="{{ $category->image_url }}" class="img-fluid rounded" alt="{{ $category->name }}">
                         @else
                             <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 200px;">
                                 <i class="fas fa-image fa-2x text-muted"></i>
@@ -121,7 +121,7 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         @if($product->featured_image)
-                                            <img src="{{ Storage::url($product->featured_image) }}" class="me-2 rounded" style="width: 40px; height: 40px; object-fit: cover;">
+                                            <img src="{{ $product->featured_image_url }}" class="me-2 rounded" style="width: 40px; height: 40px; object-fit: cover;">
                                         @endif
                                         <div>
                                             <strong>{{ $product->name }}</strong>

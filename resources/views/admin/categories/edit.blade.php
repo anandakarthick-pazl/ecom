@@ -58,7 +58,7 @@
                         <label for="image" class="form-label">Category Image</label>
                         @if($category->image)
                             <div class="mb-2">
-                                <img src="{{ Storage::url($category->image) }}" class="img-thumbnail" style="max-width: 150px;" alt="{{ $category->name }}">
+                                <img src="{{ $category->image_url }}" class="img-thumbnail" style="max-width: 150px;" alt="{{ $category->name }}">
                                 <small class="d-block text-muted">Current image</small>
                             </div>
                         @endif

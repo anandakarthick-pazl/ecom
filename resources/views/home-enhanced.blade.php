@@ -24,7 +24,7 @@
             <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
                 <div class="hero-container-compact">
                     @if($banner->image)
-                        <img src="{{ Storage::url($banner->image) }}" class="hero-image" alt="{{ $banner->alt_text ?: $banner->title }}">
+                        <img src="{{ $banner->image_url }}" class="hero-image" alt="{{ $banner->alt_text ?: $banner->title }}">
                     @else
                         <div class="hero-placeholder">
                             <div class="hero-gradient"></div>
@@ -68,7 +68,7 @@
                 <a href="{{ route('category', $category->slug) }}" class="category-link">
                     <div class="category-image-compact">
                         @if($category->image)
-                            <img src="{{ Storage::url($category->image) }}" alt="{{ $category->name }}">
+                            <img src="{{ $category->image_url }}" alt="{{ $category->name }}">
                         @else
                             <div class="category-placeholder-compact">
                                 <i class="fas fa-leaf"></i>

@@ -12,6 +12,7 @@ use App\Http\Controllers\SuperAdmin\SupportTicketController;
 use App\Http\Controllers\SuperAdmin\BillingController;
 use App\Http\Controllers\SuperAdmin\LandingPageController as SuperAdminLandingPageController;
 use App\Http\Controllers\SuperAdmin\SettingsController as SuperAdminSettingsController;
+use App\Http\Controllers\SuperAdmin\MenuManagementController;
 
 use App\Http\Controllers\SuperAdminDebugController;
 
@@ -72,6 +73,15 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'super.a
     // Dashboard
     Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
     
+    // Menu Management
+    Route::prefix('menu-management')->name('menu-management.')->group(function () {
+        Route::get('/', [MenuManagementController::class, 'index'])->name('index');
+        Route::post('/update', [MenuManagementController::class, 'update'])->name('update');
+        Route::post('/enable-all', [MenuManagementController::class, 'enableAll'])->name('enable-all');
+        Route::post('/disable-all', [MenuManagementController::class, 'disableAll'])->name('disable-all');
+        Route::post('/reset-recommended', [MenuManagementController::class, 'resetToRecommended'])->name('reset-recommended');
+    });
+    
     // Companies Management
     Route::resource('companies', CompanyController::class);
     Route::patch('companies/{company}/status', [CompanyController::class, 'updateStatus'])->name('companies.update-status');
@@ -96,6 +106,22 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'super.a
         Route::post('companies/{sourceCompany}/clone-to/{targetCompany}', [ThemeAssignmentController::class, 'cloneTheme'])->name('clone-theme');
         Route::get('companies/{company}/customizations', [ThemeAssignmentController::class, 'getCustomizationOptions'])->name('customizations');
         Route::post('companies/{company}/customizations', [ThemeAssignmentController::class, 'saveCustomizations'])->name('save-customizations');
+    });
+    
+    // Storage Management
+    Route::prefix('storage')->name('storage.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\SuperAdmin\StorageController::class, 'index'])->name('index');
+        Route::get('/local', [\App\Http\Controllers\SuperAdmin\StorageController::class, 'localStorage'])->name('local');
+        Route::get('/s3', [\App\Http\Controllers\SuperAdmin\StorageController::class, 's3Storage'])->name('s3');
+        Route::post('/config', [\App\Http\Controllers\SuperAdmin\StorageController::class, 'updateConfig'])->name('config.update');
+        Route::post('/upload', [\App\Http\Controllers\SuperAdmin\StorageController::class, 'uploadFile'])->name('upload');
+        Route::delete('/delete', [\App\Http\Controllers\SuperAdmin\StorageController::class, 'deleteFile'])->name('delete');
+        Route::post('/directory', [\App\Http\Controllers\SuperAdmin\StorageController::class, 'createDirectory'])->name('directory.create');
+        Route::post('/test-connection', [\App\Http\Controllers\SuperAdmin\StorageController::class, 'testConnection'])->name('test-connection');
+        Route::post('/sync', [\App\Http\Controllers\SuperAdmin\StorageController::class, 'syncFiles'])->name('sync');
+        Route::get('/file-url', [\App\Http\Controllers\SuperAdmin\StorageController::class, 'getFileUrl'])->name('file-url');
+        Route::post('/backup', [\App\Http\Controllers\SuperAdmin\StorageController::class, 'backupStorage'])->name('backup');
+        Route::post('/cleanup', [\App\Http\Controllers\SuperAdmin\StorageController::class, 'cleanupFiles'])->name('cleanup');
     });
     
     // Data Import Management
@@ -136,6 +162,33 @@ Route::prefix('super-admin')->name('super-admin.')->middleware(['auth', 'super.a
         Route::get('/expiring-soon', [\App\Http\Controllers\SuperAdmin\SubscriptionController::class, 'expiringSoon'])->name('expiring-soon');
     });
     
+    // Settings Management
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::get('/', [SuperAdminSettingsController::class, 'index'])->name('index');
+        Route::get('/general', [SuperAdminSettingsController::class, 'general'])->name('general');
+        Route::post('/general', [SuperAdminSettingsController::class, 'updateGeneral'])->name('general.update');
+        Route::get('/email', [SuperAdminSettingsController::class, 'email'])->name('email');
+        Route::post('/email', [SuperAdminSettingsController::class, 'updateEmail'])->name('email.update');
+        Route::post('/email/test', [SuperAdminSettingsController::class, 'testEmail'])->name('email.test');
+        Route::get('/storage', [SuperAdminSettingsController::class, 'storage'])->name('storage');
+        Route::post('/storage', [SuperAdminSettingsController::class, 'updateStorage'])->name('storage.update');
+        Route::get('/cache', [SuperAdminSettingsController::class, 'cache'])->name('cache');
+        Route::post('/cache/clear', [SuperAdminSettingsController::class, 'clearCache'])->name('cache.clear');
+        Route::post('/cache/action', [SuperAdminSettingsController::class, 'cacheAction'])->name('cache.action');
+        Route::get('/cache/status', [SuperAdminSettingsController::class, 'cacheStatus'])->name('cache.status');
+        Route::post('/cache/update', [SuperAdminSettingsController::class, 'updateCacheSettings'])->name('cache.update-settings');
+        Route::get('/backup', [SuperAdminSettingsController::class, 'backup'])->name('backup');
+        Route::post('/backup/create', [SuperAdminSettingsController::class, 'createBackup'])->name('backup.create');
+        Route::get('/backup/{backup}/download', [SuperAdminSettingsController::class, 'downloadBackup'])->name('backup.download');
+        Route::post('/backup/{backup}/restore', [SuperAdminSettingsController::class, 'restoreBackup'])->name('backup.restore');
+        Route::delete('/backup/{backup}', [SuperAdminSettingsController::class, 'deleteBackup'])->name('backup.delete');
+        Route::get('/backup/{backup}/progress', [SuperAdminSettingsController::class, 'backupProgress'])->name('backup.progress');
+        Route::post('/backup/{backup}/cancel', [SuperAdminSettingsController::class, 'cancelBackup'])->name('backup.cancel');
+        Route::get('/backup/{backup}/details', [SuperAdminSettingsController::class, 'backupDetails'])->name('backup.details');
+        Route::post('/backup/cleanup', [SuperAdminSettingsController::class, 'cleanupBackups'])->name('backup.cleanup');
+        Route::post('/backup/settings', [SuperAdminSettingsController::class, 'updateBackupSettings'])->name('backup.update-settings');
+    });
+
     // Landing Page Management
     Route::prefix('landing-page')->name('landing-page.')->group(function () {
         Route::get('/', [SuperAdminLandingPageController::class, 'index'])->name('index');

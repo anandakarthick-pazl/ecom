@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenantEnhanced;
+use App\Traits\DynamicStorageUrl;
 
 class Banner extends Model
 {
-    use HasFactory, BelongsToTenantEnhanced;
+    use HasFactory, BelongsToTenantEnhanced, DynamicStorageUrl;
 
     protected $fillable = [
         'title', 'image', 'link_url', 'position', 'is_active',
@@ -68,5 +69,13 @@ class Banner extends Model
         }
         
         return true;
+    }
+
+    /**
+     * Get image URL with fallback
+     */
+    public function getImageUrlAttribute()
+    {
+        return $this->getImageUrlWithFallback($this->image, 'banners');
     }
 }

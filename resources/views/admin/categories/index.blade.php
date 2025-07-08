@@ -31,7 +31,7 @@
                         <td>
                             <div class="d-flex align-items-center">
                                 @if($category->image)
-                                    <img src="{{ Storage::url($category->image) }}" class="me-2 rounded" style="width: 40px; height: 40px; object-fit: cover;" alt="{{ $category->name }}">
+                                    <img src="{{ $category->image_url }}" class="me-2 rounded" style="width: 40px; height: 40px; object-fit: cover;" alt="{{ $category->name }}">
                                 @endif
                                 <div>
                                     <strong>{{ $category->name }}</strong>

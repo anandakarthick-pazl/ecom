@@ -2,7 +2,7 @@
 <div class="product-card {{ isset($offer) && $offer ? 'offer-card' : '' }}">
     <div class="product-image-container">
         @if($product->featured_image)
-            <img src="{{ Storage::url($product->featured_image) }}" class="product-image" alt="{{ $product->name }}">
+            <img src="{{ $product->featured_image_url }}" class="product-image" alt="{{ $product->name }}">
         @else
             <div class="product-placeholder">
                 <i class="fas fa-image"></i>

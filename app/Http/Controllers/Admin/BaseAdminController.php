@@ -406,14 +406,14 @@ class BaseAdminController extends Controller
     {
         $companyId = $this->getCurrentCompanyId();
         
-        $rule = "unique:{$table},{$column}";
-        
+        // Build the unique rule properly
         if ($ignoreId) {
-            $rule .= ",{$ignoreId}";
+            // For updates: unique:table,column,ignore_id,ignore_column,where_column,where_value
+            $rule = "unique:{$table},{$column},{$ignoreId},id,company_id,{$companyId}";
+        } else {
+            // For creates: unique:table,column,NULL,id,where_column,where_value
+            $rule = "unique:{$table},{$column},NULL,id,company_id,{$companyId}";
         }
-        
-        // Add company_id constraint
-        $rule .= ",id,company_id,{$companyId}";
         
         return $rule;
     }
@@ -444,6 +444,9 @@ class BaseAdminController extends Controller
      */
     protected function handleSuccess($message, $redirectRoute = null, $data = [])
     {
+        // Clean message to prevent header issues
+        $message = trim(preg_replace('/[\r\n]+/', ' ', $message));
+        
         if (request()->expectsJson()) {
             return response()->json([
                 'success' => true,
@@ -461,6 +464,9 @@ class BaseAdminController extends Controller
      */
     protected function handleError($message, $redirectRoute = null, $errors = [])
     {
+        // Clean message to prevent header issues
+        $message = trim(preg_replace('/[\r\n]+/', ' ', $message));
+        
         if (request()->expectsJson()) {
             return response()->json([
                 'success' => false,

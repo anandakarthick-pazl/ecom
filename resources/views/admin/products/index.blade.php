@@ -402,7 +402,7 @@
                 <div class="product-card">
                     <div class="product-card-header">
                         @if($product->featured_image)
-                            <img src="{{ Storage::url($product->featured_image) }}" class="product-card-image" alt="{{ $product->name }}">
+                            <img src="{{ $product->featured_image_url }}" class="product-card-image" alt="{{ $product->name }}">
                         @else
                             <div class="product-card-image d-flex align-items-center justify-content-center bg-light">
                                 <i class="fas fa-image text-muted fa-2x"></i>
@@ -483,7 +483,7 @@
                         <tr>
                             <td>
                                 @if($product->featured_image)
-                                    <img src="{{ Storage::url($product->featured_image) }}" class="product-thumb" alt="{{ $product->name }}">
+                                    <img src="{{ $product->featured_image_url }}" class="product-thumb" alt="{{ $product->name }}">
                                 @else
                                     <div class="product-thumb bg-light d-flex align-items-center justify-content-center">
                                         <i class="fas fa-image text-muted"></i>
@@ -565,7 +565,7 @@
                 @foreach($products as $product)
                 <div class="ultra-compact-item">
                     @if($product->featured_image)
-                        <img src="{{ Storage::url($product->featured_image) }}" class="ultra-compact-thumb" alt="{{ $product->name }}">
+                        <img src="{{ $product->featured_image_url }}" class="ultra-compact-thumb" alt="{{ $product->name }}">
                     @else
                         <div class="ultra-compact-thumb bg-light d-flex align-items-center justify-content-center">
                             <i class="fas fa-image text-muted"></i>

@@ -18,7 +18,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Register Storage Management Service
+        $this->app->singleton(\App\Services\StorageManagementService::class, function ($app) {
+            // Use safe version if S3 packages are missing
+            if (!class_exists('League\Flysystem\AwsS3V3\AwsS3V3Adapter')) {
+                return new \App\Services\StorageManagementServiceSafe();
+            }
+            return new \App\Services\StorageManagementService();
+        });
     }
 
     /**

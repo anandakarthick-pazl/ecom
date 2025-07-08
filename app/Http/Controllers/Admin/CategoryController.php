@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Traits\DynamicStorage;
 
 class CategoryController extends BaseAdminController
 {
+    use DynamicStorage;
     public function index()
     {
         $categories = Category::with('parent')
@@ -54,7 +56,8 @@ class CategoryController extends BaseAdminController
         $data['is_active'] = $request->input('is_active', 0) == '1';
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('categories', 'public');
+            $uploadResult = $this->storeFileDynamically($request->file('image'), 'categories', 'categories');
+            $data['image'] = $uploadResult['file_path'];
         }
 
         // Create with tenant scope (company_id is automatically added via trait)
@@ -118,9 +121,10 @@ class CategoryController extends BaseAdminController
 
         if ($request->hasFile('image')) {
             if ($category->image) {
-                Storage::disk('public')->delete($category->image);
+                $this->deleteFileDynamically($category->image);
             }
-            $data['image'] = $request->file('image')->store('categories', 'public');
+            $uploadResult = $this->storeFileDynamically($request->file('image'), 'categories', 'categories');
+            $data['image'] = $uploadResult['file_path'];
         }
 
         $category->update($data);
@@ -152,7 +156,7 @@ class CategoryController extends BaseAdminController
         }
 
         if ($category->image) {
-            Storage::disk('public')->delete($category->image);
+            $this->deleteFileDynamically($category->image);
         }
 
         $categoryName = $category->name;
@@ -258,10 +262,10 @@ class CategoryController extends BaseAdminController
                     return $this->handleError('Cannot delete categories with products or subcategories!');
                 }
 
-                // Delete images and categories
+                // Delete images and categories using dynamic storage
                 foreach ($categories as $category) {
                     if ($category->image) {
-                        Storage::disk('public')->delete($category->image);
+                        $this->deleteFileDynamically($category->image);
                     }
                 }
 

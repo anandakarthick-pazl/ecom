@@ -30,7 +30,7 @@
         <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
             <div class="card h-100 border-0 shadow-sm product-card">
                 @if($product->featured_image)
-                    <img src="{{ Storage::url($product->featured_image) }}" class="card-img-top" alt="{{ $product->name }}" style="height: 250px; object-fit: cover;">
+                    <img src="{{ $product->featured_image_url }}" class="card-img-top" alt="{{ $product->name }}" style="height: 250px; object-fit: cover;">
                 @else
                     <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
                         <i class="fas fa-image fa-2x text-muted"></i>

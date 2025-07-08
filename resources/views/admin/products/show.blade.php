@@ -91,7 +91,7 @@
                     
                     <div class="col-md-4">
                         @if($product->featured_image)
-                            <img src="{{ Storage::url($product->featured_image) }}" class="img-fluid rounded" alt="{{ $product->name }}">
+                            <img src="{{ $product->featured_image_url }}" class="img-fluid rounded" alt="{{ $product->name }}">
                         @else
                             <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 250px;">
                                 <i class="fas fa-image fa-3x text-muted"></i>
@@ -104,9 +104,9 @@
                 <hr>
                 <h6>Additional Images</h6>
                 <div class="row">
-                    @foreach($product->images as $image)
+                    @foreach($product->image_urls as $imageUrl)
                         <div class="col-md-3 mb-3">
-                            <img src="{{ Storage::url($image) }}" class="img-fluid rounded" alt="{{ $product->name }}">
+                            <img src="{{ $imageUrl }}" class="img-fluid rounded" alt="{{ $product->name }}">
                         </div>
                     @endforeach
                 </div>
