@@ -234,8 +234,8 @@ class PosController extends Controller
                 }
             ]);
             
-            // Get company data - simplified approach
-            $globalCompany = $this->getSimpleCompanyData();
+            // Get enhanced company data
+            $globalCompany = $this->getCompanyData($sale->company_id);
             
             return view('admin.pos.receipt', compact('sale', 'globalCompany'));
             
@@ -376,233 +376,470 @@ class PosController extends Controller
     }
 
     /**
-     * Generate and download bill PDF - Simplified Working Version
+     * FIXED: Simple and reliable PDF download method
      */
     public function downloadBill(PosSale $sale)
     {
         try {
-            Log::info('POS bill download started', [
-                'sale_id' => $sale->id,
-                'invoice_number' => $sale->invoice_number
-            ]);
+            Log::info('PDF download started', ['sale_id' => $sale->id]);
             
-            // Load sale relationships with all necessary data
-            $sale->load([
-                'items' => function($query) {
-                    $query->select(['id', 'pos_sale_id', 'product_id', 'product_name', 'quantity', 'unit_price', 'discount_amount', 'discount_percentage', 'tax_percentage', 'tax_amount', 'total_amount']);
-                },
-                'items.product' => function($query) {
-                    $query->select(['id', 'name', 'sku', 'tax_percentage']);
-                },
-                'cashier' => function($query) {
-                    $query->select(['id', 'name', 'email']);
-                }
-            ]);
+            // Load sale data
+            $sale->load(['items.product', 'cashier']);
             
-            // Get format from request (convert 'a4' to 'a4_sheet' for compatibility)
+            // Get company data
+            $globalCompany = $this->getSimpleCompanyData($sale->company_id);
+            
+            // Get format (default to A4)
             $format = request()->get('format', 'a4_sheet');
-            if ($format === 'a4') {
-                $format = 'a4_sheet';
+            
+            // Select template - try clean version first, then fixed version
+            $viewName = 'admin.pos.receipt-a4';
+            if ($format === 'thermal') {
+                $viewName = 'admin.pos.receipt-pdf';
             }
             
-            Log::info('POS bill data loaded', [
+            // Try clean template first (best option)
+            if ($format !== 'thermal' && view()->exists('admin.pos.receipt-a4-clean')) {
+                $viewName = 'admin.pos.receipt-a4-clean';
+            } elseif ($format === 'thermal' && view()->exists('admin.pos.receipt-pdf-clean')) {
+                $viewName = 'admin.pos.receipt-pdf-clean';
+            } elseif ($format === 'thermal' && view()->exists('admin.pos.receipt-pdf-fixed')) {
+                $viewName = 'admin.pos.receipt-pdf-fixed';
+            } elseif ($format !== 'thermal' && view()->exists('admin.pos.receipt-a4-fixed')) {
+                $viewName = 'admin.pos.receipt-a4-fixed';
+            }   
+            
+
+            
+            // echo "Using view: $viewName\n"; exit;
+            
+            Log::info('Using view template: ' . $viewName);
+           
+            // echo "<pre>"; print_r($globalCompany); exit;
+            
+            // Create PDF with basic settings
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, [
+                'sale' => $sale,
+                'globalCompany' => $globalCompany
+            ]);
+            
+            // Set paper size
+            if ($format === 'thermal') {
+                $pdf->setPaper([0, 0, 226.77, 841.89], 'portrait'); // 80mm thermal
+            } else {
+                $pdf->setPaper('A4', 'portrait');
+            }
+            
+            // Basic PDF options
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => false,
+                'defaultFont' => 'DejaVu Sans',
+                'dpi' => 96,
+                'debugKeepTemp' => false
+            ]);
+            
+            // Generate filename
+            $filename = 'bill_' . $sale->invoice_number . '_' . date('Y-m-d_H-i-s') . '.pdf';
+            
+            Log::info('PDF generated, returning download', [
+                'filename' => $filename,
+                'format' => $format,
+                'view' => $viewName
+            ]);
+            
+            // FIXED: Use streamDownload for proper PDF download
+            return response()->streamDownload(function() use ($pdf) {
+                echo $pdf->output();
+            }, $filename, [
+                'Content-Type' => 'application/pdf'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('PDF download failed', [
                 'sale_id' => $sale->id,
-                'items_count' => $sale->items->count(),
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+            
+            // Return error response instead of redirect
+            return response()->json([
+                'error' => 'PDF generation failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * SIMPLE PDF DOWNLOAD FIX - Alternative method
+     */
+    public function downloadBillSimple(PosSale $sale)
+    {
+        try {
+            Log::info('Simple PDF download started', ['sale_id' => $sale->id]);
+            
+            // Load sale data
+            $sale->load(['items.product', 'cashier']);
+            
+            // Get simple company data
+            $globalCompany = $this->getSimpleCompanyData($sale->company_id);
+            
+            // Get format (default to A4)
+            $format = request()->get('format', 'a4_sheet');
+            
+            // Select template - try clean version first
+            $viewName = 'admin.pos.receipt-a4';
+            if ($format === 'thermal') {
+                $viewName = 'admin.pos.receipt-pdf';
+            }
+            
+            // Try clean template first (best option)
+            if ($format !== 'thermal' && view()->exists('admin.pos.receipt-a4-clean')) {
+                $viewName = 'admin.pos.receipt-a4-clean';
+            } elseif ($format === 'thermal' && view()->exists('admin.pos.receipt-pdf-clean')) {
+                $viewName = 'admin.pos.receipt-pdf-clean';
+            }
+            
+            Log::info('Generating PDF with view: ' . $viewName);
+            
+            // Create PDF with basic settings
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, [
+                'sale' => $sale,
+                'globalCompany' => $globalCompany
+            ]);
+            
+            // Set paper size
+            if ($format === 'thermal') {
+                $pdf->setPaper([0, 0, 226.77, 841.89], 'portrait'); // 80mm thermal
+            } else {
+                $pdf->setPaper('A4', 'portrait');
+            }
+            
+            // Basic PDF options
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => false,
+                'defaultFont' => 'DejaVu Sans',
+                'dpi' => 96,
+                'debugKeepTemp' => false
+            ]);
+            
+            // Generate filename
+            $filename = 'bill_' . $sale->invoice_number . '_' . date('Y-m-d_H-i-s') . '.pdf';
+            
+            Log::info('PDF generated successfully', [
+                'filename' => $filename,
                 'format' => $format
             ]);
             
-            // Get company data using the simple method
-            $globalCompany = $this->getSimpleCompanyData();
+            // Return PDF download response - THIS IS THE KEY FIX
+            return response()->streamDownload(function() use ($pdf) {
+                echo $pdf->output();
+            }, $filename, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"'
+            ]);
             
-            // Try direct PDF generation first (most reliable)
-            try {
-                Log::info('Attempting direct PDF generation');
-                
-                // Select view based on format
-                $viewName = ($format === 'thermal') ? 'admin.pos.receipt-pdf' : 'admin.pos.receipt-a4';
-                
-                // Generate PDF directly using dompdf
-                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, compact('sale', 'globalCompany'));
-                
-                // Set paper size based on format
-                if ($format === 'thermal') {
-                    $pdf->setPaper([0, 0, 226.77, 841.89], 'portrait'); // 80mm thermal width
-                } else {
-                    $pdf->setPaper('A4', 'portrait');
-                }
-                
-                // Set optimized options
-                $pdf->setOptions([
-                    'isHtml5ParserEnabled' => true,
-                    'isRemoteEnabled' => false,
-                    'defaultFont' => 'DejaVu Sans',
-                    'dpi' => 96,
-                    'isPhpEnabled' => false,
-                    'isJavascriptEnabled' => false,
-                    'debugKeepTemp' => false
-                ]);
-                
-                // Generate PDF output
-                $pdfOutput = $pdf->output();
-                
-                // Verify it's a valid PDF
-                if (substr($pdfOutput, 0, 4) !== '%PDF') {
-                    throw new \Exception('Generated content is not a valid PDF');
-                }
-                
-                // Generate filename
-                $filename = 'bill_' . $sale->invoice_number . '_' . date('Y-m-d_H-i-s') . '.pdf';
-                
-                Log::info('Direct PDF generation successful', [
-                    'sale_id' => $sale->id,
-                    'pdf_size' => strlen($pdfOutput),
-                    'filename' => $filename
-                ]);
-                
-                // Return PDF with proper headers
-                return response($pdfOutput, 200, [
-                    'Content-Type' => 'application/pdf',
-                    'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-                    'Content-Length' => strlen($pdfOutput),
-                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
-                    'Pragma' => 'no-cache',
-                    'Expires' => '0'
-                ]);
-                
-            } catch (\Exception $directError) {
-                Log::warning('Direct PDF generation failed, trying BillPDFService', [
-                    'sale_id' => $sale->id,
-                    'error' => $directError->getMessage()
-                ]);
-                
-                // Fallback to BillPDFService methods
-                try {
-                    $billService = app(BillPDFService::class);
-                    
-                    // Try ultra-fast generation
-                    try {
-                        Log::info('Trying BillPDFService ultra-fast generation');
-                        return $billService->generateUltraFastPDF($sale, $format);
-                    } catch (\Exception $e) {
-                        Log::warning('Ultra-fast PDF failed, trying fast method', ['error' => $e->getMessage()]);
-                        
-                        try {
-                            Log::info('Trying BillPDFService fast generation');
-                            return $billService->downloadPosSaleBillFast($sale, $format);
-                        } catch (\Exception $e2) {
-                            Log::warning('Fast PDF failed, trying standard method', ['error' => $e2->getMessage()]);
-                            
-                            Log::info('Trying BillPDFService standard generation');
-                            return $billService->downloadPosSaleBill($sale, $format);
-                        }
-                    }
-                } catch (\Exception $serviceError) {
-                    Log::error('All BillPDFService methods failed', [
-                        'sale_id' => $sale->id,
-                        'error' => $serviceError->getMessage()
-                    ]);
-                    throw $serviceError;
-                }
-            }
-            
-        } catch (\Throwable $e) {
-            Log::error('POS bill download failed completely', [
+        } catch (\Exception $e) {
+            Log::error('Simple PDF download failed', [
                 'sale_id' => $sale->id,
                 'error' => $e->getMessage(),
-                'file' => $e->getFile(),
                 'line' => $e->getLine()
             ]);
             
-            // Final fallback: redirect to web receipt with error message
-            return redirect()->route('admin.pos.receipt', $sale->id)
-                           ->with('error', 'PDF download failed: ' . $e->getMessage() . '. Showing web receipt instead.');
+            // Return error response
+            return response()->json([
+                'error' => 'PDF generation failed: ' . $e->getMessage()
+            ], 500);
         }
     }
 
     /**
-     * Generate PDF with multiple optimization layers
+     * Get company logo for PDF generation with proper encoding
      */
-    private function generateOptimizedPDF(BillPDFService $service, PosSale $sale, $format)
+    private function getCompanyLogoForPDF($globalCompany)
+    {
+        if (empty($globalCompany->company_logo)) {
+            return null;
+        }
+        
+        // Try different possible paths for the logo
+        $possiblePaths = [
+            storage_path('app/public/' . $globalCompany->company_logo),
+            public_path('storage/' . $globalCompany->company_logo),
+            storage_path('app/' . $globalCompany->company_logo),
+            public_path($globalCompany->company_logo),
+        ];
+        
+        foreach ($possiblePaths as $path) {
+            if (file_exists($path)) {
+                try {
+                    // Get the file contents and encode as base64
+                    $imageData = file_get_contents($path);
+                    $mimeType = mime_content_type($path);
+                    
+                    // Create data URI for PDF
+                    $base64 = base64_encode($imageData);
+                    $dataUri = 'data:' . $mimeType . ';base64,' . $base64;
+                    
+                    Log::info('Logo found and encoded for PDF', [
+                        'path' => $path,
+                        'size' => strlen($imageData),
+                        'mime_type' => $mimeType
+                    ]);
+                    
+                    return $dataUri;
+                } catch (\Exception $e) {
+                    Log::error('Error processing logo', [
+                        'path' => $path,
+                        'error' => $e->getMessage()
+                    ]);
+                    continue;
+                }
+            }
+        }
+        
+        Log::warning('Logo not found in any expected location', [
+            'logo_path' => $globalCompany->company_logo,
+            'searched_paths' => $possiblePaths
+        ]);
+        
+        return null;
+    }
+
+    /**
+     * Get company logo - uses base64 for PDF, asset URL for web
+     */
+    private function getLogoForDisplay($globalCompany, $isPDF = true)
+    {
+        if (empty($globalCompany->company_logo)) {
+            return null;
+        }
+        
+        if ($isPDF) {
+            // For PDF generation, use base64 encoding
+            return $this->getCompanyLogoForPDF($globalCompany);
+        } else {
+            // For web display, use asset URL
+            return asset('storage/' . $globalCompany->company_logo);
+        }
+    }
+
+    /**
+     * Get simple company data without complex caching
+     */
+    private function getSimpleCompanyData($companyId = null)
     {
         try {
-            // Method 1: Try super-fast in-memory generation
-            try {
-                return [
-                    'success' => true,
-                    'response' => $service->generateUltraFastPDF($sale, $format),
-                    'method' => 'ultra-fast'
-                ];
-            } catch (\Exception $e) {
-                Log::warning('Ultra-fast PDF generation failed, falling back', [
-                    'sale_id' => $sale->id,
-                    'error' => $e->getMessage()
-                ]);
+            if (!$companyId) {
+                $companyId = $this->getCurrentTenantId();
             }
             
-            // Method 2: Try fast cached generation
-            try {
-                return [
-                    'success' => true,
-                    'response' => $service->downloadPosSaleBillFast($sale, $format),
-                    'method' => 'fast-cached'
-                ];
-            } catch (\Exception $e) {
-                Log::warning('Fast cached PDF generation failed, falling back', [
-                    'sale_id' => $sale->id,
-                    'error' => $e->getMessage()
-                ]);
+            if (!$companyId) {
+                return $this->getFallbackCompanyData();
             }
             
-            // Method 3: Standard generation with timeout
-            return [
-                'success' => true,
-                'response' => $service->downloadPosSaleBill($sale, $format),
-                'method' => 'standard'
+            // Get company directly from database
+            $company = \App\Models\SuperAdmin\Company::find($companyId);
+            
+            if (!$company) {
+                return $this->getFallbackCompanyData();
+            }
+            
+            return (object) [
+                'company_name' => $company->name ?? 'Green Valley Herbs',
+                'company_address' => $company->address ?? '',
+                'city' => $company->city ?? '',
+                'state' => $company->state ?? '',
+                'country' => $company->country ?? '',
+                'postal_code' => $company->postal_code ?? '',
+                'company_phone' => $company->phone ?? '',
+                'company_email' => $company->email ?? '',
+                'gst_number' => $company->gst_number ?? '',
+                'company_logo' => $company->logo ?? '',
+                'company_logo_pdf' => $this->getCompanyLogoForPDF((object)['company_logo' => $company->logo ?? '']),
+                'full_address' => $this->formatFullAddress($company),
+                'contact_info' => $this->formatContactInfo($company),
+                'display_name' => $company->name ?? 'Your Store'
             ];
             
         } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'error' => 'All PDF generation methods failed: ' . $e->getMessage()
-            ];
+            Log::error('Error getting simple company data', [
+                'company_id' => $companyId,
+                'error' => $e->getMessage()
+            ]);
+            
+            return $this->getFallbackCompanyData();
         }
     }
 
     /**
-     * Get available bill formats for POS sale with caching
+     * Get current tenant ID with simple logic
      */
+    private function getCurrentTenantId()
+    {
+        try {
+            // Try session first
+            if (session()->has('selected_company_id')) {
+                return session('selected_company_id');
+            }
+            
+            // Try authenticated user
+            if (auth()->check() && auth()->user()->company_id) {
+                return auth()->user()->company_id;
+            }
+            
+            // Try domain lookup
+            $host = request()->getHost();
+            $company = \App\Models\SuperAdmin\Company::where('domain', $host)->first();
+            
+            if ($company) {
+                return $company->id;
+            }
+            
+            return null;
+            
+        } catch (\Exception $e) {
+            Log::error('Error getting tenant ID', ['error' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
+     * Test PDF generation without download
+     */
+    public function testPdfGeneration(PosSale $sale)
+    {
+        try {
+            $sale->load(['items.product', 'cashier']);
+            $globalCompany = $this->getSimpleCompanyData($sale->company_id);
+            
+            // Test view rendering
+            $html = view('admin.pos.receipt-a4', [
+                'sale' => $sale,
+                'globalCompany' => $globalCompany
+            ])->render();
+            
+            // Test PDF creation
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.pos.receipt-a4', [
+                'sale' => $sale,
+                'globalCompany' => $globalCompany
+            ]);
+            
+            $pdf->setPaper('A4', 'portrait');
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => false,
+                'defaultFont' => 'DejaVu Sans',
+                'dpi' => 96
+            ]);
+            
+            $pdfOutput = $pdf->output();
+            
+            return response()->json([
+                'success' => true,
+                'sale_id' => $sale->id,
+                'company_data' => $globalCompany,
+                'html_length' => strlen($html),
+                'pdf_size' => strlen($pdfOutput),
+                'is_valid_pdf' => substr($pdfOutput, 0, 4) === '%PDF',
+                'pdf_header' => substr($pdfOutput, 0, 20)
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get company data for receipt/bill display (legacy method)
+     */
+    private function getCompanyData($companyId = null)
+    {
+        return $this->getSimpleCompanyData($companyId);
+    }
+    
+    /**
+     * Format full address from company data
+     */
+    private function formatFullAddress($company)
+    {
+        $addressParts = array_filter([
+            $company->address,
+            $company->city,
+            $company->state,
+            $company->postal_code,
+            $company->country
+        ]);
+        
+        return implode(', ', $addressParts);
+    }
+    
+    /**
+     * Format contact information
+     */
+    private function formatContactInfo($company)
+    {
+        $contactParts = [];
+        
+        if ($company->phone) {
+            $contactParts[] = "Phone: {$company->phone}";
+        }
+        
+        if ($company->email) {
+            $contactParts[] = "Email: {$company->email}";
+        }
+        
+        return implode(' | ', $contactParts);
+    }
+    
+    /**
+     * Fallback company data when actual data is not available
+     */
+    private function getFallbackCompanyData()
+    {
+        return (object) [
+            'company_name' => 'Green Valley Herbs',
+            'company_address' => 'Natural & Organic Products Store',
+            'city' => '',
+            'state' => '',
+            'country' => '',
+            'postal_code' => '',
+            'company_phone' => '',
+            'company_email' => '',
+            'gst_number' => '',
+            'company_logo' => '',
+            'company_logo_pdf' => null,
+            'full_address' => 'Natural & Organic Products Store',
+            'contact_info' => '',
+            'display_name' => 'Green Valley Herbs'
+        ];
+    }
+
     /**
      * Enhanced bill formats retrieval with aggressive caching
      */
     public function getBillFormats(PosSale $sale)
     {
         try {
-            $companyId = $this->getCurrentTenantIdCached();
+            $companyId = $this->getCurrentTenantId();
             if (!$companyId) {
                 return response()->json(['error' => 'Company context not found'], 400);
             }
 
-            // Use static caching for the request
-            static $formatCache = [];
-            if (isset($formatCache[$companyId])) {
-                $cached = $formatCache[$companyId];
-                $cached['sale_info'] = [
-                    'id' => $sale->id,
-                    'invoice_number' => $sale->invoice_number,
-                    'company_id' => $sale->company_id,
-                    'items_count' => $sale->items()->count()
-                ];
-                return response()->json($cached);
-            }
-
-            $billService = app(BillPDFService::class);
-            $config = $billService->getBillFormatConfigCached($companyId);
-            $formats = $billService->getAvailableFormatsCached($companyId);
+            // Simple formats for now
+            $formats = [
+                'a4_sheet' => 'A4 Sheet PDF',
+                'thermal' => 'Thermal Printer (80mm)'
+            ];
 
             $result = [
                 'success' => true,
                 'formats' => $formats,
-                'config' => $config,
                 'sale_info' => [
                     'id' => $sale->id,
                     'invoice_number' => $sale->invoice_number,
@@ -611,11 +848,10 @@ class PosController extends Controller
                 ]
             ];
             
-            $formatCache[$companyId] = $result;
             return response()->json($result);
 
         } catch (\Exception $e) {
-            Log::error('Failed to get optimized bill formats for POS sale', [
+            Log::error('Failed to get bill formats for POS sale', [
                 'sale_id' => $sale->id,
                 'error' => $e->getMessage()
             ]);
@@ -628,47 +864,48 @@ class PosController extends Controller
     }
 
     /**
-     * Enhanced bill preview with caching and optimization
+     * Bill preview method
      */
     public function previewBill(PosSale $sale)
     {
         try {
-            // Use static caching for the request lifecycle
-            static $previewCache = [];
-            $cacheKey = "preview_{$sale->id}_" . request()->get('format', 'a4_sheet');
-            
-            if (isset($previewCache[$cacheKey])) {
-                return $previewCache[$cacheKey];
-            }
-            
             // Pre-load relationships efficiently
             $sale->load([
                 'items.product:id,name,sku',
                 'cashier:id,name'
             ]);
             
-            $companyId = $this->getCurrentTenantIdCached();
+            $companyId = $this->getCurrentTenantId();
             if (!$companyId) {
                 return redirect()->back()->with('error', 'Company context not found');
             }
 
-            $billService = app(BillPDFService::class);
-            $companySettings = $billService->getCompanySettingsCache($companyId);
             $format = request()->get('format', 'a4_sheet');
 
-            // Select appropriate view template
+            // Use simple company data
+            $globalCompany = $this->getSimpleCompanyData($companyId);
+
+            // Select appropriate view template (try clean version first)
             $viewName = ($format === 'thermal') ? 'admin.pos.receipt-pdf' : 'admin.pos.receipt-a4';
             
-            $response = view($viewName, [
+            // Try clean template first (best option)
+            if ($format !== 'thermal' && view()->exists('admin.pos.receipt-a4-clean')) {
+                $viewName = 'admin.pos.receipt-a4-clean';
+            } elseif ($format === 'thermal' && view()->exists('admin.pos.receipt-pdf-clean')) {
+                $viewName = 'admin.pos.receipt-pdf-clean';
+            } elseif ($format === 'thermal' && view()->exists('admin.pos.receipt-pdf-fixed')) {
+                $viewName = 'admin.pos.receipt-pdf-fixed';
+            } elseif ($format !== 'thermal' && view()->exists('admin.pos.receipt-a4-fixed')) {
+                $viewName = 'admin.pos.receipt-a4-fixed';
+            }
+            
+            return view($viewName, [
                 'sale' => $sale,
-                'globalCompany' => (object) $companySettings
+                'globalCompany' => $globalCompany
             ]);
             
-            $previewCache[$cacheKey] = $response;
-            return $response;
-            
         } catch (\Exception $e) {
-            Log::error('Optimized bill preview failed', [
+            Log::error('Bill preview failed', [
                 'sale_id' => $sale->id,
                 'error' => $e->getMessage()
             ]);
@@ -678,188 +915,58 @@ class PosController extends Controller
     }
 
     /**
-     * Get current tenant ID with enhanced caching and fallback logic
+     * Test enhanced company data retrieval (for debugging)
      */
-    private function getCurrentTenantIdCached()
+    public function testEnhancedCompanyData(PosSale $sale)
     {
-        // Use static caching for the entire request lifecycle
-        static $cachedTenantId = null;
-        static $cacheChecked = false;
-        
-        if ($cacheChecked) {
-            return $cachedTenantId;
-        }
-        
         try {
-            // Method 1: Application container
-            if (app()->has('current_tenant')) {
-                $tenant = app('current_tenant');
-                if ($tenant && isset($tenant->id)) {
-                    $cachedTenantId = $tenant->id;
-                    $cacheChecked = true;
-                    return $cachedTenantId;
-                }
-            }
+            $companyData = $this->getSimpleCompanyData($sale->company_id);
             
-            // Method 2: Request parameter
-            if (request()->has('current_company_id')) {
-                $companyId = request()->get('current_company_id');
-                if ($companyId) {
-                    $cachedTenantId = $companyId;
-                    $cacheChecked = true;
-                    return $cachedTenantId;
-                }
-            }
-            
-            // Method 3: Session
-            if (session()->has('selected_company_id')) {
-                $companyId = session('selected_company_id');
-                if ($companyId) {
-                    $cachedTenantId = $companyId;
-                    $cacheChecked = true;
-                    return $cachedTenantId;
-                }
-            }
-            
-            // Method 4: Authenticated user
-            if (auth()->check() && auth()->user()->company_id) {
-                $cachedTenantId = auth()->user()->company_id;
-                $cacheChecked = true;
-                return $cachedTenantId;
-            }
-
-            // Method 5: Domain lookup (cached)
-            $host = request()->getHost();
-            $company = Cache::remember("domain_company_{$host}", 300, function() use ($host) {
-                return \App\Models\SuperAdmin\Company::where('domain', $host)->first(['id']);
-            });
-            
-            if ($company) {
-                $cachedTenantId = $company->id;
-                $cacheChecked = true;
-                return $cachedTenantId;
-            }
+            return response()->json([
+                'success' => true,
+                'sale_id' => $sale->id,
+                'sale_company_id' => $sale->company_id,
+                'company_data' => $companyData,
+                'current_tenant_id' => $this->getCurrentTenantId()
+            ], 200, [], JSON_PRETTY_PRINT);
             
         } catch (\Exception $e) {
-            Log::warning('Error getting optimized tenant ID', [
+            return response()->json([
+                'success' => false,
                 'error' => $e->getMessage(),
-                'host' => request()->getHost() ?? 'unknown',
-                'user_id' => auth()->id()
-            ]);
+                'sale_id' => $sale->id
+            ], 500);
         }
-        
-        $cacheChecked = true;
-        $cachedTenantId = null;
-        return null;
     }
 
     /**
-     * Get simple company data with minimal dependencies
+     * Clear company data cache
      */
-    private function getSimpleCompanyData()
+    public function clearCompanyCache($companyId = null)
     {
         try {
-            // Try to get company from session first
-            $companyId = session('selected_company_id', 1);
-            
-            // Basic company data without complex dependencies
-            $company = null;
-            if (class_exists('\App\Models\SuperAdmin\Company')) {
-                $company = \App\Models\SuperAdmin\Company::find($companyId);
+            if (!$companyId) {
+                $companyId = $this->getCurrentTenantId();
             }
             
-            if ($company) {
-                return (object) [
-                    'company_name' => $company->name ?? 'Green Valley Herbs',
-                    'company_address' => $company->address ?? 'Natural & Organic Products Store',
-                    'company_phone' => $company->phone ?? '',
-                    'company_email' => $company->email ?? '',
-                    'gst_number' => $company->gst_number ?? '',
-                    'company_logo' => $company->logo ?? null
-                ];
-            }
+            // Clear Laravel cache
+            Cache::flush();
             
+            Log::info('Company cache cleared', ['company_id' => $companyId]);
+            
+            return response()->json(['success' => true, 'message' => 'Company cache cleared']);
         } catch (\Exception $e) {
-            Log::warning('Simple company data fetch failed', [
-                'error' => $e->getMessage()
-            ]);
-        }
-        
-        // Final fallback with default data
-        return (object) [
-            'company_name' => 'Green Valley Herbs',
-            'company_address' => 'Natural & Organic Products Store',
-            'company_phone' => '',
-            'company_email' => '',
-            'gst_number' => '',
-            'company_logo' => null
-        ];
-    }
-
-    /**
-     * Get company data for receipt/bill display (legacy method)
-     */
-    private function getCompanyData($companyId)
-    {
-        try {
-            // Check if we have a BillPDFService available
-            if (class_exists('\App\Services\BillPDFService')) {
-                $billService = app(BillPDFService::class);
-                $companySettings = $billService->getCompanySettingsCache($companyId);
-                return (object) $companySettings;
-            }
-            
-            // Fallback: Get company data directly
-            $company = Cache::remember("company_data_{$companyId}", 300, function() use ($companyId) {
-                return \App\Models\SuperAdmin\Company::find($companyId);
-            });
-            
-            if ($company) {
-                return (object) [
-                    'company_name' => $company->name ?? 'Store',
-                    'company_address' => $company->address ?? '',
-                    'company_phone' => $company->phone ?? '',
-                    'company_email' => $company->email ?? '',
-                    'gst_number' => $company->gst_number ?? '',
-                    'company_logo' => $company->logo ?? null
-                ];
-            }
-            
-        } catch (\Exception $e) {
-            Log::warning('Failed to get company data', [
+            Log::error('Failed to clear company cache', [
                 'company_id' => $companyId,
                 'error' => $e->getMessage()
             ]);
+            
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
-        
-        // Final fallback
-        return (object) [
-            'company_name' => 'Green Valley Herbs',
-            'company_address' => 'Natural & Organic Products Store',
-            'company_phone' => '',
-            'company_email' => '',
-            'gst_number' => '',
-            'company_logo' => null
-        ];
     }
 
     /**
-     * Format bytes for logging
-     */
-    private function formatBytes($bytes, $precision = 2)
-    {
-        $units = array('B', 'KB', 'MB', 'GB', 'TB');
-        
-        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
-            $bytes /= 1024;
-        }
-        
-        return round($bytes, $precision) . ' ' . $units[$i];
-    }
-
-    /**
-     * Debug version of downloadBill method for testing
-     * Temporary method to help diagnose PDF issues
+     * Enhanced debug version of downloadBill method for testing
      */
     public function downloadBillDebug(PosSale $sale)
     {
@@ -869,15 +976,8 @@ class PosController extends Controller
             // Load sale relationships
             $sale->load(['items.product', 'cashier']);
             
-            // Get simple company data
-            $globalCompany = (object) [
-                'company_name' => 'Green Valley Herbs',
-                'company_address' => 'Natural & Organic Products Store',
-                'company_phone' => '',
-                'company_email' => '',
-                'gst_number' => '',
-                'company_logo' => null
-            ];
+            // Get company data
+            $globalCompany = $this->getSimpleCompanyData($sale->company_id);
             
             Log::info('Debug: Data prepared', [
                 'sale_id' => $sale->id,
@@ -887,8 +987,20 @@ class PosController extends Controller
             
             // Test view rendering first
             try {
-                $html = view('admin.pos.receipt-a4', compact('sale', 'globalCompany'))->render();
-                Log::info('Debug: View rendered successfully', ['html_length' => strlen($html)]);
+                $viewName = 'admin.pos.receipt-a4';
+                
+                // Try clean version first (best option)
+                if (view()->exists('admin.pos.receipt-a4-clean')) {
+                    $viewName = 'admin.pos.receipt-a4-clean';
+                } elseif (view()->exists('admin.pos.receipt-a4-fixed')) {
+                    $viewName = 'admin.pos.receipt-a4-fixed';
+                }
+                
+                $html = view($viewName, compact('sale', 'globalCompany'))->render();
+                Log::info('Debug: View rendered successfully', [
+                    'html_length' => strlen($html),
+                    'view_used' => $viewName
+                ]);
             } catch (\Exception $e) {
                 Log::error('Debug: View rendering failed', ['error' => $e->getMessage()]);
                 return response('View rendering failed: ' . $e->getMessage(), 500);
@@ -898,18 +1010,16 @@ class PosController extends Controller
             try {
                 Log::info('Debug: Starting PDF generation');
                 
-                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.pos.receipt-a4', compact('sale', 'globalCompany'));
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, compact('sale', 'globalCompany'));
                 $pdf->setPaper('A4', 'portrait');
                 
-                // Set PDF options for better compatibility
+                // Basic PDF options for debug
                 $pdf->setOptions([
                     'isHtml5ParserEnabled' => true,
                     'isRemoteEnabled' => false,
                     'defaultFont' => 'DejaVu Sans',
                     'dpi' => 96,
-                    'debugKeepTemp' => false,
-                    'isPhpEnabled' => false,
-                    'isJavascriptEnabled' => false
+                    'debugKeepTemp' => false
                 ]);
                 
                 Log::info('Debug: PDF object created, generating output');
@@ -933,15 +1043,11 @@ class PosController extends Controller
                 
                 Log::info('Debug: Returning PDF response', ['filename' => $filename]);
                 
-                // Return PDF with explicit headers
-                return response($pdfOutput, 200, [
-                    'Content-Type' => 'application/pdf',
-                    'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-                    'Content-Length' => strlen($pdfOutput),
-                    'Cache-Control' => 'no-cache, no-store, must-revalidate',
-                    'Pragma' => 'no-cache',
-                    'Expires' => '0',
-                    'X-PDF-Debug' => 'true'
+                // Return PDF with streamDownload
+                return response()->streamDownload(function() use ($pdfOutput) {
+                    echo $pdfOutput;
+                }, $filename, [
+                    'Content-Type' => 'application/pdf'
                 ]);
                 
             } catch (\Exception $e) {
@@ -966,30 +1072,361 @@ class PosController extends Controller
     }
 
     /**
-     * Test method to return just the HTML view
-     * Temporary method for debugging
+     * Download multiple receipts in compact format (up to 20 per page)
      */
-    public function viewBillDebug(PosSale $sale)
+    public function downloadMultipleReceipts(Request $request)
     {
         try {
-            // Load sale relationships
-            $sale->load(['items.product', 'cashier']);
+            $request->validate([
+                'sale_ids' => 'required|array|min:1|max:20',
+                'sale_ids.*' => 'required|integer|exists:pos_sales,id',
+                'format' => 'nullable|in:compact,list'
+            ]);
+
+            Log::info('Multiple receipts download started', [
+                'sale_ids' => $request->sale_ids,
+                'count' => count($request->sale_ids)
+            ]);
             
-            // Get simple company data
-            $globalCompany = (object) [
-                'company_name' => 'Green Valley Herbs',
-                'company_address' => 'Natural & Organic Products Store',
-                'company_phone' => '',
-                'company_email' => '',
-                'gst_number' => '',
-                'company_logo' => null
-            ];
+            // Load sales with relationships
+            $sales = PosSale::with(['items.product', 'cashier'])
+                           ->whereIn('id', $request->sale_ids)
+                           ->currentTenant()
+                           ->get();
+
+            if ($sales->isEmpty()) {
+                return response()->json(['error' => 'No sales found'], 404);
+            }
+
+            // Get company data
+            $globalCompany = $this->getSimpleCompanyData($sales->first()->company_id);
             
-            // Return just the HTML view for testing
-            return view('admin.pos.receipt-a4', compact('sale', 'globalCompany'));
+            // Get format
+            $format = $request->get('format', 'compact');
+            
+            // Select template
+            $viewName = 'admin.pos.receipt-multi-compact';
+            
+            Log::info('Generating multi-receipt PDF', [
+                'sales_count' => $sales->count(),
+                'format' => $format,
+                'view' => $viewName
+            ]);
+            
+            // Create PDF
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, [
+                'sales' => $sales,
+                'globalCompany' => $globalCompany
+            ]);
+            
+            // Set paper size
+            $pdf->setPaper('A4', 'portrait');
+            
+            // Basic PDF options
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => false,
+                'defaultFont' => 'DejaVu Sans',
+                'dpi' => 96,
+                'debugKeepTemp' => false
+            ]);
+            
+            // Generate filename
+            $filename = 'receipts_' . count($request->sale_ids) . '_' . date('Y-m-d_H-i-s') . '.pdf';
+            
+            Log::info('Multi-receipt PDF generated', [
+                'filename' => $filename,
+                'sales_count' => $sales->count()
+            ]);
+            
+            return response()->streamDownload(function() use ($pdf) {
+                echo $pdf->output();
+            }, $filename, [
+                'Content-Type' => 'application/pdf'
+            ]);
             
         } catch (\Exception $e) {
-            return response('View debug failed: ' . $e->getMessage(), 500);
+            Log::error('Multi-receipt download failed', [
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+            
+            return response()->json([
+                'error' => 'Multi-receipt generation failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get sales for multi-receipt download
+     */
+    public function getMultiReceiptSales(Request $request)
+    {
+        try {
+            $query = PosSale::with(['items.product', 'cashier'])
+                           ->currentTenant()
+                           ->latest();
+
+            // Apply filters
+            if ($request->date_from) {
+                $query->whereDate('sale_date', '>=', $request->date_from);
+            }
+
+            if ($request->date_to) {
+                $query->whereDate('sale_date', '<=', $request->date_to);
+            }
+
+            if ($request->status) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->payment_method) {
+                $query->where('payment_method', $request->payment_method);
+            }
+
+            $sales = $query->limit(100)->get();
+
+            return response()->json([
+                'success' => true,
+                'sales' => $sales->map(function($sale) {
+                    return [
+                        'id' => $sale->id,
+                        'invoice_number' => $sale->invoice_number,
+                        'customer_name' => $sale->customer_name ?? 'Walk-in',
+                        'total_amount' => $sale->total_amount,
+                        'payment_method' => $sale->payment_method,
+                        'status' => $sale->status,
+                        'created_at' => $sale->created_at->format('d/m/Y H:i'),
+                        'items_count' => $sale->items->count(),
+                        'items_quantity' => $sale->items->sum('quantity')
+                    ];
+                })
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to get multi-receipt sales', [
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Debug company logo paths and data for troubleshooting
+     */
+    public function debugLogoIssue(PosSale $sale)
+    {
+        try {
+            $globalCompany = $this->getSimpleCompanyData($sale->company_id);
+            
+            $debug = [
+                'company_data' => [
+                    'company_id' => $sale->company_id,
+                    'company_name' => $globalCompany->company_name,
+                    'company_logo' => $globalCompany->company_logo,
+                    'logo_empty' => empty($globalCompany->company_logo),
+                ],
+                'urls_and_paths' => [],
+                'file_checks' => [],
+                'storage_status' => [
+                    'symlink_exists' => is_link(public_path('storage')),
+                    'symlink_target' => is_link(public_path('storage')) ? readlink(public_path('storage')) : null,
+                    'public_storage_dir_exists' => is_dir(public_path('storage')),
+                    'app_storage_dir_exists' => is_dir(storage_path('app/public')),
+                ],
+                'recommendations' => []
+            ];
+            
+            if (!empty($globalCompany->company_logo)) {
+                // Test different URL and path combinations
+                $logo = $globalCompany->company_logo;
+                
+                $debug['urls_and_paths'] = [
+                    'asset_url' => asset('storage/' . $logo),
+                    'public_path' => public_path('storage/' . $logo),
+                    'storage_path' => storage_path('app/public/' . $logo),
+                    'direct_public' => public_path($logo),
+                ];
+                
+                // Check if files actually exist
+                foreach ($debug['urls_and_paths'] as $type => $path) {
+                    if (str_contains($type, 'path')) {
+                        $debug['file_checks'][$type] = [
+                            'path' => $path,
+                            'exists' => file_exists($path),
+                            'readable' => file_exists($path) && is_readable($path),
+                            'size' => file_exists($path) ? filesize($path) : 0,
+                            'mime_type' => file_exists($path) ? mime_content_type($path) : null
+                        ];
+                    }
+                }
+                
+                // Add recommendations based on findings
+                $anyFileExists = collect($debug['file_checks'])->contains('exists', true);
+                
+                if (!$anyFileExists) {
+                    $debug['recommendations'][] = 'Logo file not found in any expected location';
+                    $debug['recommendations'][] = 'Upload logo to storage/app/public/ directory';
+                }
+                
+                if (!$debug['storage_status']['symlink_exists']) {
+                    $debug['recommendations'][] = 'Run: php artisan storage:link';
+                }
+                
+                if (!$debug['storage_status']['public_storage_dir_exists'] && !$debug['storage_status']['symlink_exists']) {
+                    $debug['recommendations'][] = 'Storage symlink is missing and public/storage directory does not exist';
+                }
+                
+            } else {
+                $debug['recommendations'][] = 'No logo configured in company settings';
+                $debug['recommendations'][] = 'Go to /admin/settings to upload a company logo';
+            }
+            
+            return response()->json($debug, 200, [], JSON_PRETTY_PRINT);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    }
+    
+
+    /**
+     * Bulk download receipts by date range
+     */
+    public function downloadReceiptsByDateRange(Request $request)
+    {
+        try {
+            $request->validate([
+                'date_from' => 'required|date',
+                'date_to' => 'required|date|after_or_equal:date_from',
+                'limit' => 'nullable|integer|min:1|max:50'
+            ]);
+
+            $limit = $request->get('limit', 20);
+            
+            $sales = PosSale::with(['items.product', 'cashier'])
+                           ->currentTenant()
+                           ->whereDate('sale_date', '>=', $request->date_from)
+                           ->whereDate('sale_date', '<=', $request->date_to)
+                           ->where('status', 'completed')
+                           ->latest()
+                           ->limit($limit)
+                           ->get();
+
+            if ($sales->isEmpty()) {
+                return response()->json(['error' => 'No sales found for the selected date range'], 404);
+            }
+
+            // Get company data
+            $globalCompany = $this->getSimpleCompanyData($sales->first()->company_id);
+            
+            Log::info('Bulk receipt download by date range', [
+                'date_from' => $request->date_from,
+                'date_to' => $request->date_to,
+                'sales_count' => $sales->count()
+            ]);
+            
+            // Create PDF
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.pos.receipt-multi-compact', [
+                'sales' => $sales,
+                'globalCompany' => $globalCompany
+            ]);
+            
+            $pdf->setPaper('A4', 'portrait');
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => false,
+                'defaultFont' => 'DejaVu Sans',
+                'dpi' => 96
+            ]);
+            
+            $filename = 'receipts_' . $request->date_from . '_to_' . $request->date_to . '_' . date('Y-m-d_H-i-s') . '.pdf';
+            
+            return response()->streamDownload(function() use ($pdf) {
+                echo $pdf->output();
+            }, $filename, [
+                'Content-Type' => 'application/pdf'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Bulk receipt download failed', [
+                'error' => $e->getMessage(),
+                'date_from' => $request->date_from ?? null,
+                'date_to' => $request->date_to ?? null
+            ]);
+            
+            return response()->json([
+                'error' => 'Bulk receipt generation failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Test logo display in HTML format (for debugging)
+     */
+    public function testLogoDisplay(PosSale $sale)
+    {
+        try {
+            $globalCompany = $this->getSimpleCompanyData($sale->company_id);
+            
+            $html = '<!DOCTYPE html><html><head><title>Logo Test</title>';
+            $html .= '<style>body{font-family:Arial,sans-serif;margin:40px;} .logo{max-height:100px;border:1px solid #ddd;margin:10px 0;} .info{background:#f5f5f5;padding:15px;margin:10px 0;border-radius:5px;} .success{background:#d4edda;color:#155724;} .error{background:#f8d7da;color:#721c24;}</style>';
+            $html .= '</head><body>';
+            $html .= '<h1>🔍 Logo Display Test for Sale #' . $sale->id . '</h1>';
+            
+            $html .= '<div class="info">';
+            $html .= '<h3>Company Information</h3>';
+            $html .= '<p><strong>Company:</strong> ' . ($globalCompany->company_name ?? 'N/A') . '</p>';
+            $html .= '<p><strong>Logo Path:</strong> ' . ($globalCompany->company_logo ?? 'N/A') . '</p>';
+            $html .= '<p><strong>PDF Logo Generated:</strong> ' . ($globalCompany->company_logo_pdf ? 'Yes (' . strlen($globalCompany->company_logo_pdf) . ' bytes)' : 'No') . '</p>';
+            $html .= '</div>';
+            
+            if ($globalCompany->company_logo_pdf) {
+                $html .= '<div class="success">';
+                $html .= '<h3>✅ PDF Logo (Base64 Encoded)</h3>';
+                $html .= '<p>This is how the logo will appear in PDFs:</p>';
+                $html .= '<img src="' . $globalCompany->company_logo_pdf . '" alt="PDF Logo" class="logo">';
+                $html .= '<p><strong>Data URI Size:</strong> ' . strlen($globalCompany->company_logo_pdf) . ' characters</p>';
+                $html .= '<p><strong>Preview:</strong> ' . substr($globalCompany->company_logo_pdf, 0, 100) . '...</p>';
+                $html .= '</div>';
+            } else {
+                $html .= '<div class="error">';
+                $html .= '<h3>❌ PDF Logo Not Generated</h3>';
+                $html .= '<p>Logo file not found or unreadable for PDF generation.</p>';
+                $html .= '</div>';
+            }
+            
+            if ($globalCompany->company_logo) {
+                $html .= '<div class="info">';
+                $html .= '<h3>📱 Web Logo (Asset URL)</h3>';
+                $html .= '<p>This is how the logo appears on web pages:</p>';
+                $html .= '<img src="' . asset('storage/' . $globalCompany->company_logo) . '" alt="Web Logo" class="logo" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">';
+                $html .= '<p style="display:none;color:red;">❌ Web logo failed to load</p>';
+                $html .= '<p><strong>Asset URL:</strong> ' . asset('storage/' . $globalCompany->company_logo) . '</p>';
+                $html .= '</div>';
+            }
+            
+            $html .= '<div class="info">';
+            $html .= '<h3>🔗 Test Links</h3>';
+            $html .= '<p><a href="/admin/pos/sales/' . $sale->id . '/download-bill" target="_blank">Download PDF Receipt</a></p>';
+            $html .= '<p><a href="/admin/pos/sales/' . $sale->id . '/debug-logo" target="_blank">Debug Logo JSON</a></p>';
+            $html .= '<p><a href="/logo-debug.html" target="_blank">Logo Debug Tool</a></p>';
+            $html .= '</div>';
+            
+            $html .= '</body></html>';
+            
+            return response($html);
+            
+        } catch (\Exception $e) {
+            return response('Logo test failed: ' . $e->getMessage(), 500);
         }
     }
 }

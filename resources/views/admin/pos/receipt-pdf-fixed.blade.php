@@ -19,12 +19,14 @@
             width: 80mm;
             max-width: 80mm;
             margin: 0;
-            padding: 5mm;
+            padding: 3mm; /* Reduced padding to prevent cutting */
         }
         
         .receipt-container {
             width: 100%;
-            max-width: 70mm;
+            max-width: 74mm; /* Reduced width to ensure content fits */
+            overflow: hidden; /* Prevent horizontal overflow */
+            word-wrap: break-word;
         }
         
         /* Text Alignment */
@@ -41,18 +43,23 @@
             font-weight: bold; 
         }
         
-        /* Header Section */
+        /* ENHANCED: Header Section with Better Logo Handling */
         .header {
             border-bottom: 2px solid #000;
             padding-bottom: 6px;
             margin-bottom: 8px;
+            text-align: center;
         }
         
+        /* FIXED: Better Logo Handling for Thermal */
         .company-logo {
-            max-width: 50px;
-            max-height: 40px;
+            max-width: 60px; /* Reduced size for thermal */
+            max-height: 50px; /* Reduced height */
+            width: auto;
+            height: auto;
             margin: 0 auto 4px auto;
             display: block;
+            object-fit: contain; /* Prevent logo distortion */
         }
         
         .company-name {
@@ -60,15 +67,17 @@
             font-weight: bold;
             margin-bottom: 2px;
             word-wrap: break-word;
+            line-height: 1.2;
         }
         
         .company-details {
             font-size: 9px;
             line-height: 1.2;
             margin-bottom: 1px;
+            word-wrap: break-word;
         }
         
-        /* Sale Information */
+        /* ENHANCED: Sale Information */
         .sale-info {
             font-size: 10px;
             margin-bottom: 8px;
@@ -76,9 +85,10 @@
         
         .sale-info div {
             margin-bottom: 1px;
+            word-wrap: break-word;
         }
         
-        /* Divider Lines */
+        /* ENHANCED: Divider Lines */
         .dashed-line {
             border-top: 1px dashed #000;
             margin: 6px 0;
@@ -91,7 +101,7 @@
             width: 100%;
         }
         
-        /* Items Section */
+        /* ENHANCED: Items Section */
         .items-section {
             margin-bottom: 8px;
         }
@@ -106,6 +116,7 @@
             margin-bottom: 1px;
             word-wrap: break-word;
             line-height: 1.2;
+            overflow: hidden; /* Prevent text overflow */
         }
         
         .item-details {
@@ -121,19 +132,24 @@
             font-size: 8px;
             color: #333;
             margin-bottom: 1px;
+            word-wrap: break-word;
         }
         
-        /* Price Display */
+        /* ENHANCED: Price Display with Table Layout */
         .price-line {
             display: table;
             width: 100%;
             margin-bottom: 1px;
+            table-layout: fixed; /* Prevent layout issues */
         }
         
         .price-label {
             display: table-cell;
             text-align: left;
             vertical-align: top;
+            width: 60%; /* Fixed width */
+            word-wrap: break-word;
+            padding-right: 5px;
         }
         
         .price-value {
@@ -141,9 +157,11 @@
             text-align: right;
             vertical-align: top;
             font-weight: bold;
+            width: 40%; /* Fixed width */
+            word-wrap: break-word;
         }
         
-        /* Totals Section */
+        /* ENHANCED: Totals Section */
         .totals {
             border-top: 1px solid #000;
             padding-top: 6px;
@@ -164,7 +182,7 @@
             font-size: 12px;
         }
         
-        /* Payment Section */
+        /* ENHANCED: Payment Section */
         .payment-section {
             border-top: 1px solid #000;
             padding-top: 6px;
@@ -172,23 +190,25 @@
             font-size: 10px;
         }
         
-        /* Summary Section */
+        /* ENHANCED: Summary Section */
         .summary-section {
             margin-top: 8px;
             padding-top: 6px;
             border-top: 1px dashed #000;
             font-size: 9px;
+            text-align: center;
         }
         
-        /* Notes Section */
+        /* ENHANCED: Notes Section */
         .notes-section {
             margin-top: 8px;
             padding-top: 6px;
             border-top: 1px dashed #000;
             font-size: 8px;
+            word-wrap: break-word;
         }
         
-        /* Footer */
+        /* ENHANCED: Footer */
         .footer {
             border-top: 1px solid #000;
             padding-top: 6px;
@@ -222,7 +242,20 @@
             font-size: 8px;
         }
         
-        /* Print Styles */
+        /* ENHANCED: Prevent Text Overflow */
+        .text-truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .text-wrap {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+        
+        /* ENHANCED: Print Styles */
         @media print {
             body {
                 margin: 0;
@@ -232,47 +265,56 @@
             .no-print {
                 display: none;
             }
+            .receipt-container {
+                max-width: 76mm;
+            }
+        }
+        
+        /* ENHANCED: Ensure content fits within thermal width */
+        @page {
+            size: 80mm auto;
+            margin: 0;
         }
     </style>
 </head>
 <body>
     <div class="receipt-container">
-        <!-- Header -->
+        <!-- ENHANCED: Header with Better Logo Handling -->
         <div class="header text-center">
-            @php
-                $logoSrc = null;
-                if (!empty($globalCompany->company_logo)) {
-                    // Use processed image data if available from the service
-                    if (isset($globalCompany->logo_data_url)) {
-                        $logoSrc = $globalCompany->logo_data_url;
-                    } elseif (isset($globalCompany->logo_absolute_path)) {
-                        $logoSrc = $globalCompany->logo_absolute_path;
-                    } else {
-                        // Fallback to helper method
-                        $logoSrc = \App\Services\BillPDFService::getImageForPDF($globalCompany->company_logo);
-                    }
-                }
-            @endphp
-            @if($logoSrc)
-                <img src="{{ $logoSrc }}" alt="{{ $globalCompany->company_name ?? 'Logo' }}" class="company-logo">
+            @if(!empty($globalCompany->company_logo_base64))
+                {{-- Use base64 encoded logo for better PDF compatibility --}}
+                <img src="{{ $globalCompany->company_logo_base64 }}" alt="{{ $globalCompany->company_name ?? 'Logo' }}" class="company-logo">
+            @elseif(!empty($globalCompany->company_logo_path) && file_exists($globalCompany->company_logo_path))
+                {{-- Fallback to file path if base64 not available --}}
+                <img src="{{ $globalCompany->company_logo_path }}" alt="{{ $globalCompany->company_name ?? 'Logo' }}" class="company-logo">
+            @elseif(!empty($globalCompany->company_logo))
+                {{-- Try original logo path as last resort --}}
+                <img src="{{ public_path('storage/' . $globalCompany->company_logo) }}" alt="{{ $globalCompany->company_name ?? 'Logo' }}" class="company-logo">
             @else
-                <div style="font-size: 16px;">🌿</div>
+                {{-- Fallback icon if no logo --}}
+                <div style="font-size: 16px; margin-bottom: 4px;">🌿</div>
             @endif
-            <div class="company-name">{{ strtoupper($globalCompany->company_name ?? 'HERBAL STORE') }}</div>
+            
+            <div class="company-name text-wrap">{{ strtoupper($globalCompany->company_name ?? 'HERBAL STORE') }}</div>
+            
             @if(!empty($globalCompany->company_address))
-                <div class="company-details">{{ $globalCompany->company_address }}</div>
+                <div class="company-details text-wrap">{{ $globalCompany->company_address }}</div>
             @endif
+            
             @if(!empty($globalCompany->city))
-                <div class="company-details">
+                <div class="company-details text-wrap">
                     {{ $globalCompany->city }}@if(!empty($globalCompany->state)), {{ $globalCompany->state }}@endif
                 </div>
             @endif
+            
             @if(!empty($globalCompany->company_phone))
                 <div class="company-details">Ph: {{ $globalCompany->company_phone }}</div>
             @endif
+            
             @if(!empty($globalCompany->company_email))
-                <div class="company-details">{{ $globalCompany->company_email }}</div>
+                <div class="company-details text-wrap">{{ $globalCompany->company_email }}</div>
             @endif
+            
             @if(!empty($globalCompany->gst_number))
                 <div class="company-details">GST: {{ $globalCompany->gst_number }}</div>
             @endif
@@ -289,10 +331,10 @@
             <div><strong>Invoice:</strong> {{ $sale->invoice_number }}</div>
             <div><strong>Date:</strong> {{ $sale->created_at->format('d M Y, h:i A') }}</div>
             @if($sale->cashier)
-                <div><strong>Cashier:</strong> {{ $sale->cashier->name }}</div>
+                <div class="text-wrap"><strong>Cashier:</strong> {{ $sale->cashier->name }}</div>
             @endif
             @if($sale->customer_name)
-                <div><strong>Customer:</strong> {{ $sale->customer_name }}</div>
+                <div class="text-wrap"><strong>Customer:</strong> {{ $sale->customer_name }}</div>
             @endif
             @if($sale->customer_phone)
                 <div><strong>Phone:</strong> {{ $sale->customer_phone }}</div>
@@ -301,11 +343,11 @@
         
         <div class="dashed-line"></div>
         
-        <!-- Items -->
+        <!-- ENHANCED: Items with Better Layout -->
         <div class="items-section">
             @foreach($sale->items as $index => $item)
                 <div class="item-row">
-                    <div class="item-name">{{ $item->product->name ?? $item->product_name }}</div>
+                    <div class="item-name text-wrap">{{ $item->product->name ?? $item->product_name }}</div>
                     
                     <div class="price-line">
                         <div class="price-label">{{ $item->quantity }} x ₹{{ number_format($item->unit_price, 2) }}</div>
@@ -324,7 +366,7 @@
                     </div>
                     
                     @if(($item->discount_amount ?? 0) > 0)
-                        <div class="item-extras discount-highlight">
+                        <div class="item-extras discount-highlight text-wrap">
                             Item Disc: -₹{{ number_format($item->discount_amount, 2) }} ({{ number_format($item->discount_percentage ?? 0, 1) }}%)
                         </div>
                     @endif
@@ -342,7 +384,7 @@
             @endforeach
         </div>
         
-        <!-- Totals -->
+        <!-- ENHANCED: Totals -->
         <div class="totals">
             @php
                 $itemsSubtotal = $sale->items->sum(function($item) {
@@ -390,7 +432,7 @@
             @endif
         </div>
         
-        <!-- Final Total -->
+        <!-- ENHANCED: Final Total -->
         <div class="final-total">
             <div class="price-line">
                 <div class="price-label">TOTAL:</div>
@@ -398,7 +440,7 @@
             </div>
         </div>
         
-        <!-- Payment Details -->
+        <!-- ENHANCED: Payment Details -->
         <div class="payment-section">
             <div class="price-line">
                 <div class="price-label">{{ ucfirst(str_replace('_', ' ', $sale->payment_method)) }}:</div>
@@ -413,7 +455,7 @@
             @endif
         </div>
         
-        <!-- Summary -->
+        <!-- ENHANCED: Summary -->
         <div class="summary-section text-center">
             <div><strong>Items:</strong> {{ $sale->items->sum('quantity') }} | <strong>Products:</strong> {{ $sale->items->count() }}</div>
             
@@ -434,22 +476,22 @@
             @endif
         </div>
         
-        <!-- Notes -->
+        <!-- ENHANCED: Notes -->
         @if($sale->custom_tax_enabled && $sale->tax_notes)
             <div class="notes-section">
                 <div class="bold">Tax Notes:</div>
-                <div>{{ $sale->tax_notes }}</div>
+                <div class="text-wrap">{{ $sale->tax_notes }}</div>
             </div>
         @endif
         
         @if($sale->notes)
             <div class="notes-section">
                 <div class="bold">Sale Notes:</div>
-                <div>{{ $sale->notes }}</div>
+                <div class="text-wrap">{{ $sale->notes }}</div>
             </div>
         @endif
         
-        <!-- Footer -->
+        <!-- ENHANCED: Footer -->
         <div class="footer">
             <div class="dashed-line"></div>
             <div class="footer-title">Thank you for shopping!</div>
@@ -464,7 +506,7 @@
                         <br>
                     @endif
                     @if(!empty($globalCompany->company_email))
-                        {{ $globalCompany->company_email }}
+                        <div class="text-wrap">{{ $globalCompany->company_email }}</div>
                     @endif
                 </div>
             @endif

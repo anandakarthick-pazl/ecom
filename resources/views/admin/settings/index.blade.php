@@ -723,7 +723,7 @@
                                                         </label>
                                                     </div>
 
-                                                    <div class="row">
+                                                    <div class="row" id="thermal-printer-settings" style="display: {{ ($billFormatSettings['thermal_printer_enabled'] ?? false) ? 'block' : 'none' }};">
                                                         <div class="col-md-6">
                                                             <div class="form-group">
                                                                 <label for="thermal_printer_width">
@@ -768,7 +768,7 @@
                                                         </label>
                                                     </div>
 
-                                                    <div class="form-group">
+                                                    <div class="form-group" id="a4-sheet-settings" style="display: {{ ($billFormatSettings['a4_sheet_enabled'] ?? true) ? 'block' : 'none' }};">
                                                         <label for="a4_sheet_orientation">
                                                             <i class="fas fa-orientation"></i> Paper Orientation
                                                         </label>
@@ -896,10 +896,16 @@
                                             <div class="mb-2">
                                                 <strong>Orientation:</strong> {{ ucfirst($billFormatSettings['a4_sheet_orientation'] ?? 'portrait') }}
                                             </div>
-                                            <div>
-                                                <strong>Default Format:</strong> 
-                                                {{ ucfirst(str_replace('_', ' ', $billFormatSettings['default_bill_format'] ?? 'a4_sheet')) }}
+                                            <div class="mb-2">
+                                                <strong>Saved Default:</strong> 
+                                                <span class="badge bg-primary">
+                                                    {{ $billFormatSettings['default_bill_format'] == 'thermal' ? 'Thermal Printer' : 'A4 Sheet PDF' }}
+                                                </span>
                                             </div>
+                                            {{-- <div>
+                                                <strong>Current Selection:</strong> 
+                                                <span id="current-default-display" class="badge bg-info">Loading...</span>
+                                            </div> --}}
                                         </div>
                                     </div>
                                 </div>
@@ -1639,6 +1645,144 @@ Thank you for your payment!
                 --secondary-color: #6b8e23;
                 --sidebar-color: #2d5016;
             }
+            
+            // Manual test function - can be called from browser console
+            window.testBillFormatSettings = function() {
+                debugLog('=== MANUAL TEST STARTED ===');
+                
+                // Test element existence
+                const elements = {
+                    thermal_checkbox: document.getElementById('thermal_printer_enabled'),
+                    a4_checkbox: document.getElementById('a4_sheet_enabled'),
+                    thermal_settings: document.getElementById('thermal-printer-settings'),
+                    a4_settings: document.getElementById('a4-sheet-settings'),
+                    default_format: document.getElementById('default_bill_format'),
+                    form: document.querySelector('form[action*="bill-format"]')
+                };
+                
+                debugLog('Element existence test:', Object.keys(elements).reduce((acc, key) => {
+                    acc[key] = !!elements[key];
+                    return acc;
+                }, {}));
+                
+                // Test current states
+                if (elements.thermal_checkbox && elements.a4_checkbox) {
+                    debugLog('Current checkbox states:', {
+                        thermal: elements.thermal_checkbox.checked,
+                        a4: elements.a4_checkbox.checked
+                    });
+                }
+                
+                // Test toggle functions
+                try {
+                    debugLog('Testing toggle functions...');
+                    toggleThermalPrinterSettings();
+                    toggleA4SheetSettings();
+                    updateDefaultFormatOptions();
+                    debugLog('Toggle functions executed successfully');
+                } catch (error) {
+                    debugLog('ERROR in toggle functions:', error);
+                }
+                
+                // Test event listeners
+                debugLog('Re-setting up event listeners...');
+                setupBillFormatEventListeners();
+                
+                debugLog('=== MANUAL TEST COMPLETED ===');
+                debugLog('You can now try toggling the checkboxes to see if they work.');
+                
+                return 'Test completed. Check console for details.';
+            };
+            
+            // Quick toggle test functions
+            window.toggleThermalTest = function() {
+                const checkbox = document.getElementById('thermal_printer_enabled');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    handleThermalChange();
+                    return 'Thermal toggled to: ' + checkbox.checked;
+                }
+                return 'Thermal checkbox not found';
+            };
+            
+            window.toggleA4Test = function() {
+                const checkbox = document.getElementById('a4_sheet_enabled');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    handleA4Change();
+                    return 'A4 toggled to: ' + checkbox.checked;
+                }
+                return 'A4 checkbox not found';
+            };
+            
+            // Manual test function - can be called from browser console
+            window.testBillFormatSettings = function() {
+                debugLog('=== MANUAL TEST STARTED ===');
+                
+                // Test element existence
+                const elements = {
+                    thermal_checkbox: document.getElementById('thermal_printer_enabled'),
+                    a4_checkbox: document.getElementById('a4_sheet_enabled'),
+                    thermal_settings: document.getElementById('thermal-printer-settings'),
+                    a4_settings: document.getElementById('a4-sheet-settings'),
+                    default_format: document.getElementById('default_bill_format'),
+                    form: document.querySelector('form[action*="bill-format"]')
+                };
+                
+                debugLog('Element existence test:', Object.keys(elements).reduce((acc, key) => {
+                    acc[key] = !!elements[key];
+                    return acc;
+                }, {}));
+                
+                // Test current states
+                if (elements.thermal_checkbox && elements.a4_checkbox) {
+                    debugLog('Current checkbox states:', {
+                        thermal: elements.thermal_checkbox.checked,
+                        a4: elements.a4_checkbox.checked
+                    });
+                }
+                
+                // Test toggle functions
+                try {
+                    debugLog('Testing toggle functions...');
+                    toggleThermalPrinterSettings();
+                    toggleA4SheetSettings();
+                    updateDefaultFormatOptions();
+                    debugLog('Toggle functions executed successfully');
+                } catch (error) {
+                    debugLog('ERROR in toggle functions:', error);
+                }
+                
+                // Test event listeners
+                debugLog('Re-setting up event listeners...');
+                setupBillFormatEventListeners();
+                
+                debugLog('=== MANUAL TEST COMPLETED ===');
+                debugLog('You can now try toggling the checkboxes to see if they work.');
+                
+                return 'Test completed. Check console for details.';
+            };
+            
+            // Quick toggle test functions
+            window.toggleThermalTest = function() {
+                const checkbox = document.getElementById('thermal_printer_enabled');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    handleThermalChange();
+                    return 'Thermal toggled to: ' + checkbox.checked;
+                }
+                return 'Thermal checkbox not found';
+            };
+            
+            window.toggleA4Test = function() {
+                const checkbox = document.getElementById('a4_sheet_enabled');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    handleA4Change();
+                    return 'A4 toggled to: ' + checkbox.checked;
+                }
+                return 'A4 checkbox not found';
+            };
 
             .sidebar {
                 background: var(--sidebar-color) !important;
@@ -1677,6 +1821,15 @@ Thank you for your payment!
 
     @push('scripts')
         <script>
+            // Global debug flag
+            const DEBUG_BILL_FORMAT = true;
+            
+            function debugLog(message, data = null) {
+                if (DEBUG_BILL_FORMAT) {
+                    console.log('[Bill Format Debug]:', message, data);
+                }
+            }
+            
             function toggleDeliverySettings() {
                 const deliveryEnabled = document.getElementById('delivery_enabled').checked;
                 const deliveryContent = document.getElementById('delivery-settings-content');
@@ -1727,6 +1880,366 @@ Thank you for your payment!
                 }
             }
 
+            function toggleThermalPrinterSettings() {
+                debugLog('toggleThermalPrinterSettings called');
+                
+                const thermalCheckbox = document.getElementById('thermal_printer_enabled');
+                const thermalSettings = document.getElementById('thermal-printer-settings');
+                
+                if (!thermalCheckbox) {
+                    debugLog('ERROR: thermal_printer_enabled checkbox not found!');
+                    return;
+                }
+                
+                if (!thermalSettings) {
+                    debugLog('ERROR: thermal-printer-settings container not found!');
+                    return;
+                }
+                
+                const thermalEnabled = thermalCheckbox.checked;
+                debugLog('Thermal printer enabled:', thermalEnabled);
+                
+                if (thermalEnabled) {
+                    thermalSettings.style.display = 'block';
+                    debugLog('Thermal settings shown');
+                } else {
+                    thermalSettings.style.display = 'none';
+                    debugLog('Thermal settings hidden');
+                }
+            }
+
+            function toggleA4SheetSettings() {
+                debugLog('toggleA4SheetSettings called');
+                
+                const a4Checkbox = document.getElementById('a4_sheet_enabled');
+                const a4Settings = document.getElementById('a4-sheet-settings');
+                
+                if (!a4Checkbox) {
+                    debugLog('ERROR: a4_sheet_enabled checkbox not found!');
+                    return;
+                }
+                
+                if (!a4Settings) {
+                    debugLog('ERROR: a4-sheet-settings container not found!');
+                    return;
+                }
+                
+                const a4Enabled = a4Checkbox.checked;
+                debugLog('A4 sheet enabled:', a4Enabled);
+                
+                if (a4Enabled) {
+                    a4Settings.style.display = 'block';
+                    debugLog('A4 settings shown');
+                } else {
+                    a4Settings.style.display = 'none';
+                    debugLog('A4 settings hidden');
+                }
+            }
+
+            function updateDefaultFormatOptions() {
+                debugLog('updateDefaultFormatOptions called');
+                
+                const thermalCheckbox = document.getElementById('thermal_printer_enabled');
+                const a4Checkbox = document.getElementById('a4_sheet_enabled');
+                const defaultFormatSelect = document.getElementById('default_bill_format');
+                
+                if (!thermalCheckbox || !a4Checkbox || !defaultFormatSelect) {
+                    debugLog('ERROR: Required elements not found:', {
+                        thermalCheckbox: !!thermalCheckbox,
+                        a4Checkbox: !!a4Checkbox,
+                        defaultFormatSelect: !!defaultFormatSelect
+                    });
+                    return;
+                }
+                
+                const thermalEnabled = thermalCheckbox.checked;
+                const a4Enabled = a4Checkbox.checked;
+                
+                debugLog('Current format states:', {
+                    thermalEnabled: thermalEnabled,
+                    a4Enabled: a4Enabled
+                });
+                
+                // Store current selection (including server-side value)
+                const currentValue = defaultFormatSelect.value;
+                debugLog('Current default format value:', currentValue);
+                
+                // If both formats are enabled, don't rebuild - just ensure the current selection is valid
+                if (thermalEnabled && a4Enabled) {
+                    debugLog('Both formats enabled - no need to rebuild dropdown');
+                    
+                    // Just validate that current selection is valid
+                    const validOptions = ['thermal', 'a4_sheet'];
+                    if (!validOptions.includes(currentValue)) {
+                        // If somehow invalid, set to first valid option
+                        defaultFormatSelect.value = 'thermal';
+                        debugLog('Invalid selection detected, defaulted to thermal');
+                    }
+                    return;
+                }
+                
+                // Only rebuild if we need to limit options
+                debugLog('Rebuilding dropdown options due to format constraints');
+                
+                // Store the server-side selected value before clearing
+                const originalServerValue = getOriginalServerValue();
+                debugLog('Original server value detected:', originalServerValue);
+                
+                // Clear current options
+                defaultFormatSelect.innerHTML = '';
+                
+                // Track if current selection will be available
+                let selectedValue = currentValue || originalServerValue || '';
+                let selectionMade = false;
+                
+                // Add available options based on enabled formats
+                if (thermalEnabled) {
+                    const thermalOption = document.createElement('option');
+                    thermalOption.value = 'thermal';
+                    thermalOption.textContent = 'Thermal Printer';
+                    
+                    if (selectedValue === 'thermal') {
+                        thermalOption.selected = true;
+                        selectionMade = true;
+                        debugLog('Selected thermal option');
+                    }
+                    
+                    defaultFormatSelect.appendChild(thermalOption);
+                    debugLog('Added thermal option');
+                }
+                
+                if (a4Enabled) {
+                    const a4Option = document.createElement('option');
+                    a4Option.value = 'a4_sheet';
+                    a4Option.textContent = 'A4 Sheet PDF';
+                    
+                    if (selectedValue === 'a4_sheet') {
+                        a4Option.selected = true;
+                        selectionMade = true;
+                        debugLog('Selected A4 option');
+                    }
+                    
+                    defaultFormatSelect.appendChild(a4Option);
+                    debugLog('Added A4 option');
+                }
+                
+                // If no selection was made but we have options, select the first one
+                if (!selectionMade && defaultFormatSelect.options.length > 0) {
+                    defaultFormatSelect.options[0].selected = true;
+                    debugLog('Auto-selected first available option:', defaultFormatSelect.options[0].value);
+                    
+                    // Show notification if we had to change from a valid previous selection
+                    if (selectedValue && selectedValue !== defaultFormatSelect.options[0].value) {
+                        showDefaultFormatChangeNotification(selectedValue, defaultFormatSelect.options[0].value);
+                    }
+                }
+                
+                // If no options available, add a disabled option
+                if (!thermalEnabled && !a4Enabled) {
+                    const disabledOption = document.createElement('option');
+                    disabledOption.value = '';
+                    disabledOption.textContent = 'Please enable at least one format';
+                    disabledOption.disabled = true;
+                    disabledOption.selected = true;
+                    defaultFormatSelect.appendChild(disabledOption);
+                    
+                    debugLog('Added disabled option - no formats enabled');
+                }
+                
+                // Update the visual state of the dropdown
+                if (defaultFormatSelect.options.length === 1 && !thermalEnabled && !a4Enabled) {
+                    defaultFormatSelect.style.color = '#6c757d';
+                    defaultFormatSelect.style.fontStyle = 'italic';
+                } else {
+                    defaultFormatSelect.style.color = '';
+                    defaultFormatSelect.style.fontStyle = '';
+                }
+                
+                debugLog('Default format options updated successfully:', {
+                    thermalEnabled: thermalEnabled,
+                    a4Enabled: a4Enabled,
+                    originalValue: selectedValue,
+                    newValue: defaultFormatSelect.value,
+                    optionsCount: defaultFormatSelect.options.length
+                });
+            }
+            
+            // Function to detect the original server-side selected value
+            function updateCurrentDefaultDisplay() {
+                const defaultFormatSelect = document.getElementById('default_bill_format');
+                const displayElement = document.getElementById('current-default-display');
+                
+                if (!defaultFormatSelect || !displayElement) {
+                    return;
+                }
+                
+                const currentValue = defaultFormatSelect.value;
+                const formatNames = {
+                    'thermal': 'Thermal Printer',
+                    'a4_sheet': 'A4 Sheet PDF'
+                };
+                
+                const displayText = formatNames[currentValue] || currentValue || 'None';
+                displayElement.textContent = displayText;
+                
+                // Update badge color based on whether it matches the server value
+                const originalValue = window.originalDefaultFormat;
+                if (originalValue && currentValue === originalValue) {
+                    displayElement.className = 'badge bg-success';
+                } else {
+                    displayElement.className = 'badge bg-warning';
+                }
+            }
+            
+            function showDefaultFormatChangeNotification(oldFormat, newFormat) {
+                const formatNames = {
+                    'thermal': 'Thermal Printer',
+                    'a4_sheet': 'A4 Sheet PDF'
+                };
+                
+                debugLog('Showing format change notification:', { oldFormat, newFormat });
+                
+                // Create a temporary notification element
+                const notification = document.createElement('div');
+                notification.className = 'alert alert-info alert-dismissible fade show mt-2';
+                notification.style.fontSize = '0.875rem';
+                notification.innerHTML = `
+                    <i class="fas fa-info-circle"></i>
+                    Default format automatically changed from "${formatNames[oldFormat] || oldFormat}" to "${formatNames[newFormat] || newFormat}" because the previous option was disabled.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                
+                // Insert after the default format field
+                const defaultFormatField = document.getElementById('default_bill_format').closest('.form-group');
+                if (defaultFormatField) {
+                    defaultFormatField.appendChild(notification);
+                    
+                    // Auto-remove after 5 seconds
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.remove();
+                        }
+                    }, 5000);
+                }
+            }
+
+            function validateBillFormatSettings() {
+                debugLog('validateBillFormatSettings called');
+                
+                const thermalCheckbox = document.getElementById('thermal_printer_enabled');
+                const a4Checkbox = document.getElementById('a4_sheet_enabled');
+                
+                if (!thermalCheckbox || !a4Checkbox) {
+                    debugLog('ERROR: Validation checkboxes not found!');
+                    return false;
+                }
+                
+                const thermalEnabled = thermalCheckbox.checked;
+                const a4Enabled = a4Checkbox.checked;
+                
+                debugLog('Validation check:', { thermalEnabled, a4Enabled });
+                
+                if (!thermalEnabled && !a4Enabled) {
+                    alert('Error: At least one bill format must be enabled. Please enable either Thermal Printer or A4 Sheet format.');
+                    debugLog('Validation failed - no formats enabled');
+                    return false;
+                }
+                
+                debugLog('Validation passed');
+                return true;
+            }
+            
+            function setupBillFormatEventListeners() {
+                debugLog('Setting up event listeners');
+                
+                const thermalCheckbox = document.getElementById('thermal_printer_enabled');
+                const a4Checkbox = document.getElementById('a4_sheet_enabled');
+                
+                if (thermalCheckbox) {
+                    // Remove any existing listeners
+                    thermalCheckbox.removeEventListener('change', handleThermalChange);
+                    // Add new listener
+                    thermalCheckbox.addEventListener('change', handleThermalChange);
+                    debugLog('Thermal checkbox listener added');
+                } else {
+                    debugLog('ERROR: Could not find thermal checkbox for event listener');
+                }
+                
+                if (a4Checkbox) {
+                    // Remove any existing listeners
+                    a4Checkbox.removeEventListener('change', handleA4Change);
+                    // Add new listener
+                    a4Checkbox.addEventListener('change', handleA4Change);
+                    debugLog('A4 checkbox listener added');
+                } else {
+                    debugLog('ERROR: Could not find A4 checkbox for event listener');
+                }
+            }
+            
+            function handleThermalChange() {
+                debugLog('Thermal checkbox changed');
+                toggleThermalPrinterSettings();
+                setTimeout(updateDefaultFormatOptions, 50);
+            }
+            
+            function handleA4Change() {
+                debugLog('A4 checkbox changed');
+                toggleA4SheetSettings();
+                setTimeout(updateDefaultFormatOptions, 50);
+            }
+            
+            function initializeBillFormatSettings() {
+                debugLog('Initializing bill format settings...');
+                
+                // Wait for DOM to be fully ready
+                setTimeout(() => {
+                    try {
+                        // FIRST: Capture the original server-side selected value before any modifications
+                        const originalValue = getOriginalServerValue();
+                        debugLog('Captured original server value on initialization:', originalValue);
+                        
+                        // Check if all required elements exist
+                        const requiredElements = {
+                            thermal_checkbox: document.getElementById('thermal_printer_enabled'),
+                            a4_checkbox: document.getElementById('a4_sheet_enabled'),
+                            thermal_settings: document.getElementById('thermal-printer-settings'),
+                            a4_settings: document.getElementById('a4-sheet-settings'),
+                            default_format: document.getElementById('default_bill_format')
+                        };
+                        
+                        debugLog('Required elements check:', Object.keys(requiredElements).reduce((acc, key) => {
+                            acc[key] = !!requiredElements[key];
+                            return acc;
+                        }, {}));
+                        
+                        // Initialize current states (but don't update dropdown yet)
+                        toggleThermalPrinterSettings();
+                        toggleA4SheetSettings();
+                        
+                        // Only update dropdown if format constraints require it
+                        const thermalEnabled = requiredElements.thermal_checkbox ? requiredElements.thermal_checkbox.checked : false;
+                        const a4Enabled = requiredElements.a4_checkbox ? requiredElements.a4_checkbox.checked : true;
+                        
+                        // If both formats are enabled, preserve the server selection completely
+                        if (thermalEnabled && a4Enabled) {
+                            debugLog('Both formats enabled - preserving server selection:', originalValue);
+                            // Don't call updateDefaultFormatOptions() to preserve server value
+                        } else {
+                            debugLog('Format constraints detected - updating dropdown');
+                            updateDefaultFormatOptions();
+                        }
+                        
+                        // Set up event listeners
+                        setupBillFormatEventListeners();
+                        
+                        debugLog('Bill format settings initialized successfully!');
+                        
+                    } catch (error) {
+                        debugLog('ERROR during initialization:', error);
+                    }
+                }, 200);
+            }
+
             // Convert single braces to double braces for WhatsApp templates
             function convertTemplatePlaceholders() {
                 const templateTextareas = [
@@ -1750,10 +2263,52 @@ Thank you for your payment!
 
             // Initialize toggles on page load
             document.addEventListener('DOMContentLoaded', function() {
-                toggleDeliverySettings();
-                toggleFreeDelivery();
-                toggleMinOrderValidation();
-                toggleAnimationSettings();
+                debugLog('DOM Content Loaded - Starting initialization');
+                
+                try {
+                    // Initialize other settings first
+                    toggleDeliverySettings();
+                    toggleFreeDelivery();
+                    toggleMinOrderValidation();
+                    toggleAnimationSettings();
+                    
+                    // Initialize bill format settings with enhanced debugging
+                    initializeBillFormatSettings();
+                    
+                    // Add enhanced form validation for bill format settings
+                    setTimeout(() => {
+                        const billFormatForm = document.querySelector('form[action*="bill-format"]');
+                        if (billFormatForm) {
+                            debugLog('Bill format form found, adding validation');
+                            
+                            billFormatForm.addEventListener('submit', function(e) {
+                                debugLog('Form submission attempted');
+                                
+                                if (!validateBillFormatSettings()) {
+                                    debugLog('Form validation failed, preventing submission');
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    return false;
+                                }
+                                
+                                debugLog('Form validation passed, allowing submission');
+                                
+                                // Show loading state
+                                const submitButton = billFormatForm.querySelector('button[type="submit"]');
+                                if (submitButton) {
+                                    submitButton.disabled = true;
+                                    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                                }
+                            });
+                        } else {
+                            debugLog('WARNING: Bill format form not found!');
+                        }
+                    }, 300);
+                    
+                } catch (error) {
+                    debugLog('ERROR in DOMContentLoaded:', error);
+                }
+                
                 // convertTemplatePlaceholders(); // Disabled to prevent template corruption
             });
 
@@ -1761,6 +2316,73 @@ Thank you for your payment!
             // document.querySelector('form[action*="whatsapp-templates"]')?.addEventListener('submit', function() {
             //     convertTemplatePlaceholders();
             // });
+            
+            // Global debugging function - accessible from browser console
+            window.debugBillFormatSettings = function() {
+                console.log('\n=== BILL FORMAT SETTINGS DEBUG ===');
+                
+                const thermal = document.getElementById('thermal_printer_enabled');
+                const a4 = document.getElementById('a4_sheet_enabled');
+                const defaultFormat = document.getElementById('default_bill_format');
+                const form = document.querySelector('form[action*="bill-format"]');
+                
+                console.log('✅ Elements Found:', {
+                    'Thermal Checkbox': !!thermal,
+                    'A4 Checkbox': !!a4,
+                    'Default Format Dropdown': !!defaultFormat,
+                    'Form': !!form
+                });
+                
+                if (thermal && a4 && defaultFormat) {
+                    console.log('✅ Current States:', {
+                        'Thermal Enabled': thermal.checked,
+                        'A4 Enabled': a4.checked,
+                        'Default Format Value': defaultFormat.value,
+                        'Default Format Text': defaultFormat.options[defaultFormat.selectedIndex] ? defaultFormat.options[defaultFormat.selectedIndex].text : 'N/A',
+                        'Available Options': Array.from(defaultFormat.options).map(opt => ({ value: opt.value, text: opt.text, selected: opt.selected }))
+                    });
+                    
+                    console.log('🔍 Server Value Info:', {
+                        'Original Server Value': window.originalDefaultFormat || 'Not captured',
+                        'Current Selection': defaultFormat.value,
+                        'Values Match': (window.originalDefaultFormat === defaultFormat.value)
+                    });
+                }
+                
+                console.log('\n🔧 Manual Test Commands:');
+                console.log('- testBillFormatSettings() - Run full test');
+                console.log('- toggleThermalTest() - Toggle thermal setting');
+                console.log('- toggleA4Test() - Toggle A4 setting');
+                console.log('- fixDefaultFormat() - Reset dropdown to server value');
+                console.log('\n================================\n');
+                
+                return 'Debug info displayed in console above.';
+            };
+            
+            // Function to manually fix the default format dropdown
+            window.fixDefaultFormat = function() {
+                const defaultFormatSelect = document.getElementById('default_bill_format');
+                const originalValue = window.originalDefaultFormat;
+                
+                if (!defaultFormatSelect) {
+                    return 'Default format dropdown not found';
+                }
+                
+                if (!originalValue) {
+                    return 'Original server value not captured';
+                }
+                
+                // Find the option with the original value
+                for (let option of defaultFormatSelect.options) {
+                    if (option.value === originalValue) {
+                        option.selected = true;
+                        debugLog('Manually restored default format to:', originalValue);
+                        return `Default format restored to: ${option.text}`;
+                    }
+                }
+                
+                return `Original value "${originalValue}" not found in current options`;
+            };
         </script>
     @endpush
 @endsection

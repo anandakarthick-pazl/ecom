@@ -114,15 +114,17 @@ class AppSetting extends Model
     public static function getGroup($group)
     {
         $tenantId = static::getCurrentTenantId();
+        
         $cacheKey = "settings:group:{$tenantId}:{$group}";
         
-        return Cache::remember($cacheKey, 3600, function () use ($group, $tenantId) {
+        
+        // return Cache::remember($cacheKey, 3600, function () use ($group, $tenantId) {
             $query = self::where('group', $group);
             if ($tenantId) {
                 $query->where('company_id', $tenantId);
             }
             return $query->get()->pluck('value', 'key')->toArray();
-        });
+        // });
     }
 
     /**

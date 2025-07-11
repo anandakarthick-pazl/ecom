@@ -255,11 +255,18 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
         Route::get('/sales/{sale}/download-bill', [PosController::class, 'downloadBill'])->name('download-bill');
         Route::get('/sales/{sale}/download-bill-debug', [PosController::class, 'downloadBillDebug'])->name('download-bill-debug');
         Route::get('/sales/{sale}/view-bill-debug', [PosController::class, 'viewBillDebug'])->name('view-bill-debug');
+        Route::get('/sales/{sale}/debug-logo', [PosController::class, 'debugCompanyLogo'])->name('debug-logo');
+        Route::get('/sales/{sale}/test-logo', [PosController::class, 'testLogoDisplay'])->name('test-logo');
         Route::get('/sales/{sale}/bill-formats', [PosController::class, 'getBillFormats'])->name('bill-formats');
         Route::post('/sales/{sale}/refund', [PosController::class, 'refund'])->name('refund');
         Route::get('/products/search', [PosController::class, 'searchProducts'])->name('products.search');
         Route::get('/products/{product}', [PosController::class, 'getProduct'])->name('products.get');
         Route::get('/summary/daily', [PosController::class, 'dailySummary'])->name('summary.daily');
+        
+        // Multiple receipts functionality
+        Route::post('/download-multiple-receipts', [PosController::class, 'downloadMultipleReceipts'])->name('download-multiple-receipts');
+        Route::get('/multi-receipt-sales', [PosController::class, 'getMultiReceiptSales'])->name('multi-receipt-sales');
+        Route::post('/download-receipts-by-date', [PosController::class, 'downloadReceiptsByDateRange'])->name('download-receipts-by-date');
     });
     
     // Inventory Management
@@ -561,6 +568,61 @@ if (app()->environment('local')) {
 // Include debug routes in development
 if (config('app.debug')) {
     require __DIR__ . '/debug.php';
+    
+    // Debug routes for PDF and company data (remove in production)
+    Route::prefix('debug/pos')->name('debug.pos.')->middleware(['auth'])->group(function () {
+        Route::get('/sales/{sale}/company-data', [\App\Http\Controllers\Admin\PosController::class, 'testCompanyData'])->name('test-company-data');
+        Route::post('/clear-company-cache/{companyId?}', [\App\Http\Controllers\Admin\PosController::class, 'clearCompanyCache'])->name('clear-company-cache');
+        Route::get('/sales/{sale}/test-pdf', [\App\Http\Controllers\Admin\PosController::class, 'downloadBillDebug'])->name('test-pdf');
+        Route::get('/sales/{sale}/view-debug', [\App\Http\Controllers\Admin\PosController::class, 'viewBillDebug'])->name('view-debug');
+    });
+    
+    // API endpoints for testing
+    Route::prefix('api/debug')->name('api.debug.')->middleware(['auth'])->group(function () {
+        Route::get('/bill-formats/{companyId}', function($companyId) {
+            try {
+                if (!class_exists('\App\Services\BillPDFService')) {
+                    return response()->json(['error' => 'BillPDFService not available'], 500);
+                }
+                
+                $billService = app(\App\Services\BillPDFService::class);
+                $config = $billService->getBillFormatConfig($companyId);
+                $formats = $billService->getAvailableFormats($companyId);
+                
+                return response()->json([
+                    'success' => true,
+                    'config' => $config,
+                    'formats' => $formats,
+                    'company_id' => $companyId
+                ]);
+            } catch (\Exception $e) {
+                return response()->json(['error' => $e->getMessage()], 500);
+            }
+        })->name('bill-formats');
+        
+        Route::post('/clear-all-caches', function() {
+            try {
+                \Illuminate\Support\Facades\Cache::flush();
+                \App\Models\AppSetting::clearCache();
+                
+                if (class_exists('\App\Services\BillPDFService')) {
+                    \App\Services\BillPDFService::clearCache();
+                }
+                
+                if (function_exists('opcache_reset')) {
+                    opcache_reset();
+                }
+                
+                \Artisan::call('view:clear');
+                \Artisan::call('config:clear');
+                \Artisan::call('cache:clear');
+                
+                return response()->json(['success' => true, 'message' => 'All caches cleared']);
+            } catch (\Exception $e) {
+                return response()->json(['error' => $e->getMessage()], 500);
+            }
+        })->name('clear-all-caches');
+    });
     
     // Temporary test route for storage
     Route::get('/super-admin/storage-test', [\App\Http\Controllers\SuperAdmin\StorageTestController::class, 'index'])

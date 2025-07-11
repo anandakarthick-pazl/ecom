@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class BillPDFService
@@ -35,6 +36,9 @@ class BillPDFService
             
             // Get company settings with caching
             $companySettings = $this->getCompanySettingsCache($order->company_id);
+            
+            // Fix image paths for PDF generation
+            $companySettings = $this->processCompanyImagesForPDF($companySettings);
             
             // Determine format to use based on admin configuration
             $format = $customFormat ?? $this->getConfiguredBillFormat($order->company_id);
@@ -114,6 +118,9 @@ class BillPDFService
             // Get company settings with caching
             $companySettings = $this->getCompanySettingsCache($sale->company_id);
             
+            // Fix image paths for PDF generation
+            $companySettings = $this->processCompanyImagesForPDF($companySettings);
+            
             // Determine format to use based on admin configuration
             $format = $customFormat ?? $this->getConfiguredBillFormat($sale->company_id);
             
@@ -174,6 +181,119 @@ class BillPDFService
                 'error' => $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Process company images for PDF generation
+     * Converts images to base64 data URLs or absolute paths for better PDF compatibility
+     */
+    protected function processCompanyImagesForPDF($companySettings)
+    {
+        if (isset($companySettings['logo']) && !empty($companySettings['logo'])) {
+            $logoPath = $companySettings['logo'];
+            
+            // Try different paths to find the logo
+            $possiblePaths = [
+                public_path('storage/' . $logoPath),
+                storage_path('app/public/' . $logoPath),
+                public_path($logoPath),
+                storage_path('app/' . $logoPath)
+            ];
+            
+            $foundPath = null;
+            foreach ($possiblePaths as $path) {
+                if (File::exists($path) && is_file($path)) {
+                    $foundPath = $path;
+                    break;
+                }
+            }
+            
+            if ($foundPath) {
+                try {
+                    // Get image info
+                    $imageInfo = getimagesize($foundPath);
+                    if ($imageInfo !== false) {
+                        $mimeType = $imageInfo['mime'];
+                        
+                        // Check if image is supported
+                        if (in_array($mimeType, ['image/jpeg', 'image/png', 'image/gif'])) {
+                            // Convert to base64 data URL for better PDF compatibility
+                            $imageData = File::get($foundPath);
+                            $base64 = base64_encode($imageData);
+                            $companySettings['logo_data_url'] = "data:{$mimeType};base64,{$base64}";
+                            $companySettings['logo_absolute_path'] = $foundPath;
+                            
+                            Log::debug('Logo processed for PDF', [
+                                'original_path' => $logoPath,
+                                'found_path' => $foundPath,
+                                'mime_type' => $mimeType,
+                                'size' => $this->formatBytes(strlen($imageData))
+                            ]);
+                        } else {
+                            Log::warning('Unsupported image format for logo', [
+                                'path' => $foundPath,
+                                'mime_type' => $mimeType
+                            ]);
+                            $companySettings['logo'] = null;
+                        }
+                    } else {
+                        Log::warning('Invalid image file for logo', ['path' => $foundPath]);
+                        $companySettings['logo'] = null;
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to process logo image', [
+                        'path' => $foundPath,
+                        'error' => $e->getMessage()
+                    ]);
+                    $companySettings['logo'] = null;
+                }
+            } else {
+                Log::warning('Logo file not found', [
+                    'original_path' => $logoPath,
+                    'searched_paths' => $possiblePaths
+                ]);
+                $companySettings['logo'] = null;
+            }
+        }
+        
+        return $companySettings;
+    }
+
+    /**
+     * Get image helper for Blade templates
+     * Returns the best available image source for PDF generation
+     */
+    public static function getImageForPDF($imagePath, $companySettings = null)
+    {
+        if (empty($imagePath)) {
+            return null;
+        }
+        
+        // If this is a company logo and we have processed data
+        if ($companySettings && isset($companySettings['logo']) && $companySettings['logo'] === $imagePath) {
+            if (isset($companySettings['logo_data_url'])) {
+                return $companySettings['logo_data_url'];
+            }
+            if (isset($companySettings['logo_absolute_path'])) {
+                return $companySettings['logo_absolute_path'];
+            }
+        }
+        
+        // Try to find the image in various locations
+        $possiblePaths = [
+            public_path('storage/' . $imagePath),
+            storage_path('app/public/' . $imagePath),
+            public_path($imagePath),
+            storage_path('app/' . $imagePath)
+        ];
+        
+        foreach ($possiblePaths as $path) {
+            if (File::exists($path) && is_file($path)) {
+                return $path;
+            }
+        }
+        
+        return null;
     }
 
     /**
@@ -238,6 +358,10 @@ class BillPDFService
             
             // Get settings with aggressive caching
             $companySettings = $this->getCompanySettingsCache($sale->company_id);
+            
+            // Process images for PDF
+            $companySettings = $this->processCompanyImagesForPDF($companySettings);
+            
             $format = $customFormat ?? $this->getConfiguredBillFormatCache($sale->company_id);
             
             Log::debug('Fast POS bill generation started', [
@@ -682,6 +806,9 @@ class BillPDFService
             // Use in-memory data structures - no additional DB queries
             $companySettings = $this->getCompanySettingsCache($sale->company_id);
             
+            // Process images for PDF
+            $companySettings = $this->processCompanyImagesForPDF($companySettings);
+            
             Log::debug('Ultra-fast PDF generation started', [
                 'sale_id' => $sale->id,
                 'format' => $format,
@@ -892,15 +1019,20 @@ class BillPDFService
     public function generateSimplePDF($model, $companyData, $viewName, $paperSize = 'A4')
     {
         try {
+            // Process images for PDF if company data is provided
+            if (is_array($companyData)) {
+                $companyData = $this->processCompanyImagesForPDF($companyData);
+            }
+            
             // Prepare view data
             $viewData = [];
             
             if ($model instanceof PosSale) {
                 $viewData['sale'] = $model;
-                $viewData['globalCompany'] = $companyData;
+                $viewData['globalCompany'] = is_object($companyData) ? $companyData : (object)$companyData;
             } elseif ($model instanceof Order) {
                 $viewData['order'] = $model;
-                $viewData['company'] = $companyData;
+                $viewData['company'] = is_object($companyData) ? $companyData : (object)$companyData;
             } else {
                 throw new \Exception('Unsupported model type for PDF generation');
             }

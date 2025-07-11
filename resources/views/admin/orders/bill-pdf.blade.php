@@ -242,8 +242,22 @@
         <div class="header">
             <div class="header-content">
                 <div class="company-info">
-                    @if($company['logo'])
-                        <img src="{{ asset('storage/' . $company['logo']) }}" alt="Company Logo" class="company-logo">
+                    @php
+                        $logoSrc = null;
+                        if (!empty($company['logo'])) {
+                            // Use processed image data if available
+                            if (isset($company['logo_data_url'])) {
+                                $logoSrc = $company['logo_data_url'];
+                            } elseif (isset($company['logo_absolute_path'])) {
+                                $logoSrc = $company['logo_absolute_path'];
+                            } else {
+                                // Fallback to helper method
+                                $logoSrc = \App\Services\BillPDFService::getImageForPDF($company['logo'], $company);
+                            }
+                        }
+                    @endphp
+                    @if($logoSrc)
+                        <img src="{{ $logoSrc }}" alt="Company Logo" class="company-logo">
                     @endif
                     <div class="company-name">{{ $company['name'] }}</div>
                     <div class="company-details">

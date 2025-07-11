@@ -90,8 +90,22 @@
     <div class="receipt-container">
         <!-- Header -->
         <div class="header text-center">
-            @if($company['logo'] ?? false)
-                <img src="{{ asset('storage/' . $company['logo']) }}" alt="{{ $company['name'] }}" class="company-logo">
+            @php
+                $logoSrc = null;
+                if (!empty($company['logo'])) {
+                    // Use processed image data if available
+                    if (isset($company['logo_data_url'])) {
+                        $logoSrc = $company['logo_data_url'];
+                    } elseif (isset($company['logo_absolute_path'])) {
+                        $logoSrc = $company['logo_absolute_path'];
+                    } else {
+                        // Fallback to helper method
+                        $logoSrc = \App\Services\BillPDFService::getImageForPDF($company['logo'], $company);
+                    }
+                }
+            @endphp
+            @if($logoSrc)
+                <img src="{{ $logoSrc }}" alt="{{ $company['name'] }}" class="company-logo">
             @else
                 <div style="font-size: 18px;">🌿</div>
             @endif
