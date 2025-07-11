@@ -107,7 +107,7 @@
                             <label for="notes" class="form-label">Order Notes (Optional)</label>
                             <textarea class="form-control @error('notes') is-invalid @enderror" 
                                       id="notes" name="notes" rows="2" 
-                                      placeholder="Any special instructions for delivery...">{{ old('notes') }}</textarea>
+                                      placeholder="Please provide contact details here or Any special instructions for delivery...">{{ old('notes') }}</textarea>
                             @error('notes')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror

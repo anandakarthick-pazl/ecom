@@ -138,7 +138,7 @@
                             @include('partials.product-card-modern', ['product' => $product])
                         @endforeach
                     </div>
-                    @if($enablePagination && isset($products) && method_exists($products, 'appends'))
+                    @if(($frontendPaginationSettings['enabled'] ?? true) && isset($products) && method_exists($products, 'appends'))
                         <div class="pagination-container">
                             {{ $products->appends(['menu' => 'all'])->links() }}
                         </div>
@@ -155,7 +155,7 @@
                             @include('partials.product-card-modern', ['product' => $product, 'offer' => true])
                         @endforeach
                     </div>
-                    @if($enablePagination && isset($products) && method_exists($products, 'appends'))
+                    @if(($frontendPaginationSettings['enabled'] ?? true) && isset($products) && method_exists($products, 'appends'))
                         <div class="pagination-container">
                             {{ $products->appends(['menu' => 'offers'])->links() }}
                         </div>

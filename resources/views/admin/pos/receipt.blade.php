@@ -226,10 +226,7 @@
                 @endif
             </div>
             <br>
-            <div style="font-size: 10px;">
-                Return Policy: Items can be returned within<br>
-                7 days with original receipt
-            </div>
+            
         </div>
         
         <!-- Print Button (only visible on screen) -->

@@ -35,6 +35,10 @@
                                 role="tab">
                                 <i class="fas fa-print"></i> Bill Format Settings
                             </a>
+                            <a class="nav-link" id="v-pills-invoice-numbering-tab" data-bs-toggle="pill" href="#v-pills-invoice-numbering"
+                                role="tab">
+                                <i class="fas fa-hashtag"></i> Invoice Numbering
+                            </a>
                             <a class="nav-link" id="v-pills-notifications-tab" data-bs-toggle="pill"
                                 href="#v-pills-notifications" role="tab">
                                 <i class="fas fa-bell"></i> Notifications
@@ -532,23 +536,32 @@
                                     <div class="alert alert-info">
                                         <i class="fas fa-info-circle"></i>
                                         <strong>Configure pagination settings</strong><br>
-                                        Control how many records are displayed per page in both admin panel and frontend.
+                                        <div class="row mt-2">
+                                            <div class="col-md-6">
+                                                <strong><i class="fas fa-storefront text-primary"></i> Frontend Settings:</strong>
+                                                <small class="d-block">Controls pagination on your customer-facing e-commerce website (product listings, category pages, search results that customers see)</small>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <strong><i class="fas fa-cog text-success"></i> Admin Panel Settings:</strong>
+                                                <small class="d-block">Controls pagination in the admin dashboard (where you manage products, orders, customers, etc.)</small>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <!-- Frontend Pagination Settings -->
-                                    <div class="card bg-light mb-4">
-                                        <div class="card-header">
-                                            <h6 class="mb-0"><i class="fas fa-storefront"></i> Frontend Settings</h6>
+                                    <!-- Frontend Settings (Customer Website) -->
+                                    <div class="card bg-primary bg-opacity-10 border-primary mb-4">
+                                        <div class="card-header bg-primary bg-opacity-25">
+                                            <h6 class="mb-0"><i class="fas fa-storefront"></i> Frontend Settings (Customer Website)</h6>
+                                            <small class="text-muted">These settings control how customers see products on your e-commerce website</small>
                                         </div>
                                         <div class="card-body">
                                             <div class="form-check form-switch mb-3">
                                                 <input class="form-check-input" type="checkbox"
                                                     id="frontend_pagination_enabled" name="frontend_pagination_enabled"
-                                                    value="1" checked>
+                                                    value="1" {{ ($paginationSettings['frontend_pagination_enabled'] ?? true) ? 'checked' : '' }}>
                                                 <label class="form-check-label" for="frontend_pagination_enabled">
-                                                    <strong>Enable Frontend Pagination</strong>
-                                                    <br><small class="text-muted">Enable pagination on products and offers
-                                                        pages. If disabled, all items will load at once.</small>
+                                                    <strong>Enable Customer Website Pagination</strong>
+                                                    <br><small class="text-muted">Enable pagination on product listings, category pages, and search results that customers see. If disabled, all products will load at once.</small>
                                                 </label>
                                             </div>
 
@@ -560,36 +573,58 @@
                                                         </label>
                                                         <select class="form-control" id="frontend_records_per_page"
                                                             name="frontend_records_per_page" required>
-                                                            <option value="6">6 Products</option>
-                                                            <option value="9">9 Products</option>
-                                                            <option value="12" selected>12 Products</option>
-                                                            <option value="15">15 Products</option>
-                                                            <option value="18">18 Products</option>
-                                                            <option value="24">24 Products</option>
-                                                            <option value="30">30 Products</option>
+                                                            <option value="6" {{ ($paginationSettings['frontend_records_per_page'] ?? 12) == 6 ? 'selected' : '' }}>6 Products</option>
+                                                            <option value="9" {{ ($paginationSettings['frontend_records_per_page'] ?? 12) == 9 ? 'selected' : '' }}>9 Products</option>
+                                                            <option value="12" {{ ($paginationSettings['frontend_records_per_page'] ?? 12) == 12 ? 'selected' : '' }}>12 Products</option>
+                                                            <option value="15" {{ ($paginationSettings['frontend_records_per_page'] ?? 12) == 15 ? 'selected' : '' }}>15 Products</option>
+                                                            <option value="18" {{ ($paginationSettings['frontend_records_per_page'] ?? 12) == 18 ? 'selected' : '' }}>18 Products</option>
+                                                            <option value="24" {{ ($paginationSettings['frontend_records_per_page'] ?? 12) == 24 ? 'selected' : '' }}>24 Products</option>
+                                                            <option value="30" {{ ($paginationSettings['frontend_records_per_page'] ?? 12) == 30 ? 'selected' : '' }}>30 Products</option>
                                                         </select>
-                                                        <small class="text-muted">Number of products to show per page on
-                                                            frontend</small>
+                                                        <small class="text-muted">Number of products customers see per page on your website</small>
                                                     </div>
                                                 </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label for="frontend_default_sort_order">
+                                                            <i class="fas fa-sort"></i> Default Sort Order *
+                                                        </label>
+                                                        <select class="form-control" id="frontend_default_sort_order"
+                                                            name="frontend_default_sort_order" required>
+                                                            <option value="desc" {{ ($paginationSettings['frontend_default_sort_order'] ?? 'desc') == 'desc' ? 'selected' : '' }}>Newest First</option>
+                                                            <option value="asc" {{ ($paginationSettings['frontend_default_sort_order'] ?? 'desc') == 'asc' ? 'selected' : '' }}>Oldest First</option>
+                                                        </select>
+                                                        <small class="text-muted">Default sorting for customer product listings</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox"
+                                                    id="frontend_load_more_enabled" name="frontend_load_more_enabled"
+                                                    value="1" {{ ($paginationSettings['frontend_load_more_enabled'] ?? false) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="frontend_load_more_enabled">
+                                                    <strong>Enable "Load More" Button</strong>
+                                                    <br><small class="text-muted">Show "Load More" button instead of page numbers for better mobile customer experience</small>
+                                                </label>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- Admin Pagination Settings -->
-                                    <div class="card bg-light mb-4">
-                                        <div class="card-header">
-                                            <h6 class="mb-0"><i class="fas fa-cog"></i> Admin Panel Settings</h6>
+                                    <!-- Admin Panel Settings (Dashboard) -->
+                                    <div class="card bg-success bg-opacity-10 border-success mb-4">
+                                        <div class="card-header bg-success bg-opacity-25">
+                                            <h6 class="mb-0"><i class="fas fa-cog"></i> Admin Panel Settings (Dashboard)</h6>
+                                            <small class="text-muted">These settings control how you see data in the admin dashboard</small>
                                         </div>
                                         <div class="card-body">
                                             <div class="form-check form-switch mb-3">
                                                 <input class="form-check-input" type="checkbox"
                                                     id="admin_pagination_enabled" name="admin_pagination_enabled"
-                                                    value="1" checked>
+                                                    value="1" {{ ($paginationSettings['admin_pagination_enabled'] ?? true) ? 'checked' : '' }}>
                                                 <label class="form-check-label" for="admin_pagination_enabled">
-                                                    <strong>Enable Admin Pagination</strong>
-                                                    <br><small class="text-muted">Enable pagination in admin listings. If
-                                                        disabled, all records will load at once.</small>
+                                                    <strong>Enable Admin Dashboard Pagination</strong>
+                                                    <br><small class="text-muted">Enable pagination in admin listings (products, orders, customers). If disabled, all records will load at once in admin.</small>
                                                 </label>
                                             </div>
 
@@ -601,18 +636,40 @@
                                                         </label>
                                                         <select class="form-control" id="admin_records_per_page"
                                                             name="admin_records_per_page" required>
-                                                            <option value="10">10 Records</option>
-                                                            <option value="15">15 Records</option>
-                                                            <option value="20" selected>20 Records</option>
-                                                            <option value="25">25 Records</option>
-                                                            <option value="30">30 Records</option>
-                                                            <option value="50">50 Records</option>
-                                                            <option value="100">100 Records</option>
+                                                            <option value="10" {{ ($paginationSettings['admin_records_per_page'] ?? 20) == 10 ? 'selected' : '' }}>10 Records</option>
+                                                            <option value="15" {{ ($paginationSettings['admin_records_per_page'] ?? 20) == 15 ? 'selected' : '' }}>15 Records</option>
+                                                            <option value="20" {{ ($paginationSettings['admin_records_per_page'] ?? 20) == 20 ? 'selected' : '' }}>20 Records</option>
+                                                            <option value="25" {{ ($paginationSettings['admin_records_per_page'] ?? 20) == 25 ? 'selected' : '' }}>25 Records</option>
+                                                            <option value="30" {{ ($paginationSettings['admin_records_per_page'] ?? 20) == 30 ? 'selected' : '' }}>30 Records</option>
+                                                            <option value="50" {{ ($paginationSettings['admin_records_per_page'] ?? 20) == 50 ? 'selected' : '' }}>50 Records</option>
+                                                            <option value="100" {{ ($paginationSettings['admin_records_per_page'] ?? 20) == 100 ? 'selected' : '' }}>100 Records</option>
                                                         </select>
-                                                        <small class="text-muted">Number of records to show per page in
-                                                            admin listings</small>
+                                                        <small class="text-muted">Number of records you see per page in admin dashboard</small>
                                                     </div>
                                                 </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label for="admin_default_sort_order">
+                                                            <i class="fas fa-sort"></i> Default Sort Order *
+                                                        </label>
+                                                        <select class="form-control" id="admin_default_sort_order"
+                                                            name="admin_default_sort_order" required>
+                                                            <option value="desc" {{ ($paginationSettings['admin_default_sort_order'] ?? 'desc') == 'desc' ? 'selected' : '' }}>Newest First</option>
+                                                            <option value="asc" {{ ($paginationSettings['admin_default_sort_order'] ?? 'desc') == 'asc' ? 'selected' : '' }}>Oldest First</option>
+                                                        </select>
+                                                        <small class="text-muted">Default sorting for admin dashboard listings</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="form-check form-switch mb-3">
+                                                <input class="form-check-input" type="checkbox"
+                                                    id="admin_show_per_page_selector" name="admin_show_per_page_selector"
+                                                    value="1" {{ ($paginationSettings['admin_show_per_page_selector'] ?? true) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="admin_show_per_page_selector">
+                                                    <strong>Show Per-Page Selector in Admin</strong>
+                                                    <br><small class="text-muted">Allow changing records per page in admin dashboard listings</small>
+                                                </label>
                                             </div>
                                         </div>
                                     </div>
@@ -641,43 +698,63 @@
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <h6><i class="fas fa-storefront"></i> Frontend:</h6>
+                                        <h6><i class="fas fa-storefront"></i> Customer Website (Frontend):</h6>
                                         <div class="bg-light p-3 rounded">
                                             <div class="mb-2">
-                                                <strong>Status:</strong>
-                                                <span class="badge bg-success">
-                                                    Enabled
-                                                </span>
+                                                <strong>Pagination Status:</strong>
+                                                @if($paginationSettings['frontend_pagination_enabled'] ?? true)
+                                                    <span class="badge bg-success">Enabled</span>
+                                                @else
+                                                    <span class="badge bg-secondary">Disabled</span>
+                                                @endif
                                             </div>
                                             <div class="mb-2">
-                                                <strong>Products per page:</strong> 12
+                                                <strong>Products per page:</strong> {{ $paginationSettings['frontend_records_per_page'] ?? 12 }}
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong>Sort order:</strong> {{ ($paginationSettings['frontend_default_sort_order'] ?? 'desc') == 'desc' ? 'Newest First' : 'Oldest First' }}
                                             </div>
                                             <div>
-                                                <strong>Behavior:</strong>
-                                                <span class="text-primary">
-                                                    Paginated with AJAX filtering
-                                                </span>
+                                                <strong>Load More Button:</strong>
+                                                @if($paginationSettings['frontend_load_more_enabled'] ?? false)
+                                                    <span class="badge bg-info">Enabled</span>
+                                                @else
+                                                    <span class="badge bg-secondary">Page Numbers</span>
+                                                @endif
+                                            </div>
+                                            <div class="mt-2">
+                                                <small class="text-muted"><i class="fas fa-info-circle"></i> Controls what customers see on your website</small>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div class="col-md-6">
-                                        <h6><i class="fas fa-cog"></i> Admin Panel:</h6>
+                                        <h6><i class="fas fa-cog"></i> Admin Dashboard (Backend):</h6>
                                         <div class="bg-light p-3 rounded">
                                             <div class="mb-2">
-                                                <strong>Status:</strong>
-                                                <span class="badge bg-success">
-                                                    Enabled
-                                                </span>
+                                                <strong>Pagination Status:</strong>
+                                                @if($paginationSettings['admin_pagination_enabled'] ?? true)
+                                                    <span class="badge bg-success">Enabled</span>
+                                                @else
+                                                    <span class="badge bg-secondary">Disabled</span>
+                                                @endif
                                             </div>
                                             <div class="mb-2">
-                                                <strong>Records per page:</strong> 20
+                                                <strong>Records per page:</strong> {{ $paginationSettings['admin_records_per_page'] ?? 20 }}
+                                            </div>
+                                            <div class="mb-2">
+                                                <strong>Sort order:</strong> {{ ($paginationSettings['admin_default_sort_order'] ?? 'desc') == 'desc' ? 'Newest First' : 'Oldest First' }}
                                             </div>
                                             <div>
-                                                <strong>Behavior:</strong>
-                                                <span class="text-primary">
-                                                    Paginated listings
-                                                </span>
+                                                <strong>Per-page selector:</strong>
+                                                @if($paginationSettings['admin_show_per_page_selector'] ?? true)
+                                                    <span class="badge bg-info">Enabled</span>
+                                                @else
+                                                    <span class="badge bg-secondary">Disabled</span>
+                                                @endif
+                                            </div>
+                                            <div class="mt-2">
+                                                <small class="text-muted"><i class="fas fa-info-circle"></i> Controls what you see in admin dashboard</small>
                                             </div>
                                         </div>
                                     </div>
@@ -906,6 +983,345 @@
                                                 <strong>Current Selection:</strong> 
                                                 <span id="current-default-display" class="badge bg-info">Loading...</span>
                                             </div> --}}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Numbering Settings -->
+                    <div class="tab-pane fade" id="v-pills-invoice-numbering" role="tabpanel">
+                        <div class="card shadow">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">
+                                    <i class="fas fa-hashtag"></i> Invoice Numbering Configuration
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <form action="{{ route('admin.settings.invoice-numbering') }}" method="POST">
+                                    @csrf
+
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        <strong>Configure automatic invoice numbering</strong><br>
+                                        Set up custom invoice number formats for both online orders and POS sales. Both formats support prefixes, separators, sequence numbers, and date components.
+                                    </div>
+
+                                    <!-- Preview Section -->
+                                    <div class="card bg-light mb-4">
+                                        <div class="card-header">
+                                            <h6 class="mb-0"><i class="fas fa-eye"></i> Live Preview</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <h6 class="text-primary">Next Online Order Invoice:</h6>
+                                                    <div class="bg-white p-3 border rounded">
+                                                        <code id="order-invoice-preview" class="text-success fs-5">
+                                                            {{ $invoiceNumberingSettings['order_invoice_prefix'] ?? 'ORD' }}-{{ date('Y') }}-{{ str_pad('1', $invoiceNumberingSettings['order_invoice_digits'] ?? 5, '0', STR_PAD_LEFT) }}
+                                                        </code>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6 class="text-primary">Next POS Sale Invoice:</h6>
+                                                    <div class="bg-white p-3 border rounded">
+                                                        <code id="pos-invoice-preview" class="text-success fs-5">
+                                                            {{ $invoiceNumberingSettings['pos_invoice_prefix'] ?? 'POS' }}-{{ date('Y') }}-{{ str_pad('1', $invoiceNumberingSettings['pos_invoice_digits'] ?? 4, '0', STR_PAD_LEFT) }}
+                                                        </code>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3 text-center">
+                                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="updatePreviews()">
+                                                    <i class="fas fa-sync"></i> Update Preview
+                                                </button>
+                                                <button type="button" class="btn btn-outline-info btn-sm" onclick="fetchServerPreviews()">
+                                                    <i class="fas fa-server"></i> Get Actual Next Numbers
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Online Order Invoice Settings -->
+                                    <div class="card bg-light mb-4">
+                                        <div class="card-header">
+                                            <h6 class="mb-0"><i class="fas fa-shopping-cart"></i> Online Order Invoice Format</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="order_invoice_prefix">
+                                                            <i class="fas fa-tag"></i> Prefix *
+                                                        </label>
+                                                        <input type="text" class="form-control" id="order_invoice_prefix"
+                                                            name="order_invoice_prefix" 
+                                                            value="{{ $invoiceNumberingSettings['order_invoice_prefix'] ?? 'ORD' }}"
+                                                            placeholder="ORD" maxlength="10" required
+                                                            pattern="[A-Z0-9]+" title="Only uppercase letters and numbers allowed"
+                                                            onchange="updatePreviews()">
+                                                        <small class="text-muted">Prefix for order invoices (e.g., ORD, ORDER)</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="order_invoice_separator">
+                                                            <i class="fas fa-minus"></i> Separator *
+                                                        </label>
+                                                        <select class="form-control" id="order_invoice_separator" name="order_invoice_separator" onchange="updatePreviews()">
+                                                            <option value="-" {{ ($invoiceNumberingSettings['order_invoice_separator'] ?? '-') == '-' ? 'selected' : '' }}>Dash (-)</option>
+                                                            <option value="_" {{ ($invoiceNumberingSettings['order_invoice_separator'] ?? '-') == '_' ? 'selected' : '' }}>Underscore (_)</option>
+                                                            <option value="/" {{ ($invoiceNumberingSettings['order_invoice_separator'] ?? '-') == '/' ? 'selected' : '' }}>Slash (/)</option>
+                                                            <option value="" {{ ($invoiceNumberingSettings['order_invoice_separator'] ?? '-') == '' ? 'selected' : '' }}>None</option>
+                                                        </select>
+                                                        <small class="text-muted">Character between components</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="order_invoice_digits">
+                                                            <i class="fas fa-sort-numeric-up"></i> Number Digits *
+                                                        </label>
+                                                        <select class="form-control" id="order_invoice_digits" name="order_invoice_digits" onchange="updatePreviews()">
+                                                            <option value="3" {{ ($invoiceNumberingSettings['order_invoice_digits'] ?? 5) == 3 ? 'selected' : '' }}>3 digits (001)</option>
+                                                            <option value="4" {{ ($invoiceNumberingSettings['order_invoice_digits'] ?? 5) == 4 ? 'selected' : '' }}>4 digits (0001)</option>
+                                                            <option value="5" {{ ($invoiceNumberingSettings['order_invoice_digits'] ?? 5) == 5 ? 'selected' : '' }}>5 digits (00001)</option>
+                                                            <option value="6" {{ ($invoiceNumberingSettings['order_invoice_digits'] ?? 5) == 6 ? 'selected' : '' }}>6 digits (000001)</option>
+                                                            <option value="7" {{ ($invoiceNumberingSettings['order_invoice_digits'] ?? 5) == 7 ? 'selected' : '' }}>7 digits (0000001)</option>
+                                                        </select>
+                                                        <small class="text-muted">Number of digits for sequence (with zero padding)</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="order_invoice_include_year"
+                                                            name="order_invoice_include_year" value="1" 
+                                                            {{ ($invoiceNumberingSettings['order_invoice_include_year'] ?? true) ? 'checked' : '' }}
+                                                            onchange="updatePreviews()">
+                                                        <label class="form-check-label" for="order_invoice_include_year">
+                                                            <strong>Include Year</strong>
+                                                            <br><small class="text-muted">Add current year to invoice number</small>
+                                                        </label>
+                                                    </div>
+
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="order_invoice_include_month"
+                                                            name="order_invoice_include_month" value="1" 
+                                                            {{ ($invoiceNumberingSettings['order_invoice_include_month'] ?? false) ? 'checked' : '' }}
+                                                            onchange="updatePreviews()">
+                                                        <label class="form-check-label" for="order_invoice_include_month">
+                                                            <strong>Include Month</strong>
+                                                            <br><small class="text-muted">Add current month to invoice number</small>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="order_invoice_reset_yearly"
+                                                            name="order_invoice_reset_yearly" value="1" 
+                                                            {{ ($invoiceNumberingSettings['order_invoice_reset_yearly'] ?? true) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="order_invoice_reset_yearly">
+                                                            <strong>Reset Yearly</strong>
+                                                            <br><small class="text-muted">Reset sequence to 1 every year</small>
+                                                        </label>
+                                                    </div>
+
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="order_invoice_reset_monthly"
+                                                            name="order_invoice_reset_monthly" value="1" 
+                                                            {{ ($invoiceNumberingSettings['order_invoice_reset_monthly'] ?? false) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="order_invoice_reset_monthly">
+                                                            <strong>Reset Monthly</strong>
+                                                            <br><small class="text-muted">Reset sequence to 1 every month</small>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- POS Sale Invoice Settings -->
+                                    <div class="card bg-light mb-4">
+                                        <div class="card-header">
+                                            <h6 class="mb-0"><i class="fas fa-cash-register"></i> POS Sale Invoice Format</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="pos_invoice_prefix">
+                                                            <i class="fas fa-tag"></i> Prefix *
+                                                        </label>
+                                                        <input type="text" class="form-control" id="pos_invoice_prefix"
+                                                            name="pos_invoice_prefix" 
+                                                            value="{{ $invoiceNumberingSettings['pos_invoice_prefix'] ?? 'POS' }}"
+                                                            placeholder="POS" maxlength="10" required
+                                                            pattern="[A-Z0-9]+" title="Only uppercase letters and numbers allowed"
+                                                            onchange="updatePreviews()">
+                                                        <small class="text-muted">Prefix for POS invoices (e.g., POS, SALE)</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="pos_invoice_separator">
+                                                            <i class="fas fa-minus"></i> Separator *
+                                                        </label>
+                                                        <select class="form-control" id="pos_invoice_separator" name="pos_invoice_separator" onchange="updatePreviews()">
+                                                            <option value="-" {{ ($invoiceNumberingSettings['pos_invoice_separator'] ?? '-') == '-' ? 'selected' : '' }}>Dash (-)</option>
+                                                            <option value="_" {{ ($invoiceNumberingSettings['pos_invoice_separator'] ?? '-') == '_' ? 'selected' : '' }}>Underscore (_)</option>
+                                                            <option value="/" {{ ($invoiceNumberingSettings['pos_invoice_separator'] ?? '-') == '/' ? 'selected' : '' }}>Slash (/)</option>
+                                                            <option value="" {{ ($invoiceNumberingSettings['pos_invoice_separator'] ?? '-') == '' ? 'selected' : '' }}>None</option>
+                                                        </select>
+                                                        <small class="text-muted">Character between components</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="pos_invoice_digits">
+                                                            <i class="fas fa-sort-numeric-up"></i> Number Digits *
+                                                        </label>
+                                                        <select class="form-control" id="pos_invoice_digits" name="pos_invoice_digits" onchange="updatePreviews()">
+                                                            <option value="3" {{ ($invoiceNumberingSettings['pos_invoice_digits'] ?? 4) == 3 ? 'selected' : '' }}>3 digits (001)</option>
+                                                            <option value="4" {{ ($invoiceNumberingSettings['pos_invoice_digits'] ?? 4) == 4 ? 'selected' : '' }}>4 digits (0001)</option>
+                                                            <option value="5" {{ ($invoiceNumberingSettings['pos_invoice_digits'] ?? 4) == 5 ? 'selected' : '' }}>5 digits (00001)</option>
+                                                            <option value="6" {{ ($invoiceNumberingSettings['pos_invoice_digits'] ?? 4) == 6 ? 'selected' : '' }}>6 digits (000001)</option>
+                                                            <option value="7" {{ ($invoiceNumberingSettings['pos_invoice_digits'] ?? 4) == 7 ? 'selected' : '' }}>7 digits (0000001)</option>
+                                                        </select>
+                                                        <small class="text-muted">Number of digits for sequence (with zero padding)</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="pos_invoice_include_year"
+                                                            name="pos_invoice_include_year" value="1" 
+                                                            {{ ($invoiceNumberingSettings['pos_invoice_include_year'] ?? true) ? 'checked' : '' }}
+                                                            onchange="updatePreviews()">
+                                                        <label class="form-check-label" for="pos_invoice_include_year">
+                                                            <strong>Include Year</strong>
+                                                            <br><small class="text-muted">Add current year to invoice number</small>
+                                                        </label>
+                                                    </div>
+
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="pos_invoice_include_month"
+                                                            name="pos_invoice_include_month" value="1" 
+                                                            {{ ($invoiceNumberingSettings['pos_invoice_include_month'] ?? false) ? 'checked' : '' }}
+                                                            onchange="updatePreviews()">
+                                                        <label class="form-check-label" for="pos_invoice_include_month">
+                                                            <strong>Include Month</strong>
+                                                            <br><small class="text-muted">Add current month to invoice number</small>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="pos_invoice_reset_yearly"
+                                                            name="pos_invoice_reset_yearly" value="1" 
+                                                            {{ ($invoiceNumberingSettings['pos_invoice_reset_yearly'] ?? true) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="pos_invoice_reset_yearly">
+                                                            <strong>Reset Yearly</strong>
+                                                            <br><small class="text-muted">Reset sequence to 1 every year</small>
+                                                        </label>
+                                                    </div>
+
+                                                    <div class="form-check form-switch mb-3">
+                                                        <input class="form-check-input" type="checkbox" id="pos_invoice_reset_monthly"
+                                                            name="pos_invoice_reset_monthly" value="1" 
+                                                            {{ ($invoiceNumberingSettings['pos_invoice_reset_monthly'] ?? false) ? 'checked' : '' }}>
+                                                        <label class="form-check-label" for="pos_invoice_reset_monthly">
+                                                            <strong>Reset Monthly</strong>
+                                                            <br><small class="text-muted">Reset sequence to 1 every month</small>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Advanced Options -->
+                                    <div class="card bg-warning bg-opacity-10 border-warning mb-4">
+                                        <div class="card-header bg-warning bg-opacity-25">
+                                            <h6 class="mb-0"><i class="fas fa-tools"></i> Advanced Options</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="alert alert-warning mb-3">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                                <strong>Caution:</strong> These actions will affect existing invoice sequences. Use with care.
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <h6><i class="fas fa-redo"></i> Reset Sequences</h6>
+                                                    <p class="text-muted small">Reset invoice sequences back to 1. This is useful at the beginning of a new year or when reorganizing your numbering system.</p>
+                                                    
+                                                    <button type="button" class="btn btn-outline-warning btn-sm mb-2" onclick="resetSequences('order')">
+                                                        <i class="fas fa-redo"></i> Reset Order Sequences
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-warning btn-sm mb-2" onclick="resetSequences('pos')">
+                                                        <i class="fas fa-redo"></i> Reset POS Sequences
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm mb-2" onclick="resetSequences('')">
+                                                        <i class="fas fa-redo"></i> Reset All Sequences
+                                                    </button>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6><i class="fas fa-info-circle"></i> Current Status</h6>
+                                                    <div id="sequence-status" class="bg-light p-3 rounded">
+                                                        <div class="text-muted">
+                                                            <i class="fas fa-spinner fa-spin"></i> Loading current sequence status...
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save"></i> Save Invoice Numbering Settings
+                                        </button>
+
+                                        <div class="text-muted small">
+                                            <i class="fas fa-lightbulb"></i>
+                                            Changes apply to new orders immediately
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Examples Card -->
+                        <div class="card shadow mt-3">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-success">
+                                    <i class="fas fa-lightbulb"></i> Format Examples
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6><i class="fas fa-shopping-cart"></i> Online Order Examples:</h6>
+                                        <div class="bg-light p-3 rounded">
+                                            <div class="mb-2"><code>ORD-2025-00001</code> <small class="text-muted">(with year)</small></div>
+                                            <div class="mb-2"><code>ORDER_2025_01_0001</code> <small class="text-muted">(with year & month)</small></div>
+                                            <div class="mb-2"><code>INV00001</code> <small class="text-muted">(no separator, no year)</small></div>
+                                            <div class="mb-2"><code>2025/ORD/001</code> <small class="text-muted">(custom format)</small></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6><i class="fas fa-cash-register"></i> POS Sale Examples:</h6>
+                                        <div class="bg-light p-3 rounded">
+                                            <div class="mb-2"><code>POS-2025-0001</code> <small class="text-muted">(with year)</small></div>
+                                            <div class="mb-2"><code>SALE_2025_01_001</code> <small class="text-muted">(with year & month)</small></div>
+                                            <div class="mb-2"><code>R0001</code> <small class="text-muted">(no separator, no year)</small></div>
+                                            <div class="mb-2"><code>2025/POS/001</code> <small class="text-muted">(custom format)</small></div>
                                         </div>
                                     </div>
                                 </div>
@@ -2383,6 +2799,256 @@ Thank you for your payment!
                 
                 return `Original value "${originalValue}" not found in current options`;
             };
+            
+            // Invoice Numbering Functions
+            function updatePreviews() {
+                try {
+                    // Get form values
+                    const orderPrefix = document.getElementById('order_invoice_prefix')?.value || 'ORD';
+                    const orderSeparator = document.getElementById('order_invoice_separator')?.value || '-';
+                    const orderDigits = parseInt(document.getElementById('order_invoice_digits')?.value) || 5;
+                    const orderIncludeYear = document.getElementById('order_invoice_include_year')?.checked || false;
+                    const orderIncludeMonth = document.getElementById('order_invoice_include_month')?.checked || false;
+                    
+                    const posPrefix = document.getElementById('pos_invoice_prefix')?.value || 'POS';
+                    const posSeparator = document.getElementById('pos_invoice_separator')?.value || '-';
+                    const posDigits = parseInt(document.getElementById('pos_invoice_digits')?.value) || 4;
+                    const posIncludeYear = document.getElementById('pos_invoice_include_year')?.checked || false;
+                    const posIncludeMonth = document.getElementById('pos_invoice_include_month')?.checked || false;
+                    
+                    // Generate preview numbers
+                    const currentYear = new Date().getFullYear().toString();
+                    const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+                    
+                    // Build order invoice preview
+                    let orderParts = [orderPrefix];
+                    if (orderIncludeYear) orderParts.push(currentYear);
+                    if (orderIncludeMonth) orderParts.push(currentMonth);
+                    orderParts.push('1'.padStart(orderDigits, '0'));
+                    const orderPreview = orderParts.join(orderSeparator);
+                    
+                    // Build POS invoice preview
+                    let posParts = [posPrefix];
+                    if (posIncludeYear) posParts.push(currentYear);
+                    if (posIncludeMonth) posParts.push(currentMonth);
+                    posParts.push('1'.padStart(posDigits, '0'));
+                    const posPreview = posParts.join(posSeparator);
+                    
+                    // Update preview displays
+                    const orderPreviewEl = document.getElementById('order-invoice-preview');
+                    const posPreviewEl = document.getElementById('pos-invoice-preview');
+                    
+                    if (orderPreviewEl) orderPreviewEl.textContent = orderPreview;
+                    if (posPreviewEl) posPreviewEl.textContent = posPreview;
+                } catch (error) {
+                    console.error('Error updating invoice previews:', error);
+                }
+            }
+            
+            // Fetch actual next invoice numbers from server
+            function fetchServerPreviews() {
+                const button = event?.target;
+                const originalContent = button?.innerHTML;
+                
+                // Show loading state
+                if (button) {
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+                    button.disabled = true;
+                }
+                
+                fetch('{{ route("admin.settings.preview-invoice-numbers") }}', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const orderPreviewEl = document.getElementById('order-invoice-preview');
+                        const posPreviewEl = document.getElementById('pos-invoice-preview');
+                        
+                        if (orderPreviewEl && data.preview?.order?.preview) {
+                            orderPreviewEl.textContent = data.preview.order.preview;
+                        }
+                        if (posPreviewEl && data.preview?.pos?.preview) {
+                            posPreviewEl.textContent = data.preview.pos.preview;
+                        }
+                        
+                        // Update sequence status
+                        updateSequenceStatus(data.preview);
+                        
+                        // Show success message
+                        showToast('success', 'Previews updated with actual next numbers!');
+                    } else {
+                        showToast('error', 'Failed to fetch preview: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching previews:', error);
+                    showToast('error', 'Failed to fetch preview. Please try again.');
+                })
+                .finally(() => {
+                    // Restore button
+                    if (button && originalContent) {
+                        button.innerHTML = originalContent;
+                        button.disabled = false;
+                    }
+                });
+            }
+            
+            // Update sequence status display
+            function updateSequenceStatus(previewData) {
+                const statusDiv = document.getElementById('sequence-status');
+                if (statusDiv && previewData) {
+                    statusDiv.innerHTML = `
+                        <div class="mb-2">
+                            <strong>Order Sequences:</strong>
+                            <br>Next: ${previewData.order?.next_sequence || 'N/A'}
+                            <br>Preview: <code>${previewData.order?.preview || 'N/A'}</code>
+                        </div>
+                        <div>
+                            <strong>POS Sequences:</strong>
+                            <br>Next: ${previewData.pos?.next_sequence || 'N/A'}
+                            <br>Preview: <code>${previewData.pos?.preview || 'N/A'}</code>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Reset invoice sequences
+            function resetSequences(type) {
+                const typeLabel = type ? (type === 'order' ? 'Order' : 'POS') : 'All';
+                
+                if (!confirm(`Are you sure you want to reset ${typeLabel.toLowerCase()} invoice sequences? This will restart numbering from 1.`)) {
+                    return;
+                }
+                
+                const button = event?.target;
+                const originalContent = button?.innerHTML;
+                
+                // Show loading state
+                if (button) {
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+                    button.disabled = true;
+                }
+                
+                // Create form data
+                const formData = new FormData();
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                if (csrfToken) formData.append('_token', csrfToken);
+                formData.append('confirm', '1');
+                if (type) {
+                    formData.append('type', type);
+                }
+                
+                fetch('{{ route("admin.settings.reset-invoice-sequences") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        // Handle redirect response
+                        window.location.href = response.url;
+                        return;
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data) {
+                        if (data.success) {
+                            showToast('success', `${typeLabel} invoice sequences reset successfully!`);
+                            // Refresh previews after reset
+                            setTimeout(() => {
+                                fetchServerPreviews();
+                            }, 500);
+                        } else {
+                            showToast('error', 'Failed to reset sequences: ' + (data.error || 'Unknown error'));
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error resetting sequences:', error);
+                    showToast('error', 'Failed to reset sequences. Please try again.');
+                })
+                .finally(() => {
+                    // Restore button
+                    if (button && originalContent) {
+                        button.innerHTML = originalContent;
+                        button.disabled = false;
+                    }
+                });
+            }
+            
+            // Show toast notification
+            function showToast(type, message) {
+                // Create toast element
+                const toast = document.createElement('div');
+                toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+                toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
+                toast.innerHTML = `
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                document.body.appendChild(toast);
+                
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 5000);
+            }
+            
+            // Add invoice numbering initialization to existing DOMContentLoaded
+            const originalDOMContentLoaded = document.addEventListener;
+            setTimeout(() => {
+                // Update previews on page load if invoice numbering elements exist
+                if (document.getElementById('order_invoice_prefix')) {
+                    updatePreviews();
+                    
+                    // Fetch actual server previews after a delay
+                    setTimeout(() => {
+                        if (document.getElementById('order-invoice-preview')) {
+                            fetchServerPreviews();
+                        }
+                    }, 1000);
+                }
+                
+                // Add form validation for invoice numbering
+                const invoiceForm = document.querySelector('form[action*="invoice-numbering"]');
+                if (invoiceForm) {
+                    invoiceForm.addEventListener('submit', function(e) {
+                        // Validate that prefixes are not empty
+                        const orderPrefix = document.getElementById('order_invoice_prefix')?.value?.trim();
+                        const posPrefix = document.getElementById('pos_invoice_prefix')?.value?.trim();
+                        
+                        if (!orderPrefix || !posPrefix) {
+                            e.preventDefault();
+                            showToast('error', 'Both order and POS prefixes are required.');
+                            return false;
+                        }
+                        
+                        // Show loading state on submit button
+                        const submitButton = invoiceForm.querySelector('button[type="submit"]');
+                        if (submitButton) {
+                            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                            submitButton.disabled = true;
+                        }
+                    });
+                }
+            }, 500);
+            
+            // Make functions global for onclick handlers
+            window.updatePreviews = updatePreviews;
+            window.fetchServerPreviews = fetchServerPreviews;
+            window.resetSequences = resetSequences;
         </script>
     @endpush
 @endsection

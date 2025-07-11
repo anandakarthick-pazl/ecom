@@ -6,6 +6,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
 use App\Services\ThemeService;
+use App\View\Composers\AnimationComposer;
+use App\Helpers\AnimationHelper;
 
 class ThemeServiceProvider extends ServiceProvider
 {
@@ -99,6 +101,9 @@ class ThemeServiceProvider extends ServiceProvider
                 }
             ?>";
         });
+        
+        // Register animation directives
+        $this->registerAnimationDirectives();
     }
 
     /**
@@ -127,5 +132,20 @@ class ThemeServiceProvider extends ServiceProvider
                 }
             }
         });
+        
+        // Share animation settings with frontend views
+        View::composer(['layouts.app', 'home*', 'product*', 'category*', 'cart*', 'checkout*', 'search*'], AnimationComposer::class);
+    }
+    
+    /**
+     * Register animation Blade directives
+     */
+    private function registerAnimationDirectives(): void
+    {
+        $directives = AnimationHelper::getBladeDirectives();
+        
+        foreach ($directives as $name => $callback) {
+            Blade::directive($name, $callback);
+        }
     }
 }

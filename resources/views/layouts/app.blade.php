@@ -524,8 +524,15 @@
     </style>
     
     @stack('styles')
+    
+    {{-- Dynamic Animation Styles --}}
+    @if(isset($animationsEnabled) && $animationsEnabled)
+    <style>
+        {!! $animationCSS ?? '' !!}
+    </style>
+    @endif
 </head>
-<body>
+<body class="{{ $animationClasses ?? '' }}">
     <!-- Modern Navigation -->
     <nav class="navbar navbar-expand-lg fixed-top navbar-modern">
         <div class="container">
@@ -625,6 +632,9 @@
     <main>
         @yield('content')
     </main>
+    
+    {{-- Animation Demo Component --}}
+    @include('components.animation-demo')
 
     <!-- Modern Footer -->
     <footer class="footer-modern py-5">
@@ -699,7 +709,7 @@
                 </div>
                 <div class="col-md-6 text-md-end">
                     <p class="mb-0 text-light opacity-75">
-                        <i class="fas fa-heart text-danger"></i> Made with care for you
+                        Designed by <a href="https://kasoftware.in">KA software</a>
                     </p>
                 </div>
             </div>
@@ -886,6 +896,24 @@
             });
         });
     </script>
+    
+    {{-- Dynamic Animation Scripts --}}
+    @if(isset($animationsEnabled) && $animationsEnabled)
+    <script>
+        {!! $animationJS ?? '' !!}
+        
+        // Trigger success animations on cart operations
+        if (window.showToast) {
+            const originalShowToast = window.showToast;
+            window.showToast = function(message, type = 'success') {
+                originalShowToast(message, type);
+                if (type === 'success' && window.triggerCrackers) {
+                    window.triggerCrackers();
+                }
+            };
+        }
+    </script>
+    @endif
     
     @stack('scripts')
 </body>

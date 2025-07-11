@@ -175,9 +175,9 @@
                                 <a href="{{ route('admin.pos.receipt', $sale) }}" class="btn btn-outline-secondary" title="View Receipt" target="_blank">
                                     <i class="fas fa-receipt"></i>
                                 </a>
-                                <a href="{{ route('admin.pos.download-bill', $sale) }}" class="btn btn-outline-primary" title="Download Bill PDF">
+                                {{-- <a href="{{ route('admin.pos.download-bill', $sale) }}" class="btn btn-outline-primary" title="Download Bill PDF">
                                     <i class="fas fa-download"></i>
-                                </a>
+                                </a> --}}
                                 @if($sale->status === 'completed')
                                     <button type="button" class="btn btn-outline-warning" title="Process Refund" 
                                             onclick="showRefundModal({{ $sale->id }})">

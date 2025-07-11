@@ -119,6 +119,7 @@ Route::middleware(['tenant'])->group(function () {
         Route::delete('/clear', [CartController::class, 'clear'])->name('clear');
         Route::get('/count', [CartController::class, 'count'])->name('count');
         Route::get('/total-quantity', [CartController::class, 'totalQuantity'])->name('total-quantity');
+        Route::get('/summary', [CartController::class, 'summary'])->name('summary');
     });
     
     // Checkout Routes
@@ -311,6 +312,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
         Route::post('/bill-format', [SettingsController::class, 'updateBillFormat'])->name('bill-format');
         Route::post('/whatsapp-templates', [SettingsController::class, 'updateWhatsAppTemplates'])->name('whatsapp-templates');
         Route::post('/animations', [SettingsController::class, 'updateAnimations'])->name('animations');
+        Route::post('/invoice-numbering', [SettingsController::class, 'updateInvoiceNumbering'])->name('invoice-numbering');
+        Route::get('/preview-invoice-numbers', [SettingsController::class, 'previewInvoiceNumbers'])->name('preview-invoice-numbers');
+        Route::post('/reset-invoice-sequences', [SettingsController::class, 'resetInvoiceSequences'])->name('reset-invoice-sequences');
         Route::post('/test-email', [SettingsController::class, 'testEmail'])->name('test-email');
         
         // Profile routes

@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use App\Traits\HasPagination;
 
 class CustomerController extends Controller
 {
+    use HasPagination;
     public function index(Request $request)
     {
         $query = Customer::with('orders');
@@ -25,9 +27,13 @@ class CustomerController extends Controller
             $query->where('city', 'LIKE', "%{$request->city}%");
         }
 
-        $customers = $query->latest()->paginate(20);
+        // Apply admin pagination using the trait
+        $customers = $this->applyAdminPagination($query->latest(), $request, '20');
+        
+        // Get pagination controls data for the view
+        $paginationControls = $this->getPaginationControlsData($request, 'admin');
 
-        return view('admin.customers.index', compact('customers'));
+        return view('admin.customers.index', compact('customers', 'paginationControls'));
     }
 
     public function show(Customer $customer)

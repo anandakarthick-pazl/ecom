@@ -7,10 +7,11 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Traits\DynamicStorage;
+use App\Traits\HasPagination;
 
 class ProductController extends BaseAdminController
 {
-    use DynamicStorage;
+    use DynamicStorage, HasPagination;
     public function index(Request $request)
     {
         $query = Product::with('category');
@@ -49,10 +50,6 @@ class ProductController extends BaseAdminController
             }
         }
 
-        // Get items per page from request or use default
-        $perPage = $request->get('per_page', 20);
-        $perPage = in_array($perPage, [20, 50, 100, 200]) ? $perPage : 20;
-
         // Apply tenant scope
         $query = $this->applyTenantScope($query);
 
@@ -61,13 +58,15 @@ class ProductController extends BaseAdminController
             return $this->exportProducts($query->get());
         }
         
-        // Get paginated results
-        $products = $query->latest()->paginate($perPage);
-        $products->withQueryString();
+        // Get paginated results using dynamic pagination settings
+        $products = $this->applyAdminPagination($query->latest(), $request, '20');
+        
+        // Get pagination controls data for the view
+        $paginationControls = $this->getPaginationControlsData($request, 'admin');
                   
         $categories = Category::active()->orderBy('name')->get();
 
-        return view('admin.products.index', compact('products', 'categories'));
+        return view('admin.products.index', compact('products', 'categories', 'paginationControls'));
     }
 
     public function create()

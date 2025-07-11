@@ -16,10 +16,11 @@
             justify-content: space-between;
             border-bottom: 2px solid #2d5016;
             margin-bottom: 20px;
+            width: 100%
         }
 
         .company-info {
-            width: 50%;
+            width: 30%;
         }
 
         .company-logo {
@@ -34,7 +35,7 @@
         }
 
         .receipt-details {
-            width: 45%;
+            width: 70%;
             text-align: right;
         }
 
@@ -129,8 +130,8 @@
         </div>
 
         <div class="receipt-details">
-            <h3>Receipt</h3>
-            <p><strong>Number:</strong> {{ $sale->invoice_number }}</p>
+            <h3>Invoice Details</h3>
+            <p><strong>InvoiceNumber:</strong> {{ $sale->invoice_number }}</p>
             <p><strong>Date:</strong> {{ $sale->created_at->format('d M, Y') }}</p>
             <p><strong>Time:</strong> {{ $sale->created_at->format('h:i A') }}</p>
             <p><strong>Status:</strong> {{ ucfirst($sale->status) }}</p>

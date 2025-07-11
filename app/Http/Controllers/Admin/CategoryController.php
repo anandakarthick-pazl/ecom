@@ -6,17 +6,34 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Traits\DynamicStorage;
+use App\Traits\HasPagination;
 
 class CategoryController extends BaseAdminController
 {
-    use DynamicStorage;
-    public function index()
+    use DynamicStorage, HasPagination;
+    public function index(Request $request)
     {
-        $categories = Category::with('parent')
-                            ->orderBy('sort_order')
-                            ->paginate(20);
+        $query = Category::with('parent')
+                        ->orderBy('sort_order');
+                        
+        // Apply search filter if provided
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'LIKE', "%{$request->search}%")
+                  ->orWhere('description', 'LIKE', "%{$request->search}%");
+            });
+        }
         
-        return view('admin.categories.index', compact('categories'));
+        // Apply tenant scope
+        $query = $this->applyTenantScope($query);
+        
+        // Get paginated results using dynamic pagination settings
+        $categories = $this->applyAdminPagination($query, $request, '20');
+        
+        // Get pagination controls data for the view
+        $paginationControls = $this->getPaginationControlsData($request, 'admin');
+        
+        return view('admin.categories.index', compact('categories', 'paginationControls'));
     }
 
     public function create()

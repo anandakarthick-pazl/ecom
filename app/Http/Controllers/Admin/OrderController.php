@@ -17,9 +17,11 @@ use App\Models\SuperAdmin\WhatsAppConfig;
 use App\Services\TwilioWhatsAppService;
 use App\Services\BillPDFService;
 use Illuminate\Support\Facades\Log;
+use App\Traits\HasPagination;
 
 class OrderController extends Controller
 {
+    use HasPagination;
     public function index(Request $request)
     {
         $query = Order::with('customer');
@@ -49,9 +51,13 @@ class OrderController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $orders = $query->latest()->paginate(20);
+        // Get paginated results using dynamic pagination settings
+        $orders = $this->applyAdminPagination($query->latest(), $request, '20');
+        
+        // Get pagination controls data for the view
+        $paginationControls = $this->getPaginationControlsData($request, 'admin');
 
-        return view('admin.orders.index', compact('orders'));
+        return view('admin.orders.index', compact('orders', 'paginationControls'));
     }
 
     public function show(Order $order)

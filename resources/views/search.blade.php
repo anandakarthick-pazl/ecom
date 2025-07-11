@@ -7,7 +7,7 @@
     <div class="row">
         <div class="col-12">
             <h2>Search Results for "{{ $query }}"</h2>
-            <p class="text-muted">{{ $enablePagination && method_exists($products, 'total') ? $products->total() : $products->count() }} product(s) found</p>
+            <p class="text-muted">{{ ($frontendPaginationSettings['enabled'] ?? true) && method_exists($products, 'total') ? $products->total() : $products->count() }} product(s) found</p>
         </div>
     </div>
 
@@ -82,7 +82,7 @@
     </div>
 
     <!-- Pagination -->
-    @if($enablePagination && isset($products) && method_exists($products, 'appends'))
+    @if(($frontendPaginationSettings['enabled'] ?? true) && isset($products) && method_exists($products, 'appends'))
     <div class="d-flex justify-content-center mt-4">
         {{ $products->appends(['q' => $query])->links() }}
     </div>

@@ -511,10 +511,7 @@
                 </div>
             @endif
             
-            <div style="margin-top: 6px;">
-                Return Policy: Items can be returned<br>
-                within 7 days with original receipt
-            </div>
+            
             
             <div style="margin-top: 6px; font-size: 7px;">
                 Generated: {{ now()->format('d/m/Y h:i A') }}

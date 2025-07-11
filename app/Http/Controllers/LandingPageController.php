@@ -9,9 +9,11 @@ use App\Models\SuperAdmin\Company;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\DemoRequest;
+use App\Traits\HasPagination;
 
 class LandingPageController extends Controller
 {
+    use HasPagination;
     public function index()
     {
         // Get settings with fallback defaults
@@ -55,21 +57,48 @@ class LandingPageController extends Controller
         ));
     }
 
-    public function themes()
+    public function themes(Request $request)
     {
-        $themes = Theme::active()->paginate(12);
+        $query = Theme::active();
+        
+        // Apply frontend pagination using the trait
+        $themes = $this->applyFrontendPagination($query, $request, '12');
+        
+        // Get frontend pagination settings and controls
+        $frontendPaginationSettings = $this->getFrontendPaginationSettings($request, '12');
+        $frontendPaginationControls = $this->getPaginationControlsData($request, 'frontend');
+        
         $categories = Theme::CATEGORIES;
         
-        return view('landing-page.themes', compact('themes', 'categories'));
+        return view('landing-page.themes', compact(
+            'themes', 
+            'categories', 
+            'frontendPaginationSettings',
+            'frontendPaginationControls'
+        ));
     }
 
-    public function themesByCategory($category)
+    public function themesByCategory($category, Request $request)
     {
-        $themes = Theme::active()->where('category', $category)->paginate(12);
+        $query = Theme::active()->where('category', $category);
+        
+        // Apply frontend pagination using the trait
+        $themes = $this->applyFrontendPagination($query, $request, '12');
+        
+        // Get frontend pagination settings and controls
+        $frontendPaginationSettings = $this->getFrontendPaginationSettings($request, '12');
+        $frontendPaginationControls = $this->getPaginationControlsData($request, 'frontend');
+        
         $categories = Theme::CATEGORIES;
         $currentCategory = $category;
         
-        return view('landing-page.themes', compact('themes', 'categories', 'currentCategory'));
+        return view('landing-page.themes', compact(
+            'themes', 
+            'categories', 
+            'currentCategory',
+            'frontendPaginationSettings',
+            'frontendPaginationControls'
+        ));
     }
 
     public function pricing()

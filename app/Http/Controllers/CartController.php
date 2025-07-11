@@ -27,6 +27,10 @@ class CartController extends Controller
         $cartItems = Cart::getCartItems($this->getSessionId());
         $subtotal = Cart::getCartTotal($this->getSessionId());
         
+        // Get minimum order validation settings
+        $minOrderValidationSettings = \App\Services\DeliveryService::getMinOrderValidationSettings();
+        $minOrderValidation = \App\Services\DeliveryService::validateMinimumOrderAmount($subtotal);
+        
         // If cart is empty and no order success data, show helpful message
         if ($cartItems->isEmpty()) {
             // Check if there's a recent order for this session
@@ -44,7 +48,7 @@ class CartController extends Controller
             }
         }
         
-        return view('cart', compact('cartItems', 'subtotal'));
+        return view('cart', compact('cartItems', 'subtotal', 'minOrderValidationSettings', 'minOrderValidation'));
     }
 
     public function add(Request $request)
@@ -89,13 +93,57 @@ class CartController extends Controller
             ]);
         }
 
-        $cartTotal = Cart::getCartTotal($this->getSessionId());
+        // Get complete cart data for Order Summary update
+        $cartItems = Cart::getCartItems($this->getSessionId());
+        $subtotal = Cart::getCartTotal($this->getSessionId());
         $cartCount = Cart::getCartCount($this->getSessionId());
-
+        
+        // Calculate tax amounts with error handling
+        $totalTax = 0;
+        $cgstAmount = 0;
+        $sgstAmount = 0;
+        
+        try {
+            foreach($cartItems as $item) {
+                if ($item->product && method_exists($item->product, 'getTaxAmount')) {
+                    $itemTax = $item->product->getTaxAmount($item->price) * $item->quantity;
+                    $totalTax += $itemTax;
+                    $cgstAmount += ($itemTax / 2);
+                    $sgstAmount += ($itemTax / 2);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error calculating tax amounts in cart update: ' . $e->getMessage());
+            // Use default values if calculation fails
+            $totalTax = 0;
+            $cgstAmount = 0;
+            $sgstAmount = 0;
+        }
+        
+        // Calculate delivery charge
+        $deliveryCharge = $subtotal >= 500 ? 0 : 50;
+        $grandTotal = $subtotal + $totalTax + $deliveryCharge;
+        
+        // Get minimum order validation
+        $minOrderValidationSettings = \App\Services\DeliveryService::getMinOrderValidationSettings();
+        $minOrderValidation = \App\Services\DeliveryService::validateMinimumOrderAmount($grandTotal);
+        
         return response()->json([
             'success' => true,
             'message' => 'Cart updated successfully!',
-            'cart_total' => $cartTotal,
+            'cart_data' => [
+                'subtotal' => $subtotal,
+                'total_tax' => $totalTax,
+                'cgst_amount' => $cgstAmount,
+                'sgst_amount' => $sgstAmount,
+                'delivery_charge' => $deliveryCharge,
+                'grand_total' => $grandTotal,
+                'cart_count' => $cartCount,
+                'min_order_validation' => $minOrderValidation,
+                'min_order_settings' => $minOrderValidationSettings
+            ],
+            // Keep backward compatibility
+            'cart_total' => $subtotal,
             'cart_count' => $cartCount
         ]);
     }
@@ -108,14 +156,58 @@ class CartController extends Controller
 
         Cart::removeFromCart($this->getSessionId(), $request->product_id);
 
+        // Get complete cart data for Order Summary update
+        $cartItems = Cart::getCartItems($this->getSessionId());
+        $subtotal = Cart::getCartTotal($this->getSessionId());
         $cartCount = Cart::getCartCount($this->getSessionId());
-        $cartTotal = Cart::getCartTotal($this->getSessionId());
+        
+        // Calculate tax amounts with error handling
+        $totalTax = 0;
+        $cgstAmount = 0;
+        $sgstAmount = 0;
+        
+        try {
+            foreach($cartItems as $item) {
+                if ($item->product && method_exists($item->product, 'getTaxAmount')) {
+                    $itemTax = $item->product->getTaxAmount($item->price) * $item->quantity;
+                    $totalTax += $itemTax;
+                    $cgstAmount += ($itemTax / 2);
+                    $sgstAmount += ($itemTax / 2);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error calculating tax amounts in cart remove: ' . $e->getMessage());
+            // Use default values if calculation fails
+            $totalTax = 0;
+            $cgstAmount = 0;
+            $sgstAmount = 0;
+        }
+        
+        // Calculate delivery charge
+        $deliveryCharge = $subtotal >= 500 ? 0 : 50;
+        $grandTotal = $subtotal + $totalTax + $deliveryCharge;
+        
+        // Get minimum order validation
+        $minOrderValidationSettings = \App\Services\DeliveryService::getMinOrderValidationSettings();
+        $minOrderValidation = \App\Services\DeliveryService::validateMinimumOrderAmount($grandTotal);
 
         return response()->json([
             'success' => true,
             'message' => 'Product removed from cart!',
+            'cart_data' => [
+                'subtotal' => $subtotal,
+                'total_tax' => $totalTax,
+                'cgst_amount' => $cgstAmount,
+                'sgst_amount' => $sgstAmount,
+                'delivery_charge' => $deliveryCharge,
+                'grand_total' => $grandTotal,
+                'cart_count' => $cartCount,
+                'min_order_validation' => $minOrderValidation,
+                'min_order_settings' => $minOrderValidationSettings
+            ],
+            // Keep backward compatibility
             'cart_count' => $cartCount,
-            'cart_total' => $cartTotal
+            'cart_total' => $subtotal
         ]);
     }
 
@@ -144,6 +236,74 @@ class CartController extends Controller
         
         return response()->json([
             'total_quantity' => $totalQuantity
+        ]);
+    }
+    
+    public function summary()
+    {
+        $cartItems = Cart::getCartItems($this->getSessionId());
+        $subtotal = Cart::getCartTotal($this->getSessionId());
+        $cartCount = Cart::getCartCount($this->getSessionId());
+        
+        // Calculate tax amounts with error handling
+        $totalTax = 0;
+        $cgstAmount = 0;
+        $sgstAmount = 0;
+        $items = [];
+        
+        try {
+            foreach($cartItems as $item) {
+                if ($item->product && method_exists($item->product, 'getTaxAmount')) {
+                    $itemTax = $item->product->getTaxAmount($item->price) * $item->quantity;
+                    $totalTax += $itemTax;
+                    $cgstAmount += ($itemTax / 2);
+                    $sgstAmount += ($itemTax / 2);
+                    
+                    // Add item details
+                    $items[] = [
+                        'id' => $item->product_id,
+                        'name' => $item->product->name,
+                        'quantity' => $item->quantity,
+                        'price' => $item->price,
+                        'tax_percentage' => $item->product->tax_percentage,
+                        'tax_amount' => $itemTax,
+                        'subtotal' => $item->price * $item->quantity,
+                        'total' => $item->total
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error calculating tax amounts in cart summary: ' . $e->getMessage());
+            // Use default values if calculation fails
+            $totalTax = 0;
+            $cgstAmount = 0;
+            $sgstAmount = 0;
+        }
+        
+        // Calculate delivery charge
+        $deliveryCharge = $subtotal >= 500 ? 0 : 50;
+        $grandTotal = $subtotal + $totalTax + $deliveryCharge;
+        
+        // Get minimum order validation
+        $minOrderValidationSettings = \App\Services\DeliveryService::getMinOrderValidationSettings();
+        $minOrderValidation = \App\Services\DeliveryService::validateMinimumOrderAmount($grandTotal);
+        
+        return response()->json([
+            'success' => true,
+            'cart_count' => $cartCount,
+            'cart_data' => [
+                'items' => $items,
+                'subtotal' => $subtotal,
+                'total_tax' => $totalTax,
+                'cgst_amount' => $cgstAmount,
+                'sgst_amount' => $sgstAmount,
+                'delivery_charge' => $deliveryCharge,
+                'payment_charge' => 0, // Default payment charge
+                'grand_total' => $grandTotal,
+                'cart_count' => $cartCount,
+                'min_order_validation' => $minOrderValidation,
+                'min_order_settings' => $minOrderValidationSettings
+            ]
         ]);
     }
 }

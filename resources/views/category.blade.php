@@ -92,7 +92,7 @@
     </div>
 
     <!-- Pagination -->
-    @if($enablePagination && isset($products) && method_exists($products, 'appends'))
+    @if(($frontendPaginationSettings['enabled'] ?? true) && isset($products) && method_exists($products, 'appends'))
     <div class="d-flex justify-content-center mt-4">
         {{ $products->links() }}
     </div>

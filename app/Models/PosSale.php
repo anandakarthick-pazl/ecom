@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenantEnhanced;
+use App\Services\InvoiceNumberService;
 
 class PosSale extends Model
 {
@@ -37,7 +38,17 @@ class PosSale extends Model
         
         static::creating(function ($sale) {
             if (!$sale->invoice_number) {
-                $sale->invoice_number = 'INV' . date('Ymd') . str_pad(mt_rand(1, 999), 3, '0', STR_PAD_LEFT);
+                try {
+                    $invoiceService = new InvoiceNumberService();
+                    $sale->invoice_number = $invoiceService->generatePosInvoiceNumber($sale->company_id);
+                } catch (\Exception $e) {
+                    \Log::error('Failed to generate POS invoice number, using fallback', [
+                        'error' => $e->getMessage(),
+                        'company_id' => $sale->company_id
+                    ]);
+                    // Fallback to original random generation
+                    $sale->invoice_number = 'INV' . date('Ymd') . str_pad(mt_rand(1, 999), 3, '0', STR_PAD_LEFT);
+                }
             }
         });
     }

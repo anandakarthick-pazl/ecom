@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenantEnhanced;
+use App\Services\InvoiceNumberService;
 
 class Order extends Model
 {
@@ -38,7 +39,17 @@ class Order extends Model
         
         static::creating(function ($order) {
             if (!$order->order_number) {
-                $order->order_number = 'HB' . date('Y') . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
+                try {
+                    $invoiceService = new InvoiceNumberService();
+                    $order->order_number = $invoiceService->generateOrderInvoiceNumber($order->company_id);
+                } catch (\Exception $e) {
+                    \Log::error('Failed to generate order invoice number, using fallback', [
+                        'error' => $e->getMessage(),
+                        'company_id' => $order->company_id
+                    ]);
+                    // Fallback to original random generation
+                    $order->order_number = 'HB' . date('Y') . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
+                }
             }
         });
     }

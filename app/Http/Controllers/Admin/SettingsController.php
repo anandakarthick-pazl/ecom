@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AppSetting;
 use App\Models\User;
 use App\Models\SuperAdmin\Company;
+use App\Services\InvoiceNumberService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -38,9 +39,39 @@ class SettingsController extends Controller
         $inventorySettings = AppSetting::getGroup('inventory');
         $deliverySettings = AppSetting::getGroup('delivery');
         $paginationSettings = AppSetting::getGroup('pagination');
+        
+        // Ensure pagination settings have proper default values
+        $paginationDefaults = [
+            'frontend_pagination_enabled' => true,
+            'admin_pagination_enabled' => true,
+            'frontend_records_per_page' => 12,
+            'admin_records_per_page' => 20,
+            'frontend_load_more_enabled' => false,
+            'admin_show_per_page_selector' => true,
+            'admin_default_sort_order' => 'desc',
+            'frontend_default_sort_order' => 'desc',
+        ];
+        
+        foreach ($paginationDefaults as $key => $defaultValue) {
+            if (!isset($paginationSettings[$key])) {
+                $paginationSettings[$key] = $defaultValue;
+            } else {
+                // Ensure proper type conversion for boolean settings
+                if (in_array($key, ['frontend_pagination_enabled', 'admin_pagination_enabled', 'frontend_load_more_enabled', 'admin_show_per_page_selector'])) {
+                    if (is_string($paginationSettings[$key])) {
+                        $paginationSettings[$key] = filter_var($paginationSettings[$key], FILTER_VALIDATE_BOOLEAN);
+                    } else {
+                        $paginationSettings[$key] = (bool) $paginationSettings[$key];
+                    }
+                } elseif (in_array($key, ['frontend_records_per_page', 'admin_records_per_page'])) {
+                    $paginationSettings[$key] = (int) $paginationSettings[$key];
+                }
+            }
+        }
         $whatsappSettings = AppSetting::getGroup('whatsapp');
         $billFormatSettings = AppSetting::getGroup('bill_format');
         $animationSettings = AppSetting::getGroup('animations');
+        $invoiceNumberingSettings = AppSetting::getGroup('invoice_numbering');
         
         // Merge theme settings
         $appearanceSettings = array_merge($appearanceSettings, $themeSettings);
@@ -116,6 +147,41 @@ class SettingsController extends Controller
             }
         }
         
+        // Ensure invoice numbering settings have proper default values
+        $invoiceNumberingDefaults = [
+            'order_invoice_prefix' => 'ORD',
+            'order_invoice_separator' => '-',
+            'order_invoice_digits' => 5,
+            'order_invoice_include_year' => true,
+            'order_invoice_include_month' => false,
+            'order_invoice_reset_yearly' => true,
+            'order_invoice_reset_monthly' => false,
+            'pos_invoice_prefix' => 'POS',
+            'pos_invoice_separator' => '-',
+            'pos_invoice_digits' => 4,
+            'pos_invoice_include_year' => true,
+            'pos_invoice_include_month' => false,
+            'pos_invoice_reset_yearly' => true,
+            'pos_invoice_reset_monthly' => false
+        ];
+        
+        foreach ($invoiceNumberingDefaults as $key => $defaultValue) {
+            if (!isset($invoiceNumberingSettings[$key])) {
+                $invoiceNumberingSettings[$key] = $defaultValue;
+            } else {
+                // Ensure proper type conversion
+                if (str_contains($key, '_digits')) {
+                    $invoiceNumberingSettings[$key] = (int) $invoiceNumberingSettings[$key];
+                } elseif (str_contains($key, '_include_') || str_contains($key, '_reset_')) {
+                    if (is_string($invoiceNumberingSettings[$key])) {
+                        $invoiceNumberingSettings[$key] = filter_var($invoiceNumberingSettings[$key], FILTER_VALIDATE_BOOLEAN);
+                    } else {
+                        $invoiceNumberingSettings[$key] = (bool) $invoiceNumberingSettings[$key];
+                    }
+                }
+            }
+        }
+        
         // Check if WhatsApp is configured (you can enhance this to check Super Admin settings)
         $whatsappConfigured = !empty($whatsappSettings); // Basic check
         $whatsappEnabled = $notificationSettings['whatsapp_notifications'] && $whatsappConfigured;
@@ -139,6 +205,7 @@ class SettingsController extends Controller
             'whatsappSettings',
             'billFormatSettings',
             'animationSettings',
+            'invoiceNumberingSettings',
             'whatsappConfigured',
             'whatsappEnabled'
         ));
@@ -279,6 +346,9 @@ class SettingsController extends Controller
 
         AppSetting::clearCache();
         
+        // Clear animation cache
+        \App\Services\AnimationService::clearCache();
+        
         // Clear view cache to ensure new settings take effect
         \Artisan::call('view:clear');
         \Cache::flush();
@@ -302,6 +372,130 @@ class SettingsController extends Controller
         ]);
         
         return redirect()->back()->with('success', 'Animation settings updated successfully!');
+    }
+
+    public function updateInvoiceNumbering(Request $request)
+    {
+        $request->validate([
+            'order_invoice_prefix' => 'required|string|max:10|regex:/^[A-Z0-9]+$/',
+            'order_invoice_separator' => 'required|string|max:5',
+            'order_invoice_digits' => 'required|integer|min:1|max:10',
+            'order_invoice_include_year' => 'boolean',
+            'order_invoice_include_month' => 'boolean',
+            'order_invoice_reset_yearly' => 'boolean',
+            'order_invoice_reset_monthly' => 'boolean',
+            'pos_invoice_prefix' => 'required|string|max:10|regex:/^[A-Z0-9]+$/',
+            'pos_invoice_separator' => 'required|string|max:5',
+            'pos_invoice_digits' => 'required|integer|min:1|max:10',
+            'pos_invoice_include_year' => 'boolean',
+            'pos_invoice_include_month' => 'boolean',
+            'pos_invoice_reset_yearly' => 'boolean',
+            'pos_invoice_reset_monthly' => 'boolean',
+        ]);
+
+        try {
+            // Update order invoice settings
+            AppSetting::set('order_invoice_prefix', $request->input('order_invoice_prefix'), 'string', 'invoice_numbering');
+            AppSetting::set('order_invoice_separator', $request->input('order_invoice_separator'), 'string', 'invoice_numbering');
+            AppSetting::set('order_invoice_digits', $request->input('order_invoice_digits'), 'integer', 'invoice_numbering');
+            AppSetting::set('order_invoice_include_year', $request->boolean('order_invoice_include_year'), 'boolean', 'invoice_numbering');
+            AppSetting::set('order_invoice_include_month', $request->boolean('order_invoice_include_month'), 'boolean', 'invoice_numbering');
+            AppSetting::set('order_invoice_reset_yearly', $request->boolean('order_invoice_reset_yearly'), 'boolean', 'invoice_numbering');
+            AppSetting::set('order_invoice_reset_monthly', $request->boolean('order_invoice_reset_monthly'), 'boolean', 'invoice_numbering');
+
+            // Update POS invoice settings
+            AppSetting::set('pos_invoice_prefix', $request->input('pos_invoice_prefix'), 'string', 'invoice_numbering');
+            AppSetting::set('pos_invoice_separator', $request->input('pos_invoice_separator'), 'string', 'invoice_numbering');
+            AppSetting::set('pos_invoice_digits', $request->input('pos_invoice_digits'), 'integer', 'invoice_numbering');
+            AppSetting::set('pos_invoice_include_year', $request->boolean('pos_invoice_include_year'), 'boolean', 'invoice_numbering');
+            AppSetting::set('pos_invoice_include_month', $request->boolean('pos_invoice_include_month'), 'boolean', 'invoice_numbering');
+            AppSetting::set('pos_invoice_reset_yearly', $request->boolean('pos_invoice_reset_yearly'), 'boolean', 'invoice_numbering');
+            AppSetting::set('pos_invoice_reset_monthly', $request->boolean('pos_invoice_reset_monthly'), 'boolean', 'invoice_numbering');
+
+            AppSetting::clearCache();
+            
+            \Log::info('Invoice numbering settings updated', [
+                'order_settings' => $request->only([
+                    'order_invoice_prefix', 'order_invoice_separator', 'order_invoice_digits',
+                    'order_invoice_include_year', 'order_invoice_include_month',
+                    'order_invoice_reset_yearly', 'order_invoice_reset_monthly'
+                ]),
+                'pos_settings' => $request->only([
+                    'pos_invoice_prefix', 'pos_invoice_separator', 'pos_invoice_digits',
+                    'pos_invoice_include_year', 'pos_invoice_include_month',
+                    'pos_invoice_reset_yearly', 'pos_invoice_reset_monthly'
+                ]),
+                'tenant_id' => $this->getCurrentTenantId(),
+                'user_id' => auth()->id()
+            ]);
+            
+            return redirect()->back()->with('success', 'Invoice numbering settings updated successfully!');
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to update invoice numbering settings', [
+                'error' => $e->getMessage(),
+                'tenant_id' => $this->getCurrentTenantId(),
+                'user_id' => auth()->id()
+            ]);
+            
+            return redirect()->back()->with('error', 'Failed to update invoice numbering settings: ' . $e->getMessage());
+        }
+    }
+
+    public function previewInvoiceNumbers()
+    {
+        try {
+            $invoiceService = new InvoiceNumberService();
+            $preview = $invoiceService->previewInvoiceNumbers($this->getCurrentTenantId());
+            
+            return response()->json([
+                'success' => true,
+                'preview' => $preview
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to preview invoice numbers', [
+                'error' => $e->getMessage(),
+                'tenant_id' => $this->getCurrentTenantId()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function resetInvoiceSequences(Request $request)
+    {
+        $request->validate([
+            'type' => 'nullable|in:order,pos',
+            'confirm' => 'required|boolean|accepted'
+        ]);
+        
+        try {
+            $invoiceService = new InvoiceNumberService();
+            $result = $invoiceService->resetInvoiceSequences(
+                $this->getCurrentTenantId(),
+                $request->input('type')
+            );
+            
+            if ($result) {
+                $type = $request->input('type') ? ucfirst($request->input('type')) : 'All';
+                return redirect()->back()->with('success', $type . ' invoice sequences reset successfully!');
+            } else {
+                return redirect()->back()->with('error', 'Failed to reset invoice sequences.');
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to reset invoice sequences', [
+                'error' => $e->getMessage(),
+                'type' => $request->input('type'),
+                'tenant_id' => $this->getCurrentTenantId()
+            ]);
+            
+            return redirect()->back()->with('error', 'Failed to reset invoice sequences: ' . $e->getMessage());
+        }
     }
 
     public function profile()
@@ -463,17 +657,51 @@ class SettingsController extends Controller
             'admin_pagination_enabled' => 'boolean',
             'frontend_records_per_page' => 'required|integer|min:5|max:100',
             'admin_records_per_page' => 'required|integer|min:10|max:200',
+            'frontend_load_more_enabled' => 'boolean',
+            'admin_show_per_page_selector' => 'boolean',
+            'admin_default_sort_order' => 'required|in:asc,desc',
+            'frontend_default_sort_order' => 'required|in:asc,desc',
         ]);
 
-        // Update pagination settings
-        AppSetting::set('frontend_pagination_enabled', $request->boolean('frontend_pagination_enabled'), 'boolean', 'pagination');
-        AppSetting::set('admin_pagination_enabled', $request->boolean('admin_pagination_enabled'), 'boolean', 'pagination');
-        AppSetting::set('frontend_records_per_page', $request->frontend_records_per_page, 'integer', 'pagination');
-        AppSetting::set('admin_records_per_page', $request->admin_records_per_page, 'integer', 'pagination');
-        
-        AppSetting::clearCache();
+        try {
+            // Update basic pagination settings
+            AppSetting::set('frontend_pagination_enabled', $request->boolean('frontend_pagination_enabled'), 'boolean', 'pagination');
+            AppSetting::set('admin_pagination_enabled', $request->boolean('admin_pagination_enabled'), 'boolean', 'pagination');
+            AppSetting::set('frontend_records_per_page', $request->frontend_records_per_page, 'integer', 'pagination');
+            AppSetting::set('admin_records_per_page', $request->admin_records_per_page, 'integer', 'pagination');
+            
+            // Update advanced pagination settings
+            AppSetting::set('frontend_load_more_enabled', $request->boolean('frontend_load_more_enabled'), 'boolean', 'pagination');
+            AppSetting::set('admin_show_per_page_selector', $request->boolean('admin_show_per_page_selector'), 'boolean', 'pagination');
+            AppSetting::set('admin_default_sort_order', $request->admin_default_sort_order, 'string', 'pagination');
+            AppSetting::set('frontend_default_sort_order', $request->frontend_default_sort_order, 'string', 'pagination');
+            
+            AppSetting::clearCache();
+            
+            \Log::info('Pagination settings updated successfully', [
+                'frontend_pagination_enabled' => $request->boolean('frontend_pagination_enabled'),
+                'admin_pagination_enabled' => $request->boolean('admin_pagination_enabled'),
+                'frontend_records_per_page' => $request->frontend_records_per_page,
+                'admin_records_per_page' => $request->admin_records_per_page,
+                'frontend_load_more_enabled' => $request->boolean('frontend_load_more_enabled'),
+                'admin_show_per_page_selector' => $request->boolean('admin_show_per_page_selector'),
+                'admin_default_sort_order' => $request->admin_default_sort_order,
+                'frontend_default_sort_order' => $request->frontend_default_sort_order,
+                'tenant_id' => $this->getCurrentTenantId(),
+                'user_id' => auth()->id()
+            ]);
 
-        return redirect()->back()->with('success', 'Pagination settings updated successfully!');
+            return redirect()->back()->with('success', 'Pagination settings updated successfully!');
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to update pagination settings', [
+                'error' => $e->getMessage(),
+                'tenant_id' => $this->getCurrentTenantId(),
+                'user_id' => auth()->id()
+            ]);
+            
+            return redirect()->back()->with('error', 'Failed to update pagination settings: ' . $e->getMessage());
+        }
     }
 
     public function updateWhatsAppTemplates(Request $request)

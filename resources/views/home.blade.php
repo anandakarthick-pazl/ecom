@@ -34,6 +34,89 @@
 @endif
 
 <div class="container">
+    <!-- Cart Summary Widget (New Addition) -->
+    <section class="cart-summary-widget mb-4" id="home-cart-summary">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center" 
+                 data-bs-toggle="collapse" data-bs-target="#cartSummaryCollapse" 
+                 style="cursor: pointer;">
+                <h5 class="mb-0">
+                    <i class="fas fa-shopping-cart me-2"></i>
+                    Cart Summary (<span id="home-cart-count">0</span> items)
+                </h5>
+                <i class="fas fa-chevron-down" id="cart-summary-chevron"></i>
+            </div>
+            <div class="collapse" id="cartSummaryCollapse">
+                <div class="card-body" id="home-cart-body">
+                    <!-- Cart content will be loaded here -->
+                    <div id="cart-empty-message" class="text-center py-3">
+                        <i class="fas fa-shopping-cart fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">Your cart is empty</p>
+                        <small class="text-muted">Add products to see cart summary</small>
+                    </div>
+                    
+                    <!-- Cart items will be dynamically loaded here -->
+                    <div id="home-cart-items" style="display: none;">
+                        <!-- Detailed Product Breakdown -->
+                        <div id="home-detailed-product-breakdown"></div>
+                        
+                        <hr class="my-3">
+                        
+                        <!-- Order Totals Section -->
+                        <div class="order-totals">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Subtotal:</span>
+                                <span id="home-cart-subtotal">₹0.00</span>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>CGST:</span>
+                                <span id="home-cgst-amount">₹0.00</span>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>SGST:</span>
+                                <span id="home-sgst-amount">₹0.00</span>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Total Tax:</span>
+                                <span id="home-total-tax">₹0.00</span>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Delivery Charge:</span>
+                                <span id="home-delivery-charge">₹50.00</span>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Payment Charge:</span>
+                                <span id="home-payment-charge">+₹0.00</span>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="d-flex justify-content-between mb-3">
+                                <strong>Total:</strong>
+                                <strong id="home-cart-total">₹0.00</strong>
+                            </div>
+                            
+                            <!-- Cart Actions -->
+                            <div class="d-grid gap-2">
+                                <a href="{{ route('cart.index') }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i> View Full Cart
+                                </a>
+                                <a href="{{ route('checkout') }}" class="btn btn-primary" id="home-checkout-btn">
+                                    <i class="fas fa-lock me-1"></i> Proceed to Checkout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Featured Categories -->
     @if($categories->count() > 0)
     <section class="categories-section mb-5">
@@ -389,6 +472,97 @@
 </div>
 
 <style>
+/* Home Cart Summary Widget Styles */
+.cart-summary-widget {
+    position: sticky;
+    top: 80px;
+    z-index: 100;
+}
+
+.cart-summary-widget .card {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.cart-summary-widget .card-header {
+    border-radius: 12px 12px 0 0 !important;
+    transition: all 0.3s ease;
+}
+
+.cart-summary-widget .card-header:hover {
+    background-color: #0056b3 !important;
+}
+
+#cart-summary-chevron {
+    transition: transform 0.3s ease;
+}
+
+.cart-summary-widget .collapsed #cart-summary-chevron {
+    transform: rotate(-90deg);
+}
+
+/* Home Cart Product Breakdown Styles */
+.home-cart-product-item {
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border-left: 3px solid #007bff;
+}
+
+.home-cart-product-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 2px;
+}
+
+.home-cart-product-calculation {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 2px;
+    line-height: 1.2;
+}
+
+.home-cart-product-subtotal {
+    font-size: 0.85rem;
+    color: #2c3e50;
+    font-weight: 600;
+    text-align: right;
+}
+
+#home-detailed-product-breakdown {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#home-detailed-product-breakdown::-webkit-scrollbar {
+    width: 4px;
+}
+
+#home-detailed-product-breakdown::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 2px;
+}
+
+#home-detailed-product-breakdown::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 2px;
+}
+
+#home-detailed-product-breakdown::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Responsive cart summary */
+@media (max-width: 768px) {
+    .cart-summary-widget {
+        position: relative;
+        top: auto;
+    }
+}
+
 .product-card {
     transition: transform 0.2s;
 }
@@ -480,4 +654,225 @@
     to { opacity: 1; transform: translateY(0); }
 }
 </style>
+
+<script>
+// Home page cart summary functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Load cart summary on page load
+    loadHomeCartSummary();
+    
+    // Handle cart summary collapse chevron rotation
+    const cartSummaryCollapse = document.getElementById('cartSummaryCollapse');
+    const cartSummaryChevron = document.getElementById('cart-summary-chevron');
+    
+    if (cartSummaryCollapse && cartSummaryChevron) {
+        cartSummaryCollapse.addEventListener('show.bs.collapse', function() {
+            cartSummaryChevron.style.transform = 'rotate(180deg)';
+        });
+        
+        cartSummaryCollapse.addEventListener('hide.bs.collapse', function() {
+            cartSummaryChevron.style.transform = 'rotate(0deg)';
+        });
+    }
+});
+
+// Load cart summary data for home page
+function loadHomeCartSummary() {
+    console.log('Loading home cart summary...');
+    
+    // First get cart count
+    fetch('{{ route("cart.count") }}')
+        .then(response => response.json())
+        .then(data => {
+            updateHomeCartCount(data.count);
+            
+            if (data.count > 0) {
+                // Load detailed cart data
+                loadHomeCartDetails();
+            } else {
+                showHomeCartEmpty();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading cart count:', error);
+            showHomeCartEmpty();
+        });
+}
+
+// Load detailed cart data for home page
+function loadHomeCartDetails() {
+    console.log('Loading detailed cart data for home page...');
+    
+    // Use the new cart summary API endpoint
+    fetch('{{ route("cart.summary") }}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.cart_data) {
+                updateHomeCartDisplay(data.cart_data);
+            } else {
+                showHomeCartEmpty();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading cart summary:', error);
+            showHomeCartEmpty();
+        });
+}
+
+// Update home cart display with data
+function updateHomeCartDisplay(cartData) {
+    console.log('Updating home cart display:', cartData);
+    
+    // Show cart items section
+    document.getElementById('cart-empty-message').style.display = 'none';
+    document.getElementById('home-cart-items').style.display = 'block';
+    
+    // Update detailed product breakdown
+    updateHomeProductBreakdown(cartData.items);
+    
+    // Update totals
+    document.getElementById('home-cart-subtotal').textContent = '₹' + cartData.subtotal.toFixed(2);
+    document.getElementById('home-cgst-amount').textContent = '₹' + cartData.cgst_amount.toFixed(2);
+    document.getElementById('home-sgst-amount').textContent = '₹' + cartData.sgst_amount.toFixed(2);
+    document.getElementById('home-total-tax').textContent = '₹' + cartData.total_tax.toFixed(2);
+    
+    // Update delivery charge
+    const homeDeliveryElement = document.getElementById('home-delivery-charge');
+    if (cartData.delivery_charge === 0) {
+        homeDeliveryElement.innerHTML = '<span class="text-success">FREE</span>';
+    } else {
+        homeDeliveryElement.textContent = '₹' + cartData.delivery_charge.toFixed(2);
+    }
+    
+    // Update payment charge
+    document.getElementById('home-payment-charge').textContent = '+₹' + cartData.payment_charge.toFixed(2);
+    
+    // Update grand total
+    document.getElementById('home-cart-total').textContent = '₹' + cartData.grand_total.toFixed(2);
+}
+
+// Update home product breakdown
+function updateHomeProductBreakdown(items) {
+    const breakdownContainer = document.getElementById('home-detailed-product-breakdown');
+    
+    if (!items || items.length === 0) {
+        breakdownContainer.innerHTML = '<p class="text-muted text-center">No items in cart</p>';
+        return;
+    }
+    
+    let breakdownHTML = '';
+    items.forEach(item => {
+        breakdownHTML += `
+            <div class="home-cart-product-item" data-product-id="${item.id}">
+                <div class="home-cart-product-name">${item.name}</div>
+                <div class="home-cart-product-calculation">
+                    Qty: ${item.quantity} × ₹${item.price.toFixed(2)}
+                    ${item.tax_percentage > 0 ? ` GST: ${item.tax_percentage}% = ₹${item.tax_amount.toFixed(2)}` : ''}
+                </div>
+                <div class="home-cart-product-subtotal">₹${item.subtotal.toFixed(2)} +Tax</div>
+            </div>
+        `;
+    });
+    
+    breakdownContainer.innerHTML = breakdownHTML;
+}
+
+// Show empty cart state
+function showHomeCartEmpty() {
+    document.getElementById('cart-empty-message').style.display = 'block';
+    document.getElementById('home-cart-items').style.display = 'none';
+    updateHomeCartCount(0);
+}
+
+// Update cart count in home page header
+function updateHomeCartCount(count) {
+    const countElement = document.getElementById('home-cart-count');
+    if (countElement) {
+        countElement.textContent = count;
+        
+        // Update the card header text
+        const headerText = count === 0 ? 'Cart Summary (Empty)' : `Cart Summary (${count} item${count !== 1 ? 's' : ''})`;
+        const headerElement = countElement.closest('h5');
+        if (headerElement) {
+            headerElement.innerHTML = `<i class="fas fa-shopping-cart me-2"></i>${headerText.replace(count, `<span id="home-cart-count">${count}</span>`)}`;
+        }
+    }
+}
+
+// Override the original addToCart function to update home cart summary
+if (typeof window.addToCart !== 'undefined') {
+    const originalAddToCart = window.addToCart;
+    window.addToCart = function(productId, quantity = 1) {
+        originalAddToCart(productId, quantity);
+        // Reload cart summary after adding item (faster refresh)
+        setTimeout(() => {
+            loadHomeCartSummary();
+        }, 300);
+    };
+}
+
+// Also override addToCartWithQuantity
+if (typeof window.addToCartWithQuantity !== 'undefined') {
+    const originalAddToCartWithQuantity = window.addToCartWithQuantity;
+    window.addToCartWithQuantity = function(productId) {
+        originalAddToCartWithQuantity(productId);
+        // Reload cart summary after adding item (faster refresh)
+        setTimeout(() => {
+            loadHomeCartSummary();
+        }, 300);
+    };
+}
+
+// Fallback: If functions are not defined yet, define them
+if (typeof window.addToCartWithQuantity === 'undefined') {
+    window.addToCartWithQuantity = function(productId) {
+        const quantity = document.getElementById(`quantity-${productId}`)?.value || 1;
+        
+        // Call the main addToCart function from the layout
+        if (typeof window.addToCart === 'function') {
+            window.addToCart(productId, quantity);
+        } else {
+            // Fallback implementation
+            fetch('{{ route("cart.add") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    quantity: quantity
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update cart count in navbar
+                    if (typeof window.updateCartCount === 'function') {
+                        window.updateCartCount();
+                    }
+                    
+                    // Update home cart summary
+                    loadHomeCartSummary();
+                    
+                    // Show success message
+                    if (typeof window.showToast === 'function') {
+                        window.showToast(data.message, 'success');
+                    }
+                } else {
+                    if (typeof window.showToast === 'function') {
+                        window.showToast(data.message, 'error');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error adding to cart:', error);
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Error adding to cart', 'error');
+                }
+            });
+        }
+    };
+}
+</script>
 @endsection

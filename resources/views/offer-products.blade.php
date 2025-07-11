@@ -58,7 +58,7 @@
                 </div>
                 
                 <!-- Pagination -->
-                @if($enablePagination && method_exists($products, 'appends'))
+                @if(($frontendPaginationSettings['enabled'] ?? true) && method_exists($products, 'appends'))
                 <div class="pagination-container" id="pagination-container">
                     {{ $products->appends(request()->query())->links() }}
                 </div>
@@ -731,7 +731,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize offer filtering
     let isLoading = false;
-    const enablePagination = {{ $enablePagination ? 'true' : 'false' }};
+    const enablePagination = {{ ($frontendPaginationSettings['enabled'] ?? true) ? 'true' : 'false' }};
     
     // Category filter functionality
     document.querySelectorAll('.offer-filter').forEach(btn => {

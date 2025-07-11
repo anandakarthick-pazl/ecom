@@ -248,10 +248,7 @@
                 @endif
             </div>
             <br>
-            <div style="font-size: 9px;">
-                Return Policy: Items can be returned<br>
-                within 7 days with original receipt
-            </div>
+           
         </div>
     </div>
 </body>

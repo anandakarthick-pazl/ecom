@@ -54,7 +54,7 @@
                 </div>
                 
                 <!-- Pagination -->
-                @if($enablePagination && method_exists($products, 'appends'))
+                @if(($frontendPaginationSettings['enabled'] ?? true) && method_exists($products, 'appends'))
                 <div class="pagination-container" id="pagination-container">
                     {{ $products->appends(request()->query())->links() }}
                 </div>
@@ -79,7 +79,7 @@
                         <i class="fas fa-box-open"></i>
                     </div>
                     <div class="stat-content">
-                        <div class="stat-number">{{ $enablePagination && method_exists($products, 'total') ? $products->total() : $products->count() }}</div>
+                        <div class="stat-number">{{ ($frontendPaginationSettings['enabled'] ?? true) && method_exists($products, 'total') ? $products->total() : $products->count() }}</div>
                         <div class="stat-label">Products Available</div>
                     </div>
                 </div>
@@ -671,7 +671,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize product filtering
     let isLoading = false;
-    const enablePagination = {{ $enablePagination ? 'true' : 'false' }};
+    const enablePagination = {{ ($frontendPaginationSettings['enabled'] ?? true) ? 'true' : 'false' }};
     
     // Category filter functionality
     document.querySelectorAll('.filter-btn').forEach(btn => {
