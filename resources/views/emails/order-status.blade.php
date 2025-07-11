@@ -84,8 +84,8 @@
 <body>
     <div class="container">
         <div class="header">
-            @if($company['logo'])
-                <img src="{{ asset('storage/' . $company['logo']) }}" alt="{{ $company['name'] }}" style="max-height: 60px; margin-bottom: 10px;">
+            @if(isset($company['logo']) && !empty($company['logo']))
+                <img src="{{ asset('storage/' . $company['logo']) }}" alt="{{ $company['name'] ?? 'Your Store' }}" style="max-height: 60px; margin-bottom: 10px;">
             @else
                 <div style="font-size: 40px; margin-bottom: 10px;">🏪</div>
             @endif
@@ -94,26 +94,26 @@
         </div>
         
         <div class="content">
-            <h2>Hello {{ $order->customer_name }},</h2>
+            <h2>Hello {{ $order->customer_name ?? 'Valued Customer' }},</h2>
             
             <p>{{ $statusMessage }}</p>
             
             <div class="order-info">
                 <h3>Order Details</h3>
-                <p><strong>Order Number:</strong> {{ $order->order_number }}</p>
-                <p><strong>Order Date:</strong> {{ $order->created_at->format('M d, Y') }}</p>
+                <p><strong>Order Number:</strong> {{ $order->order_number ?? 'N/A' }}</p>
+                <p><strong>Order Date:</strong> {{ $order->created_at ? $order->created_at->format('M d, Y') : 'N/A' }}</p>
                 <p><strong>Current Status:</strong> 
                     <span class="status-badge status-{{ $order->status }}">
                         {{ ucfirst($order->status) }}
                     </span>
                 </p>
-                <p><strong>Total Amount:</strong> ₹{{ number_format($order->total, 2) }}</p>
+                <p><strong>Total Amount:</strong> ₹{{ number_format($order->total ?? 0, 2) }}</p>
                 
-                @if($order->status === 'shipped' && $order->shipped_at)
+                @if(($order->status ?? '') === 'shipped' && isset($order->shipped_at) && $order->shipped_at)
                     <p><strong>Shipped Date:</strong> {{ $order->shipped_at->format('M d, Y') }}</p>
                 @endif
                 
-                @if($order->status === 'delivered' && $order->delivered_at)
+                @if(($order->status ?? '') === 'delivered' && isset($order->delivered_at) && $order->delivered_at)
                     <p><strong>Delivered Date:</strong> {{ $order->delivered_at->format('M d, Y') }}</p>
                 @endif
             </div>
@@ -123,11 +123,11 @@
                 @foreach($order->items as $item)
                     <div class="item">
                         <div>
-                            <strong>{{ $item->product_name }}</strong><br>
-                            <small>Qty: {{ $item->quantity }} × ₹{{ number_format($item->price, 2) }}</small>
+                            <strong>{{ $item->product_name ?? 'Product' }}</strong><br>
+                            <small>Qty: {{ $item->quantity ?? 0 }} × ₹{{ number_format($item->price ?? 0, 2) }}</small>
                         </div>
                         <div>
-                            <strong>₹{{ number_format($item->quantity * $item->price, 2) }}</strong>
+                            <strong>₹{{ number_format(($item->quantity ?? 0) * ($item->price ?? 0), 2) }}</strong>
                         </div>
                     </div>
                 @endforeach
@@ -137,7 +137,7 @@
                 <a href="{{ route('track.order') }}" class="btn">Track Your Order</a>
             </div>
             
-            @if($order->status === 'delivered')
+            @if(($order->status ?? '') === 'delivered')
                 <div style="background: #e8f5e8; padding: 15px; border-radius: 6px; margin: 20px 0;">
                     <h4 style="color: {{ $company['primary_color'] ?? '#2c3e50' }}; margin: 0 0 10px 0;">Thank you for choosing us!</h4>
                     <p style="margin: 0;">We hope you love your products. If you have any questions or concerns, please don't hesitate to contact us.</p>
@@ -147,17 +147,17 @@
         
         <div class="footer">
             <p><strong>{{ $company['name'] ?? 'Your Store' }}</strong></p>
-            @if($company['address'])
+            @if(isset($company['address']) && !empty($company['address']))
                 <p>{{ $company['address'] }}</p>
             @endif
             <p>
-                @if($company['email'])
+                @if(isset($company['email']) && !empty($company['email']))
                     Email: {{ $company['email'] }}
                 @endif
-                @if($company['email'] && $company['phone'])
+                @if(isset($company['email']) && !empty($company['email']) && isset($company['phone']) && !empty($company['phone']))
                     | 
                 @endif
-                @if($company['phone'])
+                @if(isset($company['phone']) && !empty($company['phone']))
                     Phone: {{ $company['phone'] }}
                 @endif
             </p>

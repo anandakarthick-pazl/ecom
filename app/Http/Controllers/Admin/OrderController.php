@@ -181,8 +181,6 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Order status updated successfully!');
     }
 
-
-
     public function generateInvoicePdf(Order $order)
     {
         $order->load('items.product', 'customer');
@@ -197,8 +195,6 @@ class OrderController extends Controller
         
         return $path;
     }
-
-
 
     public function export(Request $request)
     {
@@ -292,12 +288,6 @@ class OrderController extends Controller
 
         return response()->json($stats);
     }
-
-
-
-
-
-
 
     /**
      * Send WhatsApp notification for order status change
@@ -874,45 +864,56 @@ class OrderController extends Controller
     }
 
     /**
-     * Send invoice via email (existing functionality enhancement)
+     * Send invoice via email (enhanced functionality)
      */
     public function sendInvoice(Order $order)
     {
         try {
+            // Validate that customer email exists
             if (empty($order->customer_email)) {
                 return redirect()->back()->with('error', 'Customer email is not available for this order.');
             }
 
-            // Generate invoice PDF
-            $billService = new BillPDFService();
-            $pdfResult = $billService->generateOrderBill($order);
-            
-            if (!$pdfResult['success']) {
-                return redirect()->back()->with('error', 'Failed to generate invoice PDF: ' . $pdfResult['error']);
-            }
-
-            // Send via email
-            Mail::to($order->customer_email)
-                ->send(new OrderInvoiceMail($order, $pdfResult['file_path']));
-
-            // Clean up temporary file
-            if (file_exists($pdfResult['file_path'])) {
-                unlink($pdfResult['file_path']);
-            }
-
-            // Log successful sending
-            Log::info('Invoice sent via email', [
+            Log::info('Sending invoice email', [
                 'order_id' => $order->id,
                 'order_number' => $order->order_number,
                 'customer_email' => $order->customer_email
             ]);
+
+            // Send email with auto-generated PDF
+            // The OrderInvoiceMail class will automatically generate the PDF
+            Mail::to($order->customer_email)
+                ->send(new OrderInvoiceMail($order));
+
+            // Log successful sending
+            Log::info('Invoice email sent successfully', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'customer_email' => $order->customer_email
+            ]);
+
+            // Create notification for admin
+            Notification::createForAdmin(
+                'invoice_email_sent',
+                'Invoice Email Sent',
+                "Invoice for order {$order->order_number} sent to {$order->customer_email}",
+                [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'customer_email' => $order->customer_email,
+                    'sent_at' => now()->toDateTimeString()
+                ]
+            );
 
             return redirect()->back()->with('success', "Invoice sent successfully to {$order->customer_email}");
 
         } catch (\Exception $e) {
             Log::error('Invoice email sending failed', [
                 'order_id' => $order->id,
-                'error' => $e->getMessage()
+                'order_number' => $order->order_number,
+                'customer_email' => $order->customer_email ?? 'N/A',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return redirect()->back()->with('error', 'Failed to send invoice: ' . $e->getMessage());
@@ -928,6 +929,87 @@ class OrderController extends Controller
         $companySettings = $this->getCompanySettings($order->company_id);
         
         return view('admin.orders.invoice', compact('order', 'companySettings'));
+    }
+
+    /**
+     * Test email functionality (for debugging)
+     */
+    public function testInvoiceEmail(Order $order)
+    {
+        try {
+            // Test email address - use admin email or provided test email
+            $testEmail = request()->get('test_email') ?? auth()->user()->email ?? 'test@example.com';
+            
+            Log::info('Testing invoice email', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'test_email' => $testEmail
+            ]);
+
+            // Send test email
+            Mail::to($testEmail)
+                ->send(new OrderInvoiceMail($order));
+
+            Log::info('Test invoice email sent successfully', [
+                'order_id' => $order->id,
+                'test_email' => $testEmail
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Test invoice sent successfully to {$testEmail}",
+                'order_number' => $order->order_number,
+                'sent_to' => $testEmail,
+                'sent_at' => now()->toDateTimeString()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Test invoice email failed', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send test invoice: ' . $e->getMessage(),
+                'order_number' => $order->order_number
+            ], 500);
+        }
+    }
+
+    /**
+     * Preview invoice email content (for debugging)
+     */
+    public function previewInvoiceEmail(Order $order)
+    {
+        try {
+            // Create mail instance without sending
+            $mail = new OrderInvoiceMail($order, null, false); // Don't generate PDF for preview
+            $content = $mail->content();
+            
+            // Get company data
+            $company = $mail->company;
+            
+            Log::info('Invoice email preview generated', [
+                'order_id' => $order->id,
+                'has_pdf' => !empty($mail->pdfPath)
+            ]);
+            
+            // Return the email view directly
+            return view($content->view, [
+                'order' => $order,
+                'company' => $company
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Invoice email preview failed', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response('Failed to preview invoice email: ' . $e->getMessage(), 500);
+        }
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Events\OrderPlaced;
 use App\Models\Notification;
 use App\Models\AppSetting;
 use App\Mail\OrderInvoiceMail;
+use App\Jobs\SendOrderInvoiceEmail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
@@ -62,27 +63,87 @@ class HandleOrderPlaced
             ]);
 
             // Send invoice email to customer if email notifications are enabled and email is provided
-            if (AppSetting::get('email_notifications', true) && !empty($order->customer_email)) {
-                try {
-                    // For now, skip PDF generation if it's causing issues
-                    // Just send a simple order confirmation
-                    
-                    Log::info('Attempting to send order email', [
-                        'email' => $order->customer_email,
-                        'order_number' => $order->order_number
-                    ]);
-                    
-                    // You can uncomment this when email is properly configured
-                    // Mail::to($order->customer_email)
-                    //     ->send(new OrderInvoiceMail($order));
-                    
-                } catch (\Exception $e) {
-                    Log::error('Failed to send order invoice email', [
-                        'error' => $e->getMessage(),
-                        'order_id' => $order->id,
-                        'email' => $order->customer_email
-                    ]);
+            $customerEmail = $order->customer_email ?? $order->customer->email ?? null;
+            
+            if (AppSetting::get('email_notifications', true) && !empty($customerEmail)) {
+                
+                // Check if we should use queue or send immediately
+                $useQueue = AppSetting::get('use_email_queue', true); // Default to using queue
+                
+                if ($useQueue) {
+                    try {
+                        Log::info('Dispatching order invoice email to queue', [
+                            'email' => $customerEmail,
+                            'order_number' => $order->order_number,
+                            'order_id' => $order->id
+                        ]);
+                        
+                        // Dispatch to queue for better performance
+                        SendOrderInvoiceEmail::dispatch($order, $customerEmail, null, true)
+                            ->delay(now()->addSeconds(10)); // Small delay to ensure order is fully committed
+                        
+                        Log::info('Order invoice email job dispatched to queue successfully');
+                        
+                    } catch (\Exception $e) {
+                        Log::error('Failed to dispatch email job to queue, trying immediate send', [
+                            'error' => $e->getMessage(),
+                            'order_id' => $order->id,
+                            'email' => $customerEmail
+                        ]);
+                        
+                        // Fallback to immediate sending if queue fails
+                        $useQueue = false;
+                    }
                 }
+                
+                // Send immediately if not using queue or queue failed
+                if (!$useQueue) {
+                    try {
+                        Log::info('Attempting to send order invoice email immediately with PDF', [
+                            'email' => $customerEmail,
+                            'order_number' => $order->order_number,
+                            'order_id' => $order->id
+                        ]);
+                        
+                        // Send email with PDF attachment - using enhanced error handling
+                        Mail::to($customerEmail)
+                            ->send(new OrderInvoiceMail($order, null, true)); // Auto-generate PDF
+                        
+                        Log::info('Order invoice email sent successfully', [
+                            'email' => $customerEmail,
+                            'order_number' => $order->order_number
+                        ]);
+                        
+                    } catch (\Exception $e) {
+                        Log::error('Failed to send order invoice email immediately', [
+                            'error' => $e->getMessage(),
+                            'order_id' => $order->id,
+                            'email' => $customerEmail,
+                            'trace' => $e->getTraceAsString()
+                        ]);
+                        
+                        // Try sending without PDF as fallback
+                        try {
+                            Log::info('Attempting fallback email without PDF');
+                            Mail::to($customerEmail)
+                                ->send(new OrderInvoiceMail($order, null, false)); // No PDF generation
+                            
+                            Log::info('Fallback email sent successfully (without PDF)');
+                        } catch (\Exception $fallbackError) {
+                            Log::error('Fallback email also failed', [
+                                'error' => $fallbackError->getMessage(),
+                                'order_id' => $order->id
+                            ]);
+                        }
+                    }
+                }
+                
+            } else {
+                Log::info('Email not sent - notifications disabled or no customer email', [
+                    'email_notifications_enabled' => AppSetting::get('email_notifications', true),
+                    'customer_email' => $customerEmail,
+                    'order_id' => $order->id
+                ]);
             }
             
         } catch (\Exception $e) {

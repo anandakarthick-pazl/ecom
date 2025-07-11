@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Bill - {{ $order->order_number }}</title>
+    <title>Invoice - {{ $order->order_number }}</title>
     <style>
         body {
             font-family: 'Courier New', monospace;
@@ -121,12 +121,12 @@
         
         <!-- Order Info -->
         <div class="text-center">
-            <div class="bold">ORDER BILL</div>
+            <div class="bold">Invoice</div>
             <div class="dashed-line"></div>
         </div>
         
         <div style="font-size: 11px;">
-            <div><strong>Order #:</strong> {{ $order->order_number }}</div>
+            <div><strong>Invoice #:</strong> {{ $order->order_number }}</div>
             <div><strong>Date:</strong> {{ $order->created_at->format('M d, Y h:i A') }}</div>
             <div><strong>Customer:</strong> {{ $order->customer_name }}</div>
             @if($order->customer_mobile)
@@ -145,13 +145,13 @@
                 <div class="item-row">
                     <div class="item-details">
                         <div class="bold">{{ $item->product_name }}</div>
-                        <div>{{ $item->quantity }} x ₹{{ number_format($item->price, 2) }}</div>
+                        <div>{{ $item->quantity }} x Rs {{ number_format($item->price, 2) }}</div>
                         @if($item->tax_percentage > 0)
                             <div style="font-size: 9px; color: #666;">Tax: {{ $item->tax_percentage }}%</div>
                         @endif
                     </div>
                     <div class="item-price">
-                        ₹{{ number_format($item->total, 2) }}
+                        Rs {{ number_format($item->total, 2) }}
                     </div>
                 </div>
             @endforeach
@@ -161,34 +161,34 @@
         <div class="totals">
             <div class="total-row">
                 <span>Subtotal:</span>
-                <span>₹{{ number_format($order->subtotal, 2) }}</span>
+                <span>Rs {{ number_format($order->subtotal, 2) }}</span>
             </div>
             
             @if($order->cgst_amount > 0)
                 <div class="total-row">
                     <span>CGST:</span>
-                    <span>₹{{ number_format($order->cgst_amount, 2) }}</span>
+                    <span>Rs {{ number_format($order->cgst_amount, 2) }}</span>
                 </div>
             @endif
             
             @if($order->sgst_amount > 0)
                 <div class="total-row">
                     <span>SGST:</span>
-                    <span>₹{{ number_format($order->sgst_amount, 2) }}</span>
+                    <span>Rs {{ number_format($order->sgst_amount, 2) }}</span>
                 </div>
             @endif
             
             @if($order->discount > 0)
                 <div class="total-row">
                     <span>Discount:</span>
-                    <span>-₹{{ number_format($order->discount, 2) }}</span>
+                    <span>-Rs {{ number_format($order->discount, 2) }}</span>
                 </div>
             @endif
             
             @if($order->delivery_charge > 0)
                 <div class="total-row">
                     <span>Delivery:</span>
-                    <span>₹{{ number_format($order->delivery_charge, 2) }}</span>
+                    <span>Rs {{ number_format($order->delivery_charge, 2) }}</span>
                 </div>
             @elseif($order->delivery_charge == 0 && !empty($order->delivery_address))
                 <div class="total-row">
@@ -200,7 +200,7 @@
             <div class="final-total">
                 <div class="total-row">
                     <span>TOTAL:</span>
-                    <span>₹{{ number_format($order->total, 2) }}</span>
+                    <span>Rs {{ number_format($order->total, 2) }}</span>
                 </div>
             </div>
             

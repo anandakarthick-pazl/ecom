@@ -19,14 +19,14 @@
     @endif
     
     <a href="{{ route('admin.orders.download-bill', $order) }}" class="btn btn-info">
-        <i class="fas fa-download"></i> Download Bill
+        <i class="fas fa-download"></i> Download Invoice
     </a>
     
     @if($order->customer_mobile)
         <button type="button" class="btn btn-whatsapp" id="whatsapp-bill-btn" 
                 data-order-id="{{ $order->id }}" 
                 data-customer-phone="{{ $order->customer_mobile }}">
-            <i class="fab fa-whatsapp"></i> Send Bill via WhatsApp
+            <i class="fab fa-whatsapp"></i> Send Invoice via WhatsApp
         </button>
     @endif
     <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-secondary">
@@ -279,32 +279,32 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td>₹{{ number_format($item->price, 2) }}</td>
+                                <td>RS {{ number_format($item->price, 2) }}</td>
                                 <td>{{ $item->quantity }}</td>
                                 <td>{{ $item->tax_percentage }}%</td>
-                                <td>₹{{ number_format($item->tax_amount, 2) }}</td>
-                                <td><strong>₹{{ number_format($item->total, 2) }}</strong></td>
+                                <td>RS {{ number_format($item->tax_amount, 2) }}</td>
+                                <td><strong>RS {{ number_format($item->total, 2) }}</strong></td>
                             </tr>
                             @endforeach
                         </tbody>
                         <tfoot>
                             <tr>
                                 <td colspan="5" class="text-end"><strong>Subtotal:</strong></td>
-                                <td><strong>₹{{ number_format($order->subtotal, 2) }}</strong></td>
+                                <td><strong>RS {{ number_format($order->subtotal, 2) }}</strong></td>
                             </tr>
                             @if($order->discount > 0)
                             <tr>
                                 <td colspan="5" class="text-end"><strong>Discount:</strong></td>
-                                <td><strong class="text-success">-₹{{ number_format($order->discount, 2) }}</strong></td>
+                                <td><strong class="text-success">-RS {{ number_format($order->discount, 2) }}</strong></td>
                             </tr>
                             @endif
                             <tr>
                                 <td colspan="5" class="text-end"><strong>CGST:</strong></td>
-                                <td><strong>₹{{ number_format($order->cgst_amount, 2) }}</strong></td>
+                                <td><strong>RS {{ number_format($order->cgst_amount, 2) }}</strong></td>
                             </tr>
                             <tr>
                                 <td colspan="5" class="text-end"><strong>SGST:</strong></td>
-                                <td><strong>₹{{ number_format($order->sgst_amount, 2) }}</strong></td>
+                                <td><strong>RS {{ number_format($order->sgst_amount, 2) }}</strong></td>
                             </tr>
                             <tr>
                                 <td colspan="5" class="text-end"><strong>Delivery Charge:</strong></td>
@@ -312,13 +312,13 @@
                                     @if($order->delivery_charge == 0)
                                         <span class="text-success">FREE</span>
                                     @else
-                                        ₹{{ number_format($order->delivery_charge, 2) }}
+                                        RS {{ number_format($order->delivery_charge, 2) }}
                                     @endif
                                 </strong></td>
                             </tr>
                             <tr class="table-success">
                                 <td colspan="5" class="text-end"><strong>Total:</strong></td>
-                                <td><strong>₹{{ number_format($order->total, 2) }}</strong></td>
+                                <td><strong>RS {{ number_format($order->total, 2) }}</strong></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -413,19 +413,19 @@
                 @if($order->payment_status === 'paid')
                     <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
                     <h5 class="text-success">Payment Successful</h5>
-                    <p class="text-muted">₹{{ number_format($order->total, 2) }} received</p>
+                    <p class="text-muted">RS {{ number_format($order->total, 2) }} received</p>
                 @elseif($order->payment_status === 'failed')
                     <i class="fas fa-times-circle fa-3x text-danger mb-3"></i>
                     <h5 class="text-danger">Payment Failed</h5>
-                    <p class="text-muted">Amount: ₹{{ number_format($order->total, 2) }}</p>
+                    <p class="text-muted">Amount: RS {{ number_format($order->total, 2) }}</p>
                 @elseif($order->payment_status === 'processing')
                     <i class="fas fa-clock fa-3x text-info mb-3"></i>
                     <h5 class="text-info">Payment Processing</h5>
-                    <p class="text-muted">Amount: ₹{{ number_format($order->total, 2) }}</p>
+                    <p class="text-muted">Amount: RS {{ number_format($order->total, 2) }}</p>
                 @else
                     <i class="fas fa-exclamation-circle fa-3x text-warning mb-3"></i>
                     <h5 class="text-warning">Payment Pending</h5>
-                    <p class="text-muted">Amount: ₹{{ number_format($order->total, 2) }}</p>
+                    <p class="text-muted">Amount: RS {{ number_format($order->total, 2) }}</p>
                 @endif
             </div>
         </div>
@@ -514,7 +514,7 @@
             </div>
             <div class="card-body">
                 <p class="mb-2"><strong>Total Orders:</strong> {{ $order->customer->total_orders }}</p>
-                <p class="mb-2"><strong>Total Spent:</strong> ₹{{ number_format($order->customer->total_spent, 2) }}</p>
+                <p class="mb-2"><strong>Total Spent:</strong> RS {{ number_format($order->customer->total_spent, 2) }}</p>
                 <p class="mb-0"><strong>Customer Since:</strong> {{ $order->customer->created_at->format('M Y') }}</p>
                 
                 <hr>
@@ -591,8 +591,8 @@ function updateWhatsAppButton() {
     } else {
         console.log('WhatsApp enabled and configured');
         btn.prop('disabled', false)
-            .attr('title', 'Send bill via WhatsApp to ' + btn.data('customer-phone'))
-            .html('<i class="fab fa-whatsapp"></i> Send Bill via WhatsApp');
+            .attr('title', 'Send invoice via WhatsApp to ' + btn.data('customer-phone'))
+            .html('<i class="fab fa-whatsapp"></i> Send Invoice via WhatsApp');
     }
 }
 
@@ -624,7 +624,7 @@ function showWhatsAppMessageModal(orderId, customerPhone) {
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
-                            <i class="fab fa-whatsapp text-success"></i> Send Bill via WhatsApp
+                            <i class="fab fa-whatsapp text-success"></i> Send Invoice via WhatsApp
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
@@ -639,13 +639,13 @@ function showWhatsAppMessageModal(orderId, customerPhone) {
                             <label for="whatsapp-message" class="form-label">Custom Message (Optional)</label>
                             <textarea class="form-control" id="whatsapp-message" rows="4" 
                                       placeholder="Leave empty to use default message template..."></textarea>
-                            <small class="text-muted">The bill PDF will be automatically attached to the message.</small>
+                            <small class="text-muted">The invoice PDF will be automatically attached to the message.</small>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="button" class="btn btn-whatsapp" onclick="sendWhatsAppBill(${orderId})">
-                            <i class="fab fa-whatsapp"></i> Send Bill
+                            <i class="fab fa-whatsapp"></i> Send Invoice
                         </button>
                     </div>
                 </div>
@@ -689,7 +689,7 @@ function sendWhatsAppBill(orderId) {
         success: function(response) {
             console.log('AJAX success response:', response);
             if (response.success) {
-                showToast('Bill sent successfully via WhatsApp!', 'success');
+                showToast('Invoice sent successfully via WhatsApp!', 'success');
                 $('#whatsappMessageModal').modal('hide');
                 
                 // Show success details
@@ -718,7 +718,7 @@ function sendWhatsAppBill(orderId) {
         },
         complete: function() {
             console.log('AJAX request completed');
-            btn.prop('disabled', false).html('<i class="fab fa-whatsapp"></i> Send Bill');
+            btn.prop('disabled', false).html('<i class="fab fa-whatsapp"></i> Send Invoice');
         }
     });
 }

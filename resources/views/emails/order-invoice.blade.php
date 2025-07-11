@@ -69,8 +69,8 @@
 <body>
     <div class="container">
         <div class="header">
-            @if($company['logo'])
-                <img src="{{ asset('storage/' . $company['logo']) }}" alt="{{ $company['name'] }}" class="logo">
+            @if(isset($company['logo']) && !empty($company['logo']))
+                <img src="{{ asset('storage/' . $company['logo']) }}" alt="{{ $company['name'] ?? 'Your Store' }}" class="logo">
             @else
                 <div style="font-size: 40px; margin-bottom: 10px;">🏪</div>
             @endif
@@ -79,15 +79,15 @@
         </div>
         
         <div class="content">
-            <h2>Hello {{ $order->customer_name }},</h2>
+            <h2>Hello {{ $order->customer_name ?? 'Valued Customer' }},</h2>
             
             <p>Thank you for your order! Please find your invoice details below.</p>
             
             <div class="invoice-info">
                 <h3>Order Details</h3>
-                <p><strong>Order Number:</strong> {{ $order->order_number }}</p>
-                <p><strong>Order Date:</strong> {{ $order->created_at->format('M d, Y') }}</p>
-                <p><strong>Total Amount:</strong> ₹{{ number_format($order->total, 2) }}</p>
+                <p><strong>Order Number:</strong> {{ $order->order_number ?? 'N/A' }}</p>
+                <p><strong>Order Date:</strong> {{ $order->created_at ? $order->created_at->format('M d, Y') : 'N/A' }}</p>
+                <p><strong>Total Amount:</strong> ₹{{ number_format($order->total ?? 0, 2) }}</p>
                 <p><strong>Payment Status:</strong> Paid</p>
             </div>
             
@@ -99,16 +99,16 @@
             
             <div class="company-info">
                 <h4>{{ $company['name'] ?? 'Your Store' }}</h4>
-                @if($company['address'])
+                @if(isset($company['address']) && !empty($company['address']))
                     <p><strong>Address:</strong> {{ $company['address'] }}</p>
                 @endif
-                @if($company['phone'])
+                @if(isset($company['phone']) && !empty($company['phone']))
                     <p><strong>Phone:</strong> {{ $company['phone'] }}</p>
                 @endif
-                @if($company['email'])
+                @if(isset($company['email']) && !empty($company['email']))
                     <p><strong>Email:</strong> {{ $company['email'] }}</p>
                 @endif
-                @if($company['gst_number'])
+                @if(isset($company['gst_number']) && !empty($company['gst_number']))
                     <p><strong>GST No:</strong> {{ $company['gst_number'] }}</p>
                 @endif
             </div>
@@ -116,23 +116,23 @@
         
         <div class="footer">
             <p><strong>{{ $company['name'] ?? 'Your Store' }}</strong></p>
-            @if($company['address'])
+            @if(isset($company['address']) && !empty($company['address']))
                 <p>{{ $company['address'] }}</p>
             @endif
             <p>
-                @if($company['email'])
+                @if(isset($company['email']) && !empty($company['email']))
                     Email: {{ $company['email'] }}
                 @endif
-                @if($company['email'] && $company['phone'])
+                @if(isset($company['email']) && !empty($company['email']) && isset($company['phone']) && !empty($company['phone']))
                     | 
                 @endif
-                @if($company['phone'])
+                @if(isset($company['phone']) && !empty($company['phone']))
                     Phone: {{ $company['phone'] }}
                 @endif
-                @if(($company['email'] || $company['phone']) && $company['gst_number'])
+                @if((isset($company['email']) && !empty($company['email']) || isset($company['phone']) && !empty($company['phone'])) && isset($company['gst_number']) && !empty($company['gst_number']))
                     <br>
                 @endif
-                @if($company['gst_number'])
+                @if(isset($company['gst_number']) && !empty($company['gst_number']))
                     GST No: {{ $company['gst_number'] }}
                 @endif
             </p>

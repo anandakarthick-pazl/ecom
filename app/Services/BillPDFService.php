@@ -548,14 +548,14 @@ class BillPDFService
 
             if ($type === 'order') {
                 $viewData['order'] = $model;
-                $viewName = ($format === self::FORMAT_THERMAL) ? 'admin.orders.bill-thermal' : 'admin.orders.bill-pdf';
+                $viewName = ($format === self::FORMAT_THERMAL) ? 'admin.orders.bill-thermal' : 'admin.orders.invoice-pdf';
             } else {
                 // POS sale
                 $viewData['sale'] = $model;
                 $viewData['globalCompany'] = (object) $companySettings; // For compatibility with existing POS templates
                 $viewName = ($format === self::FORMAT_THERMAL) ? 'admin.pos.receipt-pdf' : 'admin.pos.receipt-a4';
             }
-            
+            // echo $viewName;exit;
             // Check if view exists
             if (!View::exists($viewName)) {
                 throw new \Exception("View template not found: {$viewName}");
@@ -563,7 +563,7 @@ class BillPDFService
             
             // Generate PDF with timeout protection
             $pdf = Pdf::loadView($viewName, $viewData);
-            
+            // echo $pdf;exit;
             // Set paper size based on format
             if ($format === self::FORMAT_THERMAL) {
                 $pdf->setPaper([0, 0, 226.77, 841.89], 'portrait'); // 80mm width thermal paper
@@ -574,11 +574,14 @@ class BillPDFService
             $pdf->setOptions([
                 'isHtml5ParserEnabled' => true,
                 'isRemoteEnabled' => false, // Disable remote resources to avoid hanging
-                'defaultFont' => $format === self::FORMAT_THERMAL ? 'monospace' : 'sans-serif',
+                'defaultFont' => $format === self::FORMAT_THERMAL ? 'DejaVu Sans' : 'DejaVu Sans', // Unicode support for currency
                 'dpi' => 96,
                 'isPhpEnabled' => false,
                 'isJavascriptEnabled' => false,
-                'debugKeepTemp' => false
+                'debugKeepTemp' => false,
+                'defaultMediaType' => 'print',
+                'isFontSubsettingEnabled' => true,
+                'fontHeightRatio' => 1.1
             ]);
             
             return $pdf;
@@ -589,7 +592,8 @@ class BillPDFService
                 'model_id' => $model->id ?? null,
                 'format' => $format,
                 'view_name' => $viewName ?? 'unknown',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'company_name' => $companySettings['name'] ?? 'Unknown'
             ]);
             throw $e;
         }
@@ -691,7 +695,49 @@ class BillPDFService
         }
         
         $settings = Cache::remember($cacheKey, 600, function () use ($companyId) { // 10 minute cache
+            // Try to get company from database first
+            $company = \App\Models\SuperAdmin\Company::find($companyId);
+            
+            if ($company) {
+                // Get data directly from company model
+                $companyData = [
+                    'id' => $company->id,
+                    'name' => $company->name ?? $company->company_name ?? 'Your Company',
+                    'address' => $company->address ?? $company->company_address ?? '',
+                    'phone' => $company->phone ?? $company->company_phone ?? '',
+                    'email' => $company->email ?? $company->company_email ?? '',
+                    'website' => $company->website ?? $company->company_website ?? '',
+                    'gst_number' => $company->gst_number ?? $company->gst_no ?? '',
+                    'logo' => $company->logo ?? $company->company_logo ?? '',
+                    'currency' => $company->currency ?? 'RS',
+                    'currency_code' => $company->currency_code ?? 'INR',
+                    'tax_name' => $company->tax_name ?? 'GST',
+                    'tax_rate' => $company->tax_rate ?? 18,
+                    'city' => $company->city ?? '',
+                    'state' => $company->state ?? '',
+                    'postal_code' => $company->postal_code ?? $company->pincode ?? $company->zip ?? '',
+                    'country' => $company->country ?? 'India',
+                    'primary_color' => $company->primary_color ?? '#2d5016',
+                    'secondary_color' => $company->secondary_color ?? '#4a7c28',
+                    'status' => $company->status ?? 'active'
+                ];
+                
+                // Build complete address if needed
+                if (empty($companyData['address'])) {
+                    $addressParts = array_filter([
+                        $companyData['city'],
+                        $companyData['state'],
+                        $companyData['postal_code']
+                    ]);
+                    $companyData['address'] = implode(', ', $addressParts);
+                }
+                
+                return $companyData;
+            }
+            
+            // Fallback to AppSetting method if company not found
             return [
+                'id' => $companyId,
                 'name' => AppSetting::getForTenant('company_name', $companyId) ?? 'Your Company',
                 'address' => AppSetting::getForTenant('company_address', $companyId) ?? '',
                 'phone' => AppSetting::getForTenant('company_phone', $companyId) ?? '',
@@ -699,9 +745,17 @@ class BillPDFService
                 'website' => AppSetting::getForTenant('company_website', $companyId) ?? '',
                 'gst_number' => AppSetting::getForTenant('company_gst_number', $companyId) ?? '',
                 'logo' => AppSetting::getForTenant('company_logo', $companyId) ?? '',
-                'currency' => AppSetting::getForTenant('currency', $companyId) ?? '₹',
+                'currency' => AppSetting::getForTenant('currency', $companyId) ?? 'RS',
+                'currency_code' => AppSetting::getForTenant('currency_code', $companyId) ?? 'INR',
                 'tax_name' => AppSetting::getForTenant('tax_name', $companyId) ?? 'GST',
                 'tax_rate' => AppSetting::getForTenant('tax_rate', $companyId) ?? 18,
+                'city' => AppSetting::getForTenant('city', $companyId) ?? '',
+                'state' => AppSetting::getForTenant('state', $companyId) ?? '',
+                'postal_code' => AppSetting::getForTenant('postal_code', $companyId) ?? AppSetting::getForTenant('pincode', $companyId) ?? '',
+                'country' => AppSetting::getForTenant('country', $companyId) ?? 'India',
+                'primary_color' => AppSetting::getForTenant('primary_color', $companyId) ?? '#2d5016',
+                'secondary_color' => AppSetting::getForTenant('secondary_color', $companyId) ?? '#4a7c28',
+                'status' => 'active'
             ];
         });
         
