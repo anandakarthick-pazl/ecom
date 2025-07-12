@@ -117,22 +117,68 @@ class ProductController extends BaseAdminController
         $data['is_active'] = $request->input('is_active', 0) == '1';
         $data['is_featured'] = $request->input('is_featured', 0) == '1';
 
-        // Handle file uploads using dynamic storage
+        // FIXED FEATURED IMAGE UPLOAD
         if ($request->hasFile('featured_image')) {
-            $uploadResult = $this->storeFileDynamically($request->file('featured_image'), 'products', 'products');
-            $data['featured_image'] = $uploadResult['file_path'];
+            try {
+                $file = $request->file('featured_image');
+                $filename = time() . '_featured_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $targetDir = storage_path('app/public/products');
+                
+                if (!is_dir($targetDir)) {
+                    mkdir($targetDir, 0755, true);
+                }
+                
+                $targetPath = $targetDir . '/' . $filename;
+                
+                if ($file->move($targetDir, $filename)) {
+                    $data['featured_image'] = 'products/' . $filename;
+                    
+                    Log::info('Product featured image uploaded', [
+                        'filename' => $filename,
+                        'stored_path' => $data['featured_image']
+                    ]);
+                } else {
+                    throw new \Exception('Failed to move featured image');
+                }
+                
+            } catch (\Exception $e) {
+                return $this->handleError('Featured image upload failed: ' . $e->getMessage());
+            }
         }
 
+        // FIXED MULTIPLE IMAGES UPLOAD
         $images = [];
         if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $uploadResult = $this->storeFileDynamically($image, 'products', 'products');
-                $images[] = $uploadResult['file_path'];
+            $targetDir = storage_path('app/public/products');
+            
+            if (!is_dir($targetDir)) {
+                mkdir($targetDir, 0755, true);
+            }
+            
+            foreach ($request->file('images') as $index => $file) {
+                try {
+                    $filename = time() . '_img' . $index . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $targetPath = $targetDir . '/' . $filename;
+                    
+                    if ($file->move($targetDir, $filename)) {
+                        $images[] = 'products/' . $filename;
+                        
+                        Log::info('Product image uploaded', [
+                            'filename' => $filename,
+                            'index' => $index
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Failed to upload product image', [
+                        'index' => $index,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
         }
         $data['images'] = $images;
 
-        // Create with tenant scope (company_id is automatically added via trait)
+        // Create with tenant scope
         $product = Product::create($data);
 
         $this->logActivity('Product created', $product, ['name' => $product->name]);
@@ -141,20 +187,6 @@ class ProductController extends BaseAdminController
             'Product created successfully!',
             'admin.products.index'
         );
-    }
-
-    public function show(Product $product)
-    {
-        $this->validateTenantOwnership($product);
-        $product->load('category');
-        return view('admin.products.show', compact('product'));
-    }
-
-    public function edit(Product $product)
-    {
-        $this->validateTenantOwnership($product);
-        $categories = Category::active()->orderBy('name')->get();
-        return view('admin.products.edit', compact('product', 'categories'));
     }
 
     public function update(Request $request, Product $product)
@@ -201,21 +233,56 @@ class ProductController extends BaseAdminController
         $data['is_active'] = $request->input('is_active', 0) == '1';
         $data['is_featured'] = $request->input('is_featured', 0) == '1';
 
-        // Handle featured image upload using dynamic storage
+        // FIXED FEATURED IMAGE UPDATE
         if ($request->hasFile('featured_image')) {
-            if ($product->featured_image) {
-                $this->deleteFileDynamically($product->featured_image);
+            try {
+                // Delete old featured image
+                if ($product->featured_image) {
+                    $oldPath = storage_path('app/public/' . $product->featured_image);
+                    if (file_exists($oldPath)) {
+                        unlink($oldPath);
+                    }
+                }
+                
+                $file = $request->file('featured_image');
+                $filename = time() . '_featured_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $targetDir = storage_path('app/public/products');
+                
+                if (!is_dir($targetDir)) {
+                    mkdir($targetDir, 0755, true);
+                }
+                
+                if ($file->move($targetDir, $filename)) {
+                    $data['featured_image'] = 'products/' . $filename;
+                }
+                
+            } catch (\Exception $e) {
+                return $this->handleError('Featured image upload failed: ' . $e->getMessage());
             }
-            $uploadResult = $this->storeFileDynamically($request->file('featured_image'), 'products', 'products');
-            $data['featured_image'] = $uploadResult['file_path'];
         }
 
-        // Handle additional images using dynamic storage
+        // FIXED ADDITIONAL IMAGES UPDATE
         $images = $product->images ?? [];
         if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $uploadResult = $this->storeFileDynamically($image, 'products', 'products');
-                $images[] = $uploadResult['file_path'];
+            $targetDir = storage_path('app/public/products');
+            
+            if (!is_dir($targetDir)) {
+                mkdir($targetDir, 0755, true);
+            }
+            
+            foreach ($request->file('images') as $index => $file) {
+                try {
+                    $filename = time() . '_img' . $index . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    
+                    if ($file->move($targetDir, $filename)) {
+                        $images[] = 'products/' . $filename;
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Failed to upload product image during update', [
+                        'product_id' => $product->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
             }
         }
         $data['images'] = $images;
@@ -229,6 +296,22 @@ class ProductController extends BaseAdminController
             'admin.products.index'
         );
     }
+
+    public function show(Product $product)
+    {
+        $this->validateTenantOwnership($product);
+        $product->load('category');
+        return view('admin.products.show', compact('product'));
+    }
+
+    public function edit(Product $product)
+    {
+        $this->validateTenantOwnership($product);
+        $categories = Category::active()->orderBy('name')->get();
+        return view('admin.products.edit', compact('product', 'categories'));
+    }
+
+    
 
     public function destroy(Product $product)
     {
