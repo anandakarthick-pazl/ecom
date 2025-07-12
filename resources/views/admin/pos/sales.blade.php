@@ -4,9 +4,30 @@
 @section('page_title', 'POS Sales History')
 
 @section('page_actions')
-<a href="{{ route('admin.pos.index') }}" class="btn btn-primary">
-    <i class="fas fa-cash-register"></i> New Sale
-</a>
+<div class="d-flex gap-2">
+    <a href="{{ route('admin.pos.index') }}" class="btn btn-primary">
+        <i class="fas fa-cash-register"></i> New Sale
+    </a>
+    
+    <!-- Bulk Actions Dropdown -->
+    <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-tasks"></i> Bulk Actions
+        </button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#" onclick="showBulkDownloadModal()">
+                <i class="fas fa-download text-primary"></i> Download Selected Invoices
+            </a></li>
+            <li><a class="dropdown-item" href="#" onclick="showDateRangeDownloadModal()">
+                <i class="fas fa-calendar-alt text-info"></i> Download by Date Range
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#" onclick="exportSales()">
+                <i class="fas fa-file-excel text-success"></i> Export to Excel
+            </a></li>
+        </ul>
+    </div>
+</div>
 @endsection
 
 @section('content')
@@ -105,6 +126,9 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" id="selectAll" class="form-check-input" title="Select All">
+                        </th>
                         <th>Invoice #</th>
                         <th>Date & Time</th>
                         <th>Customer</th>
@@ -119,6 +143,9 @@
                 <tbody>
                     @foreach($sales as $sale)
                     <tr>
+                        <td>
+                            <input type="checkbox" class="form-check-input sale-checkbox" value="{{ $sale->id }}" data-invoice="{{ $sale->invoice_number }}">
+                        </td>
                         <td>
                             <strong>{{ $sale->invoice_number }}</strong>
                         </td>
@@ -175,9 +202,21 @@
                                 <a href="{{ route('admin.pos.receipt', $sale) }}" class="btn btn-outline-secondary" title="View Receipt" target="_blank">
                                     <i class="fas fa-receipt"></i>
                                 </a>
-                                {{-- <a href="{{ route('admin.pos.download-bill', $sale) }}" class="btn btn-outline-primary" title="Download Bill PDF">
-                                    <i class="fas fa-download"></i>
-                                </a> --}}
+                                
+                                <!-- Enhanced PDF Download Dropdown -->
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Download Invoice">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        
+                                        <li><a class="dropdown-item" href="{{ route('admin.pos.preview-enhanced-invoice', $sale) }}" target="_blank">
+                                            <i class="fas fa-eye text-info"></i> Preview A4 Invoice
+                                        </a></li>
+                                        
+                                    </ul>
+                                </div>
+                                
                                 @if($sale->status === 'completed')
                                     <button type="button" class="btn btn-outline-warning" title="Process Refund" 
                                             onclick="showRefundModal({{ $sale->id }})">
@@ -222,6 +261,110 @@
         </div>
     </div>
 </div>
+
+<!-- Bulk Download Modal -->
+{{-- <div class="modal fade" id="bulkDownloadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-download text-primary"></i> Bulk Download Invoices
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    You have selected <span id="selectedCount">0</span> invoice(s) for download.
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Download Format</label>
+                    <select class="form-select" id="bulkDownloadFormat">
+                        <option value="enhanced">Enhanced A4 Invoice (Recommended)</option>
+                        <option value="thermal">Thermal Receipt (80mm)</option>
+                        <option value="simple">Simple Receipt</option>
+                        <option value="compact">Compact Multi-page PDF</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Selected Invoices</label>
+                    <div id="selectedInvoicesList" class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                        <!-- Selected invoices will be listed here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="processBulkDownload()">
+                    <i class="fas fa-download"></i> Download Selected
+                </button>
+            </div>
+        </div>
+    </div>
+</div> --}}
+
+<!-- Date Range Download Modal -->
+<div class="modal fade" id="dateRangeDownloadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-calendar-alt text-info"></i> Download by Date Range
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">From Date</label>
+                        <input type="date" class="form-control" id="dateRangeFrom" value="{{ date('Y-m-d', strtotime('-7 days')) }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">To Date</label>
+                        <input type="date" class="form-control" id="dateRangeTo" value="{{ date('Y-m-d') }}">
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <label class="form-label">Download Format</label>
+                    <select class="form-select" id="dateRangeFormat">
+                        <option value="enhanced">Enhanced A4 Invoice</option>
+                        <option value="thermal">Thermal Receipt (80mm)</option>
+                        <option value="compact">Compact Multi-page PDF</option>
+                        <option value="simple">Simple Receipt</option>
+                    </select>
+                </div>
+                
+                <div class="mt-3">
+                    <label class="form-label">Maximum Records</label>
+                    <select class="form-select" id="dateRangeLimit">
+                        <option value="20">20 invoices</option>
+                        <option value="50">50 invoices</option>
+                        <option value="100">100 invoices</option>
+                    </select>
+                    <small class="text-muted">Limit to prevent large file generation</small>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="dateRangeCompletedOnly" checked>
+                        <label class="form-check-label" for="dateRangeCompletedOnly">
+                            Only completed sales
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-info" onclick="processDateRangeDownload()">
+                    <i class="fas fa-download"></i> Download Range
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -229,6 +372,9 @@
 $(document).ready(function() {
     // Load daily summary
     loadDailySummary();
+    
+    // Initialize bulk selection functionality
+    initializeBulkSelection();
     
     function loadDailySummary() {
         fetch('{{ route("admin.pos.summary.daily") }}')
@@ -243,6 +389,194 @@ $(document).ready(function() {
             })
             .catch(error => console.error('Error loading daily summary:', error));
     }
+    
+    function initializeBulkSelection() {
+        // Select All functionality
+        $('#selectAll').on('change', function() {
+            const isChecked = $(this).prop('checked');
+            $('.sale-checkbox').prop('checked', isChecked);
+            updateBulkActionButtons();
+        });
+        
+        // Individual checkbox change
+        $(document).on('change', '.sale-checkbox', function() {
+            updateSelectAllState();
+            updateBulkActionButtons();
+        });
+    }
+    
+    function updateSelectAllState() {
+        const totalCheckboxes = $('.sale-checkbox').length;
+        const checkedCheckboxes = $('.sale-checkbox:checked').length;
+        
+        if (checkedCheckboxes === 0) {
+            $('#selectAll').prop('indeterminate', false).prop('checked', false);
+        } else if (checkedCheckboxes === totalCheckboxes) {
+            $('#selectAll').prop('indeterminate', false).prop('checked', true);
+        } else {
+            $('#selectAll').prop('indeterminate', true).prop('checked', false);
+        }
+    }
+    
+    function updateBulkActionButtons() {
+        const selectedCount = $('.sale-checkbox:checked').length;
+        // You can enable/disable bulk action buttons based on selection
+        console.log('Selected sales:', selectedCount);
+    }
+    
+    // Bulk download functions
+    window.showBulkDownloadModal = function() {
+        const selectedSales = [];
+        $('.sale-checkbox:checked').each(function() {
+            selectedSales.push({
+                id: $(this).val(),
+                invoice: $(this).data('invoice')
+            });
+        });
+        
+        if (selectedSales.length === 0) {
+            alert('Please select at least one sale to download.');
+            return;
+        }
+        
+        // Update modal content
+        $('#selectedCount').text(selectedSales.length);
+        
+        let invoicesList = '';
+        selectedSales.forEach(sale => {
+            invoicesList += `<div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                <span><i class="fas fa-file-pdf text-danger"></i> ${sale.invoice}</span>
+                <small class="text-muted">ID: ${sale.id}</small>
+            </div>`;
+        });
+        $('#selectedInvoicesList').html(invoicesList);
+        
+        $('#bulkDownloadModal').modal('show');
+    };
+    
+    window.showDateRangeDownloadModal = function() {
+        $('#dateRangeDownloadModal').modal('show');
+    };
+    
+    window.processBulkDownload = function() {
+        const selectedSales = [];
+        $('.sale-checkbox:checked').each(function() {
+            selectedSales.push($(this).val());
+        });
+        
+        if (selectedSales.length === 0) {
+            alert('No sales selected.');
+            return;
+        }
+        
+        const format = $('#bulkDownloadFormat').val();
+        
+        // Show loading state
+        const btn = $(event.target);
+        const originalText = btn.html();
+        btn.html('<i class="fas fa-spinner fa-spin"></i> Generating...');
+        btn.prop('disabled', true);
+        
+        // Create form and submit
+        const form = $('<form>', {
+            method: 'POST',
+            action: '{{ route("admin.pos.download-multiple-receipts") }}'
+        });
+        
+        // Add CSRF token
+        form.append($('<input>', {
+            type: 'hidden',
+            name: '_token',
+            value: '{{ csrf_token() }}'
+        }));
+        
+        // Add selected sale IDs
+        selectedSales.forEach(saleId => {
+            form.append($('<input>', {
+                type: 'hidden',
+                name: 'sale_ids[]',
+                value: saleId
+            }));
+        });
+        
+        // Add format
+        form.append($('<input>', {
+            type: 'hidden',
+            name: 'format',
+            value: format
+        }));
+        
+        $('body').append(form);
+        form.submit();
+        form.remove();
+        
+        // Reset button state after delay
+        setTimeout(() => {
+            btn.html(originalText);
+            btn.prop('disabled', false);
+            $('#bulkDownloadModal').modal('hide');
+        }, 3000);
+    };
+    
+    window.processDateRangeDownload = function() {
+        const dateFrom = $('#dateRangeFrom').val();
+        const dateTo = $('#dateRangeTo').val();
+        const format = $('#dateRangeFormat').val();
+        const limit = $('#dateRangeLimit').val();
+        const completedOnly = $('#dateRangeCompletedOnly').prop('checked');
+        
+        if (!dateFrom || !dateTo) {
+            alert('Please select both from and to dates.');
+            return;
+        }
+        
+        if (new Date(dateFrom) > new Date(dateTo)) {
+            alert('From date cannot be later than to date.');
+            return;
+        }
+        
+        // Show loading state
+        const btn = $(event.target);
+        const originalText = btn.html();
+        btn.html('<i class="fas fa-spinner fa-spin"></i> Generating...');
+        btn.prop('disabled', true);
+        
+        // Create form and submit
+        const form = $('<form>', {
+            method: 'POST',
+            action: '{{ route("admin.pos.download-receipts-by-date") }}'
+        });
+        
+        // Add CSRF token
+        form.append($('<input>', {
+            type: 'hidden',
+            name: '_token',
+            value: '{{ csrf_token() }}'
+        }));
+        
+        // Add parameters
+        form.append($('<input>', { type: 'hidden', name: 'date_from', value: dateFrom }));
+        form.append($('<input>', { type: 'hidden', name: 'date_to', value: dateTo }));
+        form.append($('<input>', { type: 'hidden', name: 'format', value: format }));
+        form.append($('<input>', { type: 'hidden', name: 'limit', value: limit }));
+        form.append($('<input>', { type: 'hidden', name: 'completed_only', value: completedOnly ? '1' : '0' }));
+        
+        $('body').append(form);
+        form.submit();
+        form.remove();
+        
+        // Reset button state after delay
+        setTimeout(() => {
+            btn.html(originalText);
+            btn.prop('disabled', false);
+            $('#dateRangeDownloadModal').modal('hide');
+        }, 3000);
+    };
+    
+    window.exportSales = function() {
+        // You can implement Excel export functionality here
+        alert('Excel export functionality will be implemented in future update.');
+    };
     
     window.showRefundModal = function(saleId) {
         // Load refund form

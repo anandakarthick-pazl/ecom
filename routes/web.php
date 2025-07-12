@@ -254,6 +254,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
         Route::get('/sales/{sale}', [PosController::class, 'show'])->name('show');
         Route::get('/receipt/{sale}', [PosController::class, 'receipt'])->name('receipt');
         Route::get('/sales/{sale}/download-bill', [PosController::class, 'downloadBill'])->name('download-bill');
+        Route::get('/sales/{sale}/download-enhanced-invoice', [PosController::class, 'downloadEnhancedInvoice'])->name('download-enhanced-invoice');
+        Route::get('/sales/{sale}/preview-enhanced-invoice', [PosController::class, 'previewEnhancedInvoice'])->name('preview-enhanced-invoice');
+        Route::get('/sales/{sale}/test-enhanced-company-data', [PosController::class, 'testEnhancedCompanyData'])->name('test-enhanced-company-data');
         Route::get('/sales/{sale}/download-bill-debug', [PosController::class, 'downloadBillDebug'])->name('download-bill-debug');
         Route::get('/sales/{sale}/view-bill-debug', [PosController::class, 'viewBillDebug'])->name('view-bill-debug');
         Route::get('/sales/{sale}/debug-logo', [PosController::class, 'debugCompanyLogo'])->name('debug-logo');
@@ -285,6 +288,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
         Route::get('/', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('index');
         Route::get('/customers', [\App\Http\Controllers\Admin\ReportController::class, 'customerReport'])->name('customers');
         Route::get('/sales', [\App\Http\Controllers\Admin\ReportController::class, 'salesReport'])->name('sales');
+        Route::get('/test-excel-export', [\App\Http\Controllers\Admin\ReportController::class, 'testExcelExport'])->name('test-excel-export');
         Route::get('/purchase-orders', [\App\Http\Controllers\Admin\ReportController::class, 'purchaseOrderReport'])->name('purchase-orders');
         Route::get('/purchase-order-items', [\App\Http\Controllers\Admin\ReportController::class, 'purchaseOrderItemReport'])->name('purchase-order-items');
         Route::get('/grn', [\App\Http\Controllers\Admin\ReportController::class, 'grnReport'])->name('grn');

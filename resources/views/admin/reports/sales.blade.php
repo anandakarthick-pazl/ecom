@@ -14,6 +14,11 @@
             <button type="button" class="btn btn-success btn-sm" onclick="exportReport()">
                 <i class="fas fa-file-excel"></i> Export Excel
             </button>
+            {{-- @if(config('app.debug'))
+                <a href="{{ route('admin.reports.test-excel-export') }}" class="btn btn-info btn-sm" target="_blank">
+                    <i class="fas fa-flask"></i> Test Export
+                </a>
+            @endif --}}
         </div>
     </div>
 

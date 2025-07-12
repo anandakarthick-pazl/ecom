@@ -15,27 +15,27 @@ use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-// Temporarily comment out Excel imports until package is installed
-// use Maatwebsite\Excel\Facades\Excel;
-// use App\Exports\CustomerReportExport;
-// use App\Exports\SalesReportExport;
-// use App\Exports\PurchaseOrderReportExport;
-// use App\Exports\PurchaseOrderItemReportExport;
-// use App\Exports\GrnReportExport;
-// use App\Exports\StockAdjustmentReportExport;
-// use App\Exports\IncomeReportExport;
-// use App\Exports\InventoryReportExport;
+// Excel Exports
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\CustomerReportExport;
+use App\Exports\SalesReportExport;
+use App\Exports\PurchaseOrderReportExport;
+use App\Exports\PurchaseOrderItemReportExport;
+use App\Exports\GrnReportExport;
+use App\Exports\StockAdjustmentReportExport;
+use App\Exports\IncomeReportExport;
+use App\Exports\InventoryReportExport;
 
 class ReportController extends Controller
 {
     public function index()
     {
         $summary = [
-            'total_customers' => Customer::count(),
-            'total_sales' => PosSale::where('status', 'completed')->sum('total_amount') + 
-                           Order::where('status', 'delivered')->sum('total'),
-            'total_purchases' => PurchaseOrder::sum('total_amount'),
-            'total_products' => Product::count(),
+            'total_customers' => Customer::currentTenant()->count(),
+            'total_sales' => PosSale::currentTenant()->where('status', 'completed')->sum('total_amount') + 
+                           Order::currentTenant()->where('status', 'delivered')->sum('total'),
+            'total_purchases' => PurchaseOrder::currentTenant()->sum('total_amount'),
+            'total_products' => Product::currentTenant()->count(),
             'monthly_sales' => $this->getMonthlySales(),
             'top_products' => $this->getTopProducts(),
         ];
@@ -47,7 +47,8 @@ class ReportController extends Controller
     {
         $query = Customer::withCount(['orders', 'posSales'])
             ->withSum('orders as total_online_spent', 'total')
-            ->withSum('posSales as total_pos_spent', 'total_amount');
+            ->withSum('posSales as total_pos_spent', 'total_amount')
+            ->currentTenant(); // Add tenant filtering
 
         if ($request->date_from) {
             $query->whereDate('created_at', '>=', $request->date_from);
@@ -68,23 +69,10 @@ class ReportController extends Controller
         $customers = $query->latest()->paginate(20);
 
         if ($request->export) {
-            // Temporary CSV export until Excel package is installed
-            return $this->exportToCSV($customers->items(), 'customer-report.csv', [
-                'Name', 'Email', 'Phone', 'Orders', 'POS Sales', 'Online Spent', 'POS Spent', 'Total Spent', 'Joined Date'
-            ], function($customer) {
-                $totalSpent = ($customer->total_online_spent ?? 0) + ($customer->total_pos_spent ?? 0);
-                return [
-                    $customer->name,
-                    $customer->email ?? 'N/A',
-                    $customer->mobile_number ?? 'N/A',
-                    $customer->orders_count ?? 0,
-                    $customer->pos_sales_count ?? 0,
-                    $customer->total_online_spent ?? 0,
-                    $customer->total_pos_spent ?? 0,
-                    $totalSpent,
-                    $customer->created_at->format('d/m/Y')
-                ];
-            });
+            $filename = 'customer_report_' . date('Y-m-d_H-i-s') . '.xlsx';
+            // Get all customers for export (not paginated)
+            $allCustomers = $query->get();
+            return Excel::download(new CustomerReportExport($allCustomers), $filename);
         }
 
         return view('admin.reports.customers', compact('customers'));
@@ -92,11 +80,14 @@ class ReportController extends Controller
 
     public function salesReport(Request $request)
     {
+        // Add tenant filtering
         $posQuery = PosSale::with(['cashier', 'items.product'])
-            ->where('status', 'completed');
+            ->where('status', 'completed')
+            ->currentTenant(); // Add tenant filtering
         
         $onlineQuery = Order::with(['customer', 'items.product'])
-            ->where('status', 'delivered');
+            ->where('status', 'delivered')
+            ->currentTenant(); // Add tenant filtering
 
         if ($request->date_from) {
             $posQuery->whereDate('sale_date', '>=', $request->date_from);
@@ -126,8 +117,8 @@ class ReportController extends Controller
         ];
 
         if ($request->export) {
-            // Temporary message until Excel package is installed
-            return redirect()->back()->with('info', 'Excel export feature requires Laravel Excel package. Please install it using: composer require maatwebsite/excel');
+            $filename = 'sales_report_' . date('Y-m-d_H-i-s') . '.xlsx';
+            return Excel::download(new SalesReportExport($posSales, $onlineOrders, $summary), $filename);
         }
 
         return view('admin.reports.sales', compact('posSales', 'onlineOrders', 'summary'));
@@ -168,7 +159,10 @@ class ReportController extends Controller
         ];
 
         if ($request->export) {
-            return redirect()->back()->with('info', 'Excel export feature requires Laravel Excel package. Please install it using: composer require maatwebsite/excel');
+            $filename = 'purchase_orders_report_' . date('Y-m-d_H-i-s') . '.xlsx';
+            // Get all purchase orders for export (not paginated)
+            $allPurchaseOrders = $query->get();
+            return Excel::download(new PurchaseOrderReportExport($allPurchaseOrders, $summary), $filename);
         }
 
         return view('admin.reports.purchase-orders', compact('purchaseOrders', 'suppliers', 'summary'));
@@ -220,7 +214,10 @@ class ReportController extends Controller
         ];
 
         if ($request->export) {
-            return redirect()->back()->with('info', 'Excel export feature requires Laravel Excel package. Please install it using: composer require maatwebsite/excel');
+            $filename = 'purchase_order_items_report_' . date('Y-m-d_H-i-s') . '.xlsx';
+            // Get all items for export (not paginated)
+            $allItems = $query->get();
+            return Excel::download(new PurchaseOrderItemReportExport($allItems, $summary), $filename);
         }
 
         return view('admin.reports.purchase-order-items', compact('items', 'suppliers', 'products', 'summary'));
@@ -257,7 +254,10 @@ class ReportController extends Controller
         ];
 
         if ($request->export) {
-            return redirect()->back()->with('info', 'Excel export feature requires Laravel Excel package. Please install it using: composer require maatwebsite/excel');
+            $filename = 'grn_report_' . date('Y-m-d_H-i-s') . '.xlsx';
+            // Get all GRNs for export (not paginated)
+            $allGrns = $query->get();
+            return Excel::download(new GrnReportExport($allGrns, $summary), $filename);
         }
 
         return view('admin.reports.grns', compact('grns', 'suppliers', 'summary'));
@@ -293,7 +293,10 @@ class ReportController extends Controller
         ];
 
         if ($request->export) {
-            return redirect()->back()->with('info', 'Excel export feature requires Laravel Excel package. Please install it using: composer require maatwebsite/excel');
+            $filename = 'stock_adjustments_report_' . date('Y-m-d_H-i-s') . '.xlsx';
+            // Get all adjustments for export (not paginated)
+            $allAdjustments = $query->get();
+            return Excel::download(new StockAdjustmentReportExport($allAdjustments, $summary), $filename);
         }
 
         return view('admin.reports.stock-adjustments', compact('adjustments', 'summary'));
@@ -343,7 +346,8 @@ class ReportController extends Controller
         ];
 
         if ($request->export) {
-            return redirect()->back()->with('info', 'Excel export feature requires Laravel Excel package. Please install it using: composer require maatwebsite/excel');
+            $filename = 'income_report_' . date('Y-m-d_H-i-s') . '.xlsx';
+            return Excel::download(new IncomeReportExport($data), $filename);
         }
 
         return view('admin.reports.income', compact('data'));
@@ -383,7 +387,8 @@ class ReportController extends Controller
         ];
 
         if ($request->export) {
-            return redirect()->back()->with('info', 'Excel export feature requires Laravel Excel package. Please install it using: composer require maatwebsite/excel');
+            $filename = 'inventory_report_' . date('Y-m-d_H-i-s') . '.xlsx';
+            return Excel::download(new InventoryReportExport($products, $summary), $filename);
         }
 
         return view('admin.reports.inventory', compact('products', 'summary'));
@@ -429,12 +434,14 @@ class ReportController extends Controller
         $monthlySales = [];
         for ($i = 11; $i >= 0; $i--) {
             $month = now()->subMonths($i);
-            $posAmount = PosSale::whereYear('sale_date', $month->year)
+            $posAmount = PosSale::currentTenant() // Add tenant filtering
+                ->whereYear('sale_date', $month->year)
                 ->whereMonth('sale_date', $month->month)
                 ->where('status', 'completed')
                 ->sum('total_amount');
             
-            $onlineAmount = Order::whereYear('created_at', $month->year)
+            $onlineAmount = Order::currentTenant() // Add tenant filtering
+                ->whereYear('created_at', $month->year)
                 ->whereMonth('created_at', $month->month)
                 ->where('status', 'delivered')
                 ->sum('total');
@@ -449,7 +456,8 @@ class ReportController extends Controller
 
     private function getTopProducts($limit = 10)
     {
-        return Product::select('products.*')
+        return Product::currentTenant() // Add tenant filtering
+            ->select('products.*')
             ->selectRaw('(COALESCE(SUM(order_items.quantity), 0) + COALESCE(SUM(pos_sale_items.quantity), 0)) as total_sold')
             ->leftJoin('order_items', 'products.id', '=', 'order_items.product_id')
             ->leftJoin('pos_sale_items', 'products.id', '=', 'pos_sale_items.product_id')
@@ -460,8 +468,45 @@ class ReportController extends Controller
     }
 
     /**
-     * Temporary CSV export helper until Excel package is installed
+     * Test Excel export functionality for debugging
      */
+    public function testExcelExport(Request $request)
+    {
+        try {
+            // Get a small sample of data for testing
+            $posSales = PosSale::with(['cashier', 'items.product'])
+                ->currentTenant()
+                ->where('status', 'completed')
+                ->limit(5)
+                ->get();
+            
+            $onlineOrders = Order::with(['customer', 'items.product'])
+                ->currentTenant()
+                ->where('status', 'delivered')
+                ->limit(5)
+                ->get();
+            
+            $summary = [
+                'pos_sales_count' => $posSales->count(),
+                'pos_sales_total' => $posSales->sum('total_amount'),
+                'online_sales_count' => $onlineOrders->count(),
+                'online_sales_total' => $onlineOrders->sum('total'),
+                'total_sales' => $posSales->sum('total_amount') + $onlineOrders->sum('total'),
+                'cash_sales' => $posSales->where('payment_method', 'cash')->sum('total_amount'),
+                'digital_sales' => $posSales->whereIn('payment_method', ['card', 'upi', 'gpay', 'paytm', 'phonepe'])->sum('total_amount'),
+            ];
+            
+            $filename = 'test_sales_report_' . date('Y-m-d_H-i-s') . '.xlsx';
+            
+            return Excel::download(new SalesReportExport($posSales, $onlineOrders, $summary), $filename);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Excel export test failed: ' . $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
+        }
+    }
     private function exportToCSV($data, $filename, $headers, $mapFunction)
     {
         $output = fopen('php://temp', 'r+');

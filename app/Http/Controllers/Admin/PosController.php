@@ -808,12 +808,17 @@ class PosController extends Controller
             'postal_code' => '',
             'company_phone' => '',
             'company_email' => '',
+            'website' => '',
             'gst_number' => '',
             'company_logo' => '',
-            'company_logo_pdf' => null,
+            'company_logo_pdf' => null, // FIXED: Added missing property
             'full_address' => 'Natural & Organic Products Store',
             'contact_info' => '',
-            'display_name' => 'Green Valley Herbs'
+            'display_name' => 'Green Valley Herbs',
+            'company_id' => null,
+            'domain' => '',
+            'tagline' => '',
+            'established_year' => null
         ];
     }
 
@@ -910,25 +915,78 @@ class PosController extends Controller
     }
 
     /**
-     * Test enhanced company data retrieval (for debugging)
+     * Ensure all required properties exist in company data object
      */
+    private function normalizeCompanyData($companyData)
+    {
+        $requiredProperties = [
+            'company_name' => 'Your Store',
+            'company_address' => '',
+            'city' => '',
+            'state' => '',
+            'country' => '',
+            'postal_code' => '',
+            'company_phone' => '',
+            'company_email' => '',
+            'website' => '',
+            'gst_number' => '',
+            'company_logo' => '',
+            'company_logo_pdf' => null,
+            'full_address' => '',
+            'contact_info' => '',
+            'display_name' => 'Your Store',
+            'company_id' => null,
+            'domain' => '',
+            'tagline' => '',
+            'established_year' => null
+        ];
+
+        // Convert to array for easier manipulation
+        $dataArray = is_object($companyData) ? (array)$companyData : $companyData;
+
+        // Ensure all required properties exist
+        foreach ($requiredProperties as $property => $defaultValue) {
+            if (!isset($dataArray[$property])) {
+                $dataArray[$property] = $defaultValue;
+            }
+        }
+
+        // Convert back to object
+        return (object)$dataArray;
+    }
     public function testEnhancedCompanyData(PosSale $sale)
     {
         try {
-            $companyData = $this->getSimpleCompanyData($sale->company_id);
+            $companyData = $this->getEnhancedCompanyData($sale->company_id);
+            
+            // Normalize the data
+            $normalizedData = $this->normalizeCompanyData($companyData);
 
             return response()->json([
                 'success' => true,
                 'sale_id' => $sale->id,
                 'sale_company_id' => $sale->company_id,
-                'company_data' => $companyData,
-                'current_tenant_id' => $this->getCurrentTenantId()
+                'raw_company_data' => $companyData,
+                'normalized_company_data' => $normalizedData,
+                'current_tenant_id' => $this->getCurrentTenantId(),
+                'has_logo_pdf' => isset($normalizedData->company_logo_pdf),
+                'logo_pdf_length' => isset($normalizedData->company_logo_pdf) ? strlen($normalizedData->company_logo_pdf ?? '') : 0,
+                'all_properties' => array_keys((array)$normalizedData),
+                'missing_properties_before' => array_diff(
+                    ['company_name', 'full_address', 'contact_info', 'company_logo_pdf'],
+                    array_keys((array)$companyData)
+                ),
+                'missing_properties_after' => array_diff(
+                    ['company_name', 'full_address', 'contact_info', 'company_logo_pdf'],
+                    array_keys((array)$normalizedData)
+                )
             ], 200, [], JSON_PRETTY_PRINT);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage(),
-                'sale_id' => $sale->id
+                'sale_id' => $sale->id,
+                'trace' => $e->getTraceAsString()
             ], 500);
         }
     }
@@ -1285,6 +1343,236 @@ class PosController extends Controller
         }
     }
 
+
+    /**
+     * Enhanced PDF Invoice Download - NEW METHOD
+     */
+    public function downloadEnhancedInvoice(PosSale $sale)
+    {
+        try {
+            Log::info('Enhanced PDF invoice download started', ['sale_id' => $sale->id]);
+
+            // Load sale data with relationships
+            $sale->load(['items.product', 'cashier']);
+
+            // Get enhanced company data with tenant information
+            $globalCompany = $this->getEnhancedCompanyData($sale->company_id);
+            
+            // Normalize company data to ensure all properties exist
+            $globalCompany = $this->normalizeCompanyData($globalCompany);
+
+            // Get format preference (default to A4)
+            $format = request()->get('format', 'a4_enhanced');
+
+            // Select the appropriate template based on format
+            $viewName = 'admin.pos.invoices.enhanced-a4-invoice';
+            $paperSize = 'A4';
+            $orientation = 'portrait';
+            
+            if ($format === 'thermal') {
+                $viewName = 'admin.pos.invoices.thermal-receipt';
+                $paperSize = [0, 0, 226.77, 841.89]; // 80mm thermal paper
+            } elseif ($format === 'simple') {
+                $viewName = 'admin.pos.receipt-a4-clean';
+            }
+            
+            // Fallback to existing templates if enhanced doesn't exist
+            if (!view()->exists($viewName)) {
+                if ($format === 'thermal') {
+                    $viewName = 'admin.pos.receipt-pdf-clean';
+                    if (!view()->exists($viewName)) {
+                        $viewName = 'admin.pos.receipt-pdf';
+                    }
+                } else {
+                    $viewName = 'admin.pos.receipt-a4-clean';
+                    if (!view()->exists($viewName)) {
+                        $viewName = 'admin.pos.receipt-a4';
+                    }
+                }
+            }
+
+            Log::info('Using enhanced invoice template: ' . $viewName);
+
+            // Create PDF with enhanced settings
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, [
+                'sale' => $sale,
+                'globalCompany' => $globalCompany
+            ]);
+
+            // Set paper size and orientation
+            $pdf->setPaper($paperSize, $orientation);
+
+            // Enhanced PDF options for better quality
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => false,
+                'defaultFont' => $format === 'thermal' ? 'Courier' : 'DejaVu Sans',
+                'dpi' => $format === 'thermal' ? 96 : 150, // Lower DPI for thermal
+                'debugKeepTemp' => false,
+                'chroot' => public_path(), // Allow access to public assets
+                'logOutputFile' => storage_path('logs/dompdf.log'),
+                'defaultMediaType' => 'print',
+                'isFontSubsettingEnabled' => true
+            ]);
+
+            // Generate filename with tenant info and format
+            $companySlug = str_slug($globalCompany->company_name ?? 'invoice');
+            $formatSuffix = $format === 'thermal' ? 'receipt' : 'invoice';
+            $filename = "{$formatSuffix}_{$companySlug}_{$sale->invoice_number}_" . date('Y-m-d_H-i-s') . '.pdf';
+
+            Log::info('Enhanced PDF invoice generated successfully', [
+                'filename' => $filename,
+                'company' => $globalCompany->company_name,
+                'template' => $viewName,
+                'format' => $format
+            ]);
+
+            // Return enhanced PDF download
+            return response()->streamDownload(function () use ($pdf) {
+                echo $pdf->output();
+            }, $filename, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Cache-Control' => 'private, max-age=0, must-revalidate',
+                'Pragma' => 'public'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Enhanced PDF invoice download failed', [
+                'sale_id' => $sale->id,
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+
+            // Fallback to simple download
+            return $this->downloadBillSimple($sale);
+        }
+    }
+
+    /**
+     * Get enhanced company data with complete tenant information
+     */
+    private function getEnhancedCompanyData($companyId = null)
+    {
+        try {
+            if (!$companyId) {
+                $companyId = $this->getCurrentTenantId();
+            }
+
+            if (!$companyId) {
+                return $this->getFallbackCompanyData();
+            }
+
+            // Get company with all details
+            $company = \App\Models\SuperAdmin\Company::find($companyId);
+
+            if (!$company) {
+                Log::warning('Company not found for enhanced data', ['company_id' => $companyId]);
+                return $this->getFallbackCompanyData();
+            }
+
+            // Format complete address
+            $addressParts = array_filter([
+                $company->address ?? '',
+                $company->city ?? '',
+                ($company->state ?? '') . (($company->postal_code ?? '') ? ' - ' . ($company->postal_code ?? '') : ''),
+                $company->country ?? ''
+            ]);
+            $fullAddress = !empty($addressParts) ? implode(', ', $addressParts) : '';
+
+            // Format contact information
+            $contactParts = [];
+            if (!empty($company->phone)) {
+                $contactParts[] = "Phone: {$company->phone}";
+            }
+            if (!empty($company->email)) {
+                $contactParts[] = "Email: {$company->email}";
+            }
+            if (!empty($company->website)) {
+                $contactParts[] = "Web: {$company->website}";
+            }
+            $contactInfo = !empty($contactParts) ? implode(' | ', $contactParts) : '';
+
+            // Get logo for PDF (base64 encoded)
+            $logoForPdf = null;
+            if (!empty($company->logo)) {
+                try {
+                    $logoForPdf = $this->getCompanyLogoForPDF((object)['company_logo' => $company->logo]);
+                } catch (\Exception $e) {
+                    Log::warning('Failed to process company logo for PDF', [
+                        'company_id' => $companyId,
+                        'logo' => $company->logo,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            // Return complete company data object with ALL properties
+            return (object) [
+                'company_name' => $company->name ?? 'Your Store',
+                'company_address' => $company->address ?? '',
+                'city' => $company->city ?? '',
+                'state' => $company->state ?? '',
+                'country' => $company->country ?? '',
+                'postal_code' => $company->postal_code ?? '',
+                'company_phone' => $company->phone ?? '',
+                'company_email' => $company->email ?? '',
+                'website' => $company->website ?? '',
+                'gst_number' => $company->gst_number ?? '',
+                'company_logo' => $company->logo ?? '',
+                'company_logo_pdf' => $logoForPdf,
+                'full_address' => $fullAddress,
+                'contact_info' => $contactInfo,
+                'display_name' => $company->name ?? 'Your Store',
+                'company_id' => $company->id ?? null,
+                'domain' => $company->domain ?? '',
+                'tagline' => $company->tagline ?? '',
+                'established_year' => $company->established_year ?? null
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Error getting enhanced company data', [
+                'company_id' => $companyId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return $this->getFallbackCompanyData();
+        }
+    }
+
+    /**
+     * Preview enhanced invoice (for testing)
+     */
+    public function previewEnhancedInvoice(PosSale $sale)
+    {
+        try {
+            $sale->load(['items.product', 'cashier']);
+            $globalCompany = $this->getEnhancedCompanyData($sale->company_id);
+            
+            // Normalize company data to ensure all properties exist
+            $globalCompany = $this->normalizeCompanyData($globalCompany);
+
+            $viewName = 'admin.pos.invoices.enhanced-a4-invoice';
+            
+            if (!view()->exists($viewName)) {
+                $viewName = 'admin.pos.receipt-a4-clean';
+            }
+
+            return view($viewName, [
+                'sale' => $sale,
+                'globalCompany' => $globalCompany
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Enhanced invoice preview failed', [
+                'sale_id' => $sale->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()->with('error', 'Failed to preview enhanced invoice: ' . $e->getMessage());
+        }
+    }
 
     /**
      * Bulk download receipts by date range
