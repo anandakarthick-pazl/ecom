@@ -55,9 +55,16 @@ class TenantMiddleware
             'is_admin_route' => $request->is('admin/*')
         ]);
         
-        // For localhost, skip tenant resolution but continue
-        if ($host === 'localhost' || $host === '127.0.0.1') {
-            Log::info('TenantMiddleware: Localhost access - skipping tenant resolution');
+        // Main domains - skip tenant resolution
+        $mainDomains = [
+            'rrkcrackers.com',
+            'www.rrkcrackers.com',
+            'localhost',
+            '127.0.0.1'
+        ];
+        
+        if (in_array($host, $mainDomains) || str_contains($host, 'localhost')) {
+            Log::info('TenantMiddleware: Main domain access - skipping tenant resolution');
             return $next($request);
         }
         
@@ -83,8 +90,8 @@ class TenantMiddleware
                 return $next($request);
             }
             
-            // For other routes, redirect to main SaaS landing page
-            return redirect()->to(config('app.main_url', 'http://localhost:8000'));
+            // For other routes, redirect to main domain
+            return redirect()->to(config('app.main_url', 'https://rrkcrackers.com'));
         }
         
         // Check if company is active and subscription is valid

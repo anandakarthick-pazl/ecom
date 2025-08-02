@@ -43,12 +43,15 @@ Route::get('/', function () {
     \Log::info('Root route accessed', [
         'host' => $host,
         'url' => request()->url(),
+        'is_main_domain' => in_array($host, ['rrkcrackers.com', 'www.rrkcrackers.com']),
         'is_localhost' => in_array($host, ['localhost', '127.0.0.1']),
         'has_local' => str_contains($host, '.local')
     ]);
 
-    // Main domain (localhost) - Show SaaS landing page using the original controller
-    if ($host === 'localhost' || $host === '127.0.0.1') {
+    // Main domains - Show SaaS landing page
+    $mainDomains = ['rrkcrackers.com', 'www.rrkcrackers.com', 'localhost', '127.0.0.1'];
+    
+    if (in_array($host, $mainDomains)) {
         return app(CompanyRegistrationController::class)->showRegistrationForm();
     }
 
