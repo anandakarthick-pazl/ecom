@@ -19,16 +19,8 @@ class MainDomainMiddleware
     {
         $host = $request->getHost();
         
-        // Production and development domains
-        $mainDomains = [
-            'rrkcrackers.com',
-            'www.rrkcrackers.com',
-            'localhost',
-            '127.0.0.1'
-        ];
-        
         // Check if this is the main domain
-        if (!in_array($host, $mainDomains) && !str_contains($host, 'localhost')) {
+        if ($host !== 'localhost' && $host !== '127.0.0.1' && !str_contains($host, 'localhost')) {
             // If not main domain, redirect to root which will handle tenant routing
             return redirect('/');
         }
