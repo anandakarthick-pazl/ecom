@@ -311,6 +311,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
         Route::post('/delivery', [SettingsController::class, 'updateDelivery'])->name('delivery');
         Route::post('/pagination', [SettingsController::class, 'updatePagination'])->name('pagination');
         Route::post('/bill-format', [SettingsController::class, 'updateBillFormat'])->name('bill-format');
+        Route::post('/invoice-numbering', [SettingsController::class, 'updateInvoiceNumbering'])->name('invoice-numbering');
+        Route::get('/invoice-numbering/preview', [SettingsController::class, 'previewInvoiceNumbers'])->name('invoice-numbering.preview');
+        Route::post('/invoice-numbering/reset', [SettingsController::class, 'resetInvoiceSequences'])->name('invoice-numbering.reset');
         Route::post('/whatsapp-templates', [SettingsController::class, 'updateWhatsAppTemplates'])->name('whatsapp-templates');
         Route::post('/animations', [SettingsController::class, 'updateAnimations'])->name('animations');
         Route::post('/test-email', [SettingsController::class, 'testEmail'])->name('test-email');
