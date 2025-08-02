@@ -180,6 +180,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
     Route::patch('orders/{order}/payment-status', [OrderController::class, 'updatePaymentStatus'])->name('orders.update-payment-status');
     Route::get('orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
+    Route::get('orders/{order}/print-invoice', [OrderController::class, 'printInvoice'])->name('orders.print-invoice');
+    Route::get('orders/{order}/download-invoice', [OrderController::class, 'downloadInvoice'])->name('orders.download-invoice');
     Route::post('orders/{order}/send-invoice', [OrderController::class, 'sendInvoice'])->name('orders.send-invoice');
     
     // WhatsApp Bill Routes
