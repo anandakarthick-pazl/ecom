@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Icon Usage Examples</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="css/icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-5">
+        <h1 class="mb-5">Location Icon Usage Examples</h1>
+
+        <!-- Basic Location Icons -->
+        <section class="mb-5">
+            <h2 class="h3 mb-3">Basic Location Icons</h2>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="location-icon mx-auto mb-3">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <h6>Default Location</h6>
+                            <code>fas fa-map-marker-alt</code>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="location-icon icon-store mx-auto mb-3">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <h6>Store Location</h6>
+                            <code>fas fa-store</code>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="location-icon icon-office mx-auto mb-3">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <h6>Office Location</h6>
+                            <code>fas fa-building</code>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <div class="location-icon icon-warehouse mx-auto mb-3">
+                                <i class="fas fa-warehouse"></i>
+                            </div>
+                            <h6>Warehouse</h6>
+                            <code>fas fa-warehouse</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Different Sizes -->
+        <section class="mb-5">
+            <h2 class="h3 mb-3">Different Sizes</h2>
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <div class="text-center">
+                    <div class="location-icon small mx-auto mb-2">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <small>Small</small>
+                </div>
+                <div class="text-center">
+                    <div class="location-icon mx-auto mb-2">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <small>Default</small>
+                </div>
+                <div class="text-center">
+                    <div class="location-icon large mx-auto mb-2">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <small>Large</small>
+                </div>
+                <div class="text-center">
+                    <div class="location-icon extra-large mx-auto mb-2">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <small>Extra Large</small>
+                </div>
+            </div>
+        </section>
+
+        <!-- Usage in PHP/Laravel -->
+        <section class="mb-5">
+            <h2 class="h3 mb-3">PHP/Laravel Usage Examples</h2>
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Code Examples</h6>
+                </div>
+                <div class="card-body">
+                    <h6>1. Using the IconClass Helper</h6>
+                    <pre><code class="language-php">// Get all location icons
+$locationIcons = \App\Helpers\IconClass::getLocationIcons();
+
+// Get default location icon
+$defaultIcon = \App\Helpers\IconClass::getDefaultLocationIcon();
+
+// Render location icon HTML
+$iconHtml = \App\Helpers\IconClass::renderLocationIcon('fas fa-store', '#28a745', '50px');
+
+// Check if icon is valid
+$isValid = \App\Helpers\IconClass::isValidIcon('fas fa-map-marker-alt');
+
+// Get icon name
+$iconName = \App\Helpers\IconClass::getIconName('fas fa-store'); // Returns "Store"</code></pre>
+
+                    <h6 class="mt-4">2. In Blade Templates</h6>
+                    <pre><code class="language-blade">{{-- Use the location icon selector component --}}
+@include('components.location-icon-selector', [
+    'fieldName' => 'location_icon',
+    'label' => 'Choose Location Icon',
+    'value' => $location->icon ?? 'fas fa-map-marker-alt',
+    'required' => true,
+    'previewColor' => '#dc3545'
+])
+
+{{-- Display location icon --}}
+&lt;div class="location-icon" style="background-color: {{ $location->color }}"&gt;
+    &lt;i class="{{ $location->icon_class }} text-white"&gt;&lt;/i&gt;
+&lt;/div&gt;</code></pre>
+
+                    <h6 class="mt-4">3. Controller Usage</h6>
+                    <pre><code class="language-php">// In your controller
+use App\Helpers\IconClass;
+
+class LocationController extends Controller
+{
+    public function create()
+    {
+        $locationIcons = IconClass::getLocationIcons();
+        $predefinedPlatforms = IconClass::getPredefinedPlatforms();
+        
+        return view('admin.locations.create', compact('locationIcons', 'predefinedPlatforms'));
+    }
+    
+    public function store(Request $request)
+    {
+        $request->validate([
+            'icon_class' => ['required', 'string', function ($attribute, $value, $fail) {
+                if (!IconClass::isValidIcon($value)) {
+                    $fail('The selected icon is not valid.');
+                }
+            }],
+        ]);
+        
+        // Store location with icon
+        Location::create($request->validated());
+    }
+}</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Examples -->
+        <section class="mb-5">
+            <h2 class="h3 mb-3">Interactive Examples</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Location with Animation</h6>
+                        </div>
+                        <div class="card-body text-center">
+                            <div class="location-icon icon-pulse mx-auto mb-3">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <p>Pulsing location marker</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Rotating Compass</h6>
+                        </div>
+                        <div class="card-body text-center">
+                            <div class="location-icon icon-rotate mx-auto mb-3">
+                                <i class="fas fa-compass"></i>
+                            </div>
+                            <p>Rotating compass icon</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Location List Example -->
+        <section class="mb-5">
+            <h2 class="h3 mb-3">Location List Example</h2>
+            <div class="card">
+                <div class="card-body">
+                    <ul class="icon-list">
+                        <li>
+                            <div class="location-icon small icon-store">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Main Store</h6>
+                                <small class="text-muted">123 Main Street, City</small>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="location-icon small icon-office">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Corporate Office</h6>
+                                <small class="text-muted">456 Business Ave, Downtown</small>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="location-icon small icon-warehouse">
+                                <i class="fas fa-warehouse"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">Distribution Center</h6>
+                                <small class="text-muted">789 Industrial Blvd, Suburbs</small>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- CSS Classes Reference -->
+        <section class="mb-5">
+            <h2 class="h3 mb-3">CSS Classes Reference</h2>
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Class</th>
+                                    <th>Description</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>.location-icon</code></td>
+                                    <td>Base location icon style</td>
+                                    <td>Default 40x40px red location icon</td>
+                                </tr>
+                                <tr>
+                                    <td><code>.location-icon.small</code></td>
+                                    <td>Small size (30x30px)</td>
+                                    <td>For compact displays</td>
+                                </tr>
+                                <tr>
+                                    <td><code>.location-icon.large</code></td>
+                                    <td>Large size (50x50px)</td>
+                                    <td>For emphasis</td>
+                                </tr>
+                                <tr>
+                                    <td><code>.icon-store</code></td>
+                                    <td>Green background for stores</td>
+                                    <td>Store/retail locations</td>
+                                </tr>
+                                <tr>
+                                    <td><code>.icon-office</code></td>
+                                    <td>Blue background for offices</td>
+                                    <td>Corporate/business locations</td>
+                                </tr>
+                                <tr>
+                                    <td><code>.icon-warehouse</code></td>
+                                    <td>Gray background for warehouses</td>
+                                    <td>Industrial/storage facilities</td>
+                                </tr>
+                                <tr>
+                                    <td><code>.icon-pulse</code></td>
+                                    <td>Pulsing animation</td>
+                                    <td>Draw attention to active locations</td>
+                                </tr>
+                                <tr>
+                                    <td><code>.icon-rotate</code></td>
+                                    <td>Rotating animation</td>
+                                    <td>Loading states or compass icons</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

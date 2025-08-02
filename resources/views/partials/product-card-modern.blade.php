@@ -1,5 +1,13 @@
 <!-- Modern Product Card -->
-<div class="product-card {{ isset($offer) && $offer ? 'offer-card' : '' }}">
+@php
+    // Use dynamic offer data if available
+    $hasOffer = isset($product->has_offer) ? $product->has_offer : ($product->discount_price && $product->discount_price > 0);
+    $effectivePrice = isset($product->effective_price) ? $product->effective_price : ($product->discount_price ?: $product->price);
+    $discountPercentage = isset($product->discount_percentage) ? $product->discount_percentage : $product->discount_percentage ?? 0;
+    $offerDetails = isset($product->offer_details) ? $product->offer_details : null;
+@endphp
+
+<div class="product-card {{ isset($offer) && $offer ? 'offer-card' : '' }} {{ !$product->isInStock() ? 'out-of-stock-card' : '' }}">
     <div class="product-image-container">
         @if($product->featured_image)
             <img src="{{ $product->featured_image_url }}" class="product-image" alt="{{ $product->name }}">
@@ -9,9 +17,22 @@
             </div>
         @endif
         
-        @if($product->discount_percentage > 0)
+        @if(!$product->isInStock())
+            <div class="product-badge stock-badge">
+                <span class="badge-out-of-stock">Out of Stock</span>
+            </div>
+        @elseif($discountPercentage > 0)
             <div class="product-badge">
-                <span class="badge-discount">{{ $product->discount_percentage }}% OFF</span>
+                <span class="badge-discount">{{ $discountPercentage }}% OFF</span>
+            </div>
+        @endif
+        
+        {{-- Show special offer badge if it's from category/product offer --}}
+        @if($offerDetails && ($offerDetails['is_category_offer'] || $offerDetails['is_product_offer']))
+            <div class="product-badge-special">
+                <span class="badge-special-offer">
+                    <i class="fas fa-fire"></i> {{ $offerDetails['offer']->name }}
+                </span>
             </div>
         @endif
         
@@ -26,11 +47,22 @@
                 <a href="{{ route('product', $product->slug) }}" class="quick-btn" title="View Details">
                     <i class="fas fa-eye"></i>
                 </a>
-                <button onclick="addToCart({{ $product->id }})" class="quick-btn" title="Add to Cart">
-                    <i class="fas fa-shopping-cart"></i>
-                </button>
+                @if($product->isInStock())
+                    <button onclick="addToCart({{ $product->id }})" class="quick-btn" title="Add to Cart">
+                        <i class="fas fa-shopping-cart"></i>
+                    </button>
+                @endif
             </div>
         </div>
+        
+        @if(!$product->isInStock())
+            <div class="stock-overlay">
+                <div class="stock-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Currently Unavailable</span>
+                </div>
+            </div>
+        @endif
     </div>
     
     <div class="product-content">
@@ -40,11 +72,33 @@
         </h3>
         <p class="product-description">{{ Str::limit($product->short_description ?? '', 60) }}</p>
         
+        {{-- Show offer details --}}
+        @if($offerDetails && $offerDetails['is_category_offer'])
+            <div class="offer-info">
+                <i class="fas fa-fire text-danger"></i> 
+                <small class="text-success fw-bold">{{ $offerDetails['offer']->name }}</small>
+                <span class="badge bg-success ms-1">
+                    @if($offerDetails['offer']->discount_type === 'percentage')
+                        {{ $offerDetails['offer']->value }}% OFF
+                    @else
+                        ₹{{ number_format($offerDetails['offer']->value, 2) }} OFF
+                    @endif
+                </span>
+            </div>
+        @endif
+        
         <div class="product-footer">
             <div class="price-section">
-                @if($product->discount_price)
-                    <span class="current-price">₹{{ number_format($product->discount_price, 2) }}</span>
+                @if($hasOffer)
+                    <span class="current-price">₹{{ number_format($effectivePrice, 2) }}</span>
                     <span class="original-price">₹{{ number_format($product->price, 2) }}</span>
+                    @if($offerDetails)
+                        <div class="savings-info">
+                            <small class="text-success">
+                                <i class="fas fa-tags"></i> You save ₹{{ number_format($offerDetails['savings'], 2) }}
+                            </small>
+                        </div>
+                    @endif
                 @else
                     <span class="current-price">₹{{ number_format($product->price, 2) }}</span>
                 @endif
@@ -61,15 +115,17 @@
                             <i class="fas fa-plus"></i>
                         </button>
                     </div>
-                    <button onclick="addToCartWithQuantity({{ $product->id }})" class="btn-add-cart {{ isset($offer) && $offer ? 'offer' : '' }}">
+                    <button onclick="addToCartWithQuantity({{ $product->id }})" class="btn-add-cart {{ ($hasOffer || (isset($offer) && $offer)) ? 'offer' : '' }}">
                         <i class="fas fa-cart-plus"></i>
-                        <span>{{ isset($offer) && $offer ? 'Grab Deal' : 'Add to Cart' }}</span>
+                        <span>Add</span>
                     </button>
                 @else
-                    <button class="btn-out-stock" disabled>
-                        <i class="fas fa-ban"></i>
-                        <span>Out of Stock</span>
-                    </button>
+                    <div class="out-of-stock-section">
+                        <button class="btn-out-stock" disabled>
+                            <i class="fas fa-ban"></i>
+                            <span>Out of Stock</span>
+                        </button>
+                    </div>
                 @endif
             </div>
         </div>
@@ -140,6 +196,13 @@
     z-index: 2;
 }
 
+.product-badge-special {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+}
+
 .badge-discount {
     background: linear-gradient(45deg, #ef4444, #dc2626);
     color: white;
@@ -147,6 +210,25 @@
     border-radius: 8px;
     font-size: 0.75rem;
     font-weight: 600;
+    animation: pulseOffer 2s ease-in-out infinite;
+}
+
+.badge-special-offer {
+    background: linear-gradient(45deg, #10b981, #059669);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    animation: pulseOffer 3s ease-in-out infinite;
+}
+
+@keyframes pulseOffer {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
 }
 
 .badge-featured {
@@ -247,8 +329,20 @@
     font-size: 0.875rem;
     color: #6b7280;
     line-height: 1.4;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
     flex: 1;
+}
+
+.offer-info {
+    padding: 0.5rem;
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .product-footer {
@@ -270,6 +364,10 @@
     text-decoration: line-through;
     color: #6b7280;
     margin-left: 0.5rem;
+}
+
+.savings-info {
+    margin-top: 0.25rem;
 }
 
 .product-actions {
@@ -339,10 +437,17 @@
 
 .btn-add-cart.offer {
     background: linear-gradient(45deg, #ef4444, #dc2626);
+    animation: pulseButton 3s ease-in-out infinite;
 }
 
 .btn-add-cart.offer:hover {
     background: linear-gradient(45deg, #dc2626, #b91c1c);
+    animation: none;
+}
+
+@keyframes pulseButton {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
 }
 
 .btn-out-stock {
@@ -358,5 +463,153 @@
     gap: 0.5rem;
     opacity: 0.7;
     cursor: not-allowed;
+    width: 100%;
+}
+
+/* Out of Stock Card Styles */
+.out-of-stock-card {
+    position: relative;
+    opacity: 0.8;
+}
+
+.out-of-stock-card .product-image {
+    filter: grayscale(30%);
+}
+
+.stock-badge {
+    top: 12px;
+    left: 12px;
+    z-index: 3;
+}
+
+.badge-out-of-stock {
+    background: linear-gradient(45deg, #f59e0b, #d97706);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    animation: pulse 2s infinite;
+}
+
+.stock-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    color: white;
+    padding: 1rem;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.out-of-stock-card:hover .stock-overlay {
+    opacity: 1;
+}
+
+.stock-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.out-of-stock-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
 }
 </style>
+
+<script>
+// Quantity controls
+function incrementQuantity(productId) {
+    const input = document.getElementById('quantity-' + productId);
+    const max = parseInt(input.getAttribute('max'));
+    let value = parseInt(input.value);
+    if (value < max) {
+        input.value = value + 1;
+    }
+}
+
+function decrementQuantity(productId) {
+    const input = document.getElementById('quantity-' + productId);
+    let value = parseInt(input.value);
+    if (value > 1) {
+        input.value = value - 1;
+    }
+}
+
+function addToCartWithQuantity(productId) {
+    const quantity = parseInt(document.getElementById('quantity-' + productId).value);
+    
+    fetch('{{ route("cart.add") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            product_id: productId,
+            quantity: quantity
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Product added to cart!', 'success');
+            // Update cart count if function exists
+            if (typeof updateCartCount === 'function') {
+                updateCartCount();
+            }
+        } else {
+            showToast(data.message || 'Failed to add to cart', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to add to cart', 'error');
+    });
+}
+
+function addToCart(productId) {
+    addToCartWithQuantity(productId);
+}
+
+function showToast(message, type = 'info') {
+    // Simple toast notification
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> 
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
+
+
+</script>

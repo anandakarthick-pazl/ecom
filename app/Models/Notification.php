@@ -46,12 +46,26 @@ class Notification extends Model
     /**
      * Mark notification as read
      */
-    public function markAsRead()
+    public function markAsRead($notificationId = null)
     {
-        $this->update([
-            'is_read' => true,
-            'read_at' => now()
-        ]);
+        if ($notificationId) {
+            $notification = self::find($notificationId);
+            if ($notification) {
+                $notification->update([
+                    'is_read' => true,
+                    'read_at' => now()
+                ]);
+                return $notification;
+            }
+        } else {
+            $this->update([
+                'is_read' => true,
+                'read_at' => now()
+            ]);
+            return $this;
+        }
+        
+        return null;
     }
 
     /**

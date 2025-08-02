@@ -348,34 +348,86 @@ class ProductController extends BaseAdminController
 
     public function toggleStatus(Product $product)
     {
-        $this->validateTenantOwnership($product);
-        
-        $product->update(['is_active' => !$product->is_active]);
-        
-        $status = $product->is_active ? 'activated' : 'deactivated';
-        
-        $this->logActivity("Product {$status}", $product, ['name' => $product->name]);
-        
-        // Clean the message to ensure no newline characters
-        $message = trim("Product {$status} successfully!");
-        
-        return $this->handleSuccess($message, 'admin.products.index');
+        try {
+            $this->validateTenantOwnership($product);
+            
+            $product->update(['is_active' => !$product->is_active]);
+            
+            $status = $product->is_active ? 'activated' : 'deactivated';
+            
+            $this->logActivity("Product {$status}", $product, ['name' => $product->name]);
+            
+            // Clean the message to ensure no newline characters
+            $message = "Product {$status} successfully!";
+            
+            // Return proper JSON response for AJAX calls
+            if (request()->expectsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'is_active' => $product->is_active
+                ]);
+            }
+            
+            return redirect()->back()->with('success', $message);
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to toggle product status', [
+                'product_id' => $product->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            if (request()->expectsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to update product status'
+                ], 500);
+            }
+            
+            return redirect()->back()->with('error', 'Failed to update product status!');
+        }
     }
 
     public function toggleFeatured(Product $product)
     {
-        $this->validateTenantOwnership($product);
-        
-        $product->update(['is_featured' => !$product->is_featured]);
-        
-        $status = $product->is_featured ? 'marked as featured' : 'removed from featured';
-        
-        $this->logActivity("Product {$status}", $product, ['name' => $product->name]);
-        
-        // Clean the message to ensure no newline characters
-        $message = trim("Product {$status} successfully!");
-        
-        return $this->handleSuccess($message, 'admin.products.index');
+        try {
+            $this->validateTenantOwnership($product);
+            
+            $product->update(['is_featured' => !$product->is_featured]);
+            
+            $status = $product->is_featured ? 'marked as featured' : 'removed from featured';
+            
+            $this->logActivity("Product {$status}", $product, ['name' => $product->name]);
+            
+            // Clean the message to ensure no newline characters
+            $message = "Product {$status} successfully!";
+            
+            // Return proper JSON response for AJAX calls
+            if (request()->expectsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'is_featured' => $product->is_featured
+                ]);
+            }
+            
+            return redirect()->back()->with('success', $message);
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to toggle product featured status', [
+                'product_id' => $product->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            if (request()->expectsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to update featured status'
+                ], 500);
+            }
+            
+            return redirect()->back()->with('error', 'Failed to update featured status!');
+        }
     }
 
     /**
@@ -383,20 +435,66 @@ class ProductController extends BaseAdminController
      */
     public function removeImage(Request $request, Product $product)
     {
-        $this->validateTenantOwnership($product);
-        
-        $imageIndex = $request->input('image_index');
-        $images = $product->images ?? [];
-        
-        if (isset($images[$imageIndex])) {
-            $this->deleteFileDynamically($images[$imageIndex]);
-            unset($images[$imageIndex]);
-            $product->update(['images' => array_values($images)]);
+        try {
+            $this->validateTenantOwnership($product);
             
-            return $this->handleSuccess('Image removed successfully!');
+            $imageIndex = $request->input('image_index');
+            $images = $product->images ?? [];
+            
+            if (isset($images[$imageIndex])) {
+                // Delete the file using dynamic storage
+                $this->deleteFileDynamically($images[$imageIndex]);
+                
+                // Remove from array and reindex
+                unset($images[$imageIndex]);
+                $images = array_values($images);
+                
+                // Update product
+                $product->update(['images' => $images]);
+                
+                $this->logActivity('Product image removed', $product, [
+                    'name' => $product->name,
+                    'image_index' => $imageIndex
+                ]);
+                
+                // Return proper JSON response
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Image removed successfully!',
+                        'remaining_images' => count($images)
+                    ]);
+                }
+                
+                return redirect()->back()->with('success', 'Image removed successfully!');
+            }
+            
+            // Image not found
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Image not found!'
+                ], 404);
+            }
+            
+            return redirect()->back()->with('error', 'Image not found!');
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to remove product image', [
+                'product_id' => $product->id,
+                'error' => $e->getMessage(),
+                'image_index' => $request->input('image_index')
+            ]);
+            
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to remove image: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->back()->with('error', 'Failed to remove image!');
         }
-        
-        return $this->handleError('Image not found!');
     }
 
     /**

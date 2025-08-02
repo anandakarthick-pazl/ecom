@@ -484,6 +484,7 @@ class BillPDFService
 
     /**
      * Get configured bill format for company based on admin settings
+     * NEW LOGIC: Default format setting takes precedence over individual enables
      */
     protected function getConfiguredBillFormat($companyId)
     {
@@ -501,30 +502,30 @@ class BillPDFService
                 $a4SheetEnabled = filter_var($a4SheetEnabled, FILTER_VALIDATE_BOOLEAN);
             }
 
-            // Logic: If both are enabled, use default format
-            if ($thermalEnabled && $a4SheetEnabled) {
-                return $defaultFormat;
-            }
-            
-            // If only thermal is enabled, use thermal
-            if ($thermalEnabled && !$a4SheetEnabled) {
-                return self::FORMAT_THERMAL;
-            }
-            
-            // If only A4 is enabled, use A4 (this includes the case where neither is explicitly enabled)
-            if (!$thermalEnabled && $a4SheetEnabled) {
-                return self::FORMAT_A4_SHEET;
-            }
-            
-            // If neither is enabled (shouldn't happen, but fallback to A4)
-            if (!$thermalEnabled && !$a4SheetEnabled) {
-                Log::warning('No bill format enabled, defaulting to A4 sheet', [
-                    'company_id' => $companyId
+            // NEW LOGIC: Default format setting takes precedence
+            // If default format is set to A4, both online orders and POS orders use A4
+            if ($defaultFormat === self::FORMAT_A4_SHEET) {
+                Log::debug('Using A4 format based on default setting', [
+                    'company_id' => $companyId,
+                    'default_format' => $defaultFormat
                 ]);
                 return self::FORMAT_A4_SHEET;
             }
             
-            // Fallback
+            // If default format is set to thermal, both online orders and POS orders use thermal
+            if ($defaultFormat === self::FORMAT_THERMAL) {
+                Log::debug('Using thermal format based on default setting', [
+                    'company_id' => $companyId,
+                    'default_format' => $defaultFormat
+                ]);
+                return self::FORMAT_THERMAL;
+            }
+            
+            // Fallback: if default format is invalid, use A4
+            Log::warning('Invalid default format, falling back to A4', [
+                'company_id' => $companyId,
+                'default_format' => $defaultFormat
+            ]);
             return self::FORMAT_A4_SHEET;
             
         } catch (\Exception $e) {
@@ -642,18 +643,28 @@ class BillPDFService
 
     /**
      * Get available formats for a company
+     * NEW LOGIC: Only show the format that matches the default setting
      */
     public function getAvailableFormats($companyId)
     {
         $formats = [];
         
-        if ($this->isThermalEnabled($companyId)) {
-            $formats[self::FORMAT_THERMAL] = 'Thermal Printer (80mm)';
-        }
+        // Get the default format setting
+        $defaultFormat = AppSetting::getForTenant('default_bill_format', $companyId) ?? self::FORMAT_A4_SHEET;
         
-        if ($this->isA4SheetEnabled($companyId)) {
+        // Only show the format that matches the default setting
+        if ($defaultFormat === self::FORMAT_THERMAL) {
+            $formats[self::FORMAT_THERMAL] = 'Thermal Printer (80mm)';
+        } else {
+            // Default to A4 for any other value or if A4 is explicitly set
             $formats[self::FORMAT_A4_SHEET] = 'A4 Sheet PDF';
         }
+        
+        Log::debug('Available formats determined by default setting', [
+            'company_id' => $companyId,
+            'default_format' => $defaultFormat,
+            'available_formats' => array_keys($formats)
+        ]);
         
         return $formats;
     }
@@ -1004,10 +1015,11 @@ class BillPDFService
 
     /**
      * Enhanced available formats with caching
+     * NEW LOGIC: Only show the format that matches the default setting
      */
     public function getAvailableFormatsCached($companyId)
     {
-        $cacheKey = "available_formats_{$companyId}";
+        $cacheKey = "available_formats_v2_{$companyId}";
         
         static $formatCache = [];
         if (isset($formatCache[$cacheKey])) {
@@ -1017,11 +1029,14 @@ class BillPDFService
         $formats = Cache::remember($cacheKey, 600, function () use ($companyId) {
             $formats = [];
             
-            if ($this->isThermalEnabled($companyId)) {
-                $formats[self::FORMAT_THERMAL] = 'Thermal Printer (80mm)';
-            }
+            // Get the default format setting
+            $defaultFormat = AppSetting::getForTenant('default_bill_format', $companyId) ?? self::FORMAT_A4_SHEET;
             
-            if ($this->isA4SheetEnabled($companyId)) {
+            // Only show the format that matches the default setting
+            if ($defaultFormat === self::FORMAT_THERMAL) {
+                $formats[self::FORMAT_THERMAL] = 'Thermal Printer (80mm)';
+            } else {
+                // Default to A4 for any other value or if A4 is explicitly set
                 $formats[self::FORMAT_A4_SHEET] = 'A4 Sheet PDF';
             }
             

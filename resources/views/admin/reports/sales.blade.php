@@ -14,12 +14,48 @@
             <button type="button" class="btn btn-success btn-sm" onclick="exportReport()">
                 <i class="fas fa-file-excel"></i> Export Excel
             </button>
+            <a href="{{ route('admin.commissions.index') }}" class="btn btn-info btn-sm">
+                <i class="fas fa-percentage"></i> Manage Commissions
+            </a>
             {{-- @if(config('app.debug'))
                 <a href="{{ route('admin.reports.test-excel-export') }}" class="btn btn-info btn-sm" target="_blank">
                     <i class="fas fa-flask"></i> Test Export
                 </a>
             @endif --}}
         </div>
+
+    <!-- Top Commission Performers -->
+    @if(isset($commissionStats['top_performers']) && $commissionStats['top_performers']->count() > 0)
+    {{-- <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Top Commission Performers</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>Reference Name</th>
+                            <th>Total Commission</th>
+                            <th>Transaction Count</th>
+                            <th>Average Commission</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($commissionStats['top_performers'] as $performer)
+                            <tr>
+                                <td><strong>{{ $performer['name'] }}</strong></td>
+                                <td class="text-success">₹{{ number_format($performer['total_commission'], 2) }}</td>
+                                <td>{{ $performer['count'] }}</td>
+                                <td>₹{{ number_format($performer['avg_commission'], 2) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div> --}}
+    @endif
     </div>
 
     <!-- Filters -->
@@ -51,6 +87,18 @@
                                 <option value="card" {{ request('payment_method') == 'card' ? 'selected' : '' }}>Card</option>
                                 <option value="upi" {{ request('payment_method') == 'upi' ? 'selected' : '' }}>UPI</option>
                                 <option value="mixed" {{ request('payment_method') == 'mixed' ? 'selected' : '' }}>Mixed</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>Commission Status</label>
+                            <select name="commission_status" class="form-control">
+                                <option value="">All Sales</option>
+                                <option value="with_commission" {{ request('commission_status') == 'with_commission' ? 'selected' : '' }}>With Commission</option>
+                                <option value="without_commission" {{ request('commission_status') == 'without_commission' ? 'selected' : '' }}>Without Commission</option>
+                                <option value="pending" {{ request('commission_status') == 'pending' ? 'selected' : '' }}>Pending Commission</option>
+                                <option value="paid" {{ request('commission_status') == 'paid' ? 'selected' : '' }}>Paid Commission</option>
                             </select>
                         </div>
                     </div>
@@ -141,6 +189,83 @@
         </div>
     </div>
 
+    <!-- Commission Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Commission</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ number_format($summary['total_commission_amount'] ?? 0, 2) }}</div>
+                            <div class="text-xs text-gray-500">{{ $summary['total_commission_count'] ?? 0 }} records</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Commission</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ number_format($summary['pending_commission_amount'] ?? 0, 2) }}</div>
+                            <div class="text-xs text-gray-500">{{ $summary['pending_commission_count'] ?? 0 }} pending</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-hourglass-half fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Paid Commission</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">₹{{ number_format($summary['paid_commission_amount'] ?? 0, 2) }}</div>
+                            <div class="text-xs text-gray-500">{{ $summary['paid_commission_count'] ?? 0 }} paid</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-secondary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">Commission Rate</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @if($summary['total_sales'] > 0 && ($summary['total_commission_amount'] ?? 0) > 0)
+                                    {{ number_format((($summary['total_commission_amount'] ?? 0) / $summary['total_sales']) * 100, 2) }}%
+                                @else
+                                    0.00%
+                                @endif
+                            </div>
+                            <div class="text-xs text-gray-500">of total sales</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-pie fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- POS Sales Table -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
@@ -149,43 +274,57 @@
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-bordered table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Invoice No</th>
-                            <th>Date</th>
-                            <th>Customer</th>
-                            <th>Items</th>
-                            <th>Payment Method</th>
-                            <th>Subtotal</th>
-                            <th>Tax</th>
-                            <th>Total</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($posSales as $sale)
-                            <tr>
-                                <td>{{ $sale->invoice_number }}</td>
-                                <td>{{ $sale->sale_date }}</td>
-                                <td>{{ $sale->customer_name ?? 'Walk-in' }}</td>
-                                <td>{{ $sale->items->count() }}</td>
-                                <td>
-                                    <span class="badge badge-secondary">{{ ucfirst($sale->payment_method) }}</span>
-                                </td>
-                                <td>₹{{ number_format($sale->subtotal, 2) }}</td>
-                                <td>₹{{ number_format($sale->tax_amount, 2) }}</td>
-                                <td><strong>₹{{ number_format($sale->total_amount, 2) }}</strong></td>
-                                <td>
-                                    <span class="badge badge-success">{{ ucfirst($sale->status) }}</span>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="9" class="text-center">No POS sales found</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                <thead>
+                <tr>
+                <th>Invoice No</th>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Items</th>
+                <th>Payment Method</th>
+                <th>Subtotal</th>
+                <th>Tax</th>
+                <th>Total</th>
+                <th>Commission</th>
+                    <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @forelse($posSales as $sale)
+                <tr>
+                <td>{{ $sale->invoice_number }}</td>
+                <td>{{ $sale->sale_date }}</td>
+                <td>{{ $sale->customer_name ?? 'Walk-in' }}</td>
+                <td>{{ $sale->items->count() }}</td>
+                <td>
+                    <span class="badge badge-secondary">{{ ucfirst($sale->payment_method) }}</span>
+                </td>
+                <td>₹{{ number_format($sale->subtotal, 2) }}</td>
+                <td>₹{{ number_format($sale->tax_amount, 2) }}</td>
+                <td><strong>₹{{ number_format($sale->total_amount, 2) }}</strong></td>
+                <td>
+                    @if($sale->commission)
+                            <div class="text-success">
+                                    <strong>₹{{ number_format($sale->commission->commission_amount, 2) }}</strong><br>
+                                <small>{{ $sale->commission->reference_name }}</small><br>
+                            <span class="badge badge-{{ $sale->commission->status_color }} badge-sm">
+                                    {{ $sale->commission->status_text }}
+                                    </span>
+                                    </div>
+                                    @else
+                                            <span class="text-muted">No Commission</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-success">{{ ucfirst($sale->status) }}</span>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="10" class="text-center">No POS sales found</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
             </div>
         </div>
     </div>

@@ -1,0 +1,186 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToTenantEnhanced;
+
+class ProductStockNotification extends Model
+{
+    use HasFactory, BelongsToTenantEnhanced;
+
+    protected $fillable = [
+        'company_id',
+        'product_id',
+        'customer_name',
+        'customer_email',
+        'customer_mobile',
+        'notification_type',
+        'is_notified',
+        'notified_at',
+        'session_id',
+        'metadata'
+    ];
+
+    protected $casts = [
+        'is_notified' => 'boolean',
+        'notified_at' => 'datetime',
+        'metadata' => 'array'
+    ];
+
+    // Relationships
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    // Scopes
+    public function scopePending($query)
+    {
+        return $query->where('is_notified', false);
+    }
+
+    public function scopeNotified($query)
+    {
+        return $query->where('is_notified', true);
+    }
+
+    public function scopeForProduct($query, $productId)
+    {
+        return $query->where('product_id', $productId);
+    }
+
+    public function scopeByEmail($query, $email)
+    {
+        return $query->where('customer_email', $email);
+    }
+
+    public function scopeByMobile($query, $mobile)
+    {
+        return $query->where('customer_mobile', $mobile);
+    }
+
+    public function scopeBySession($query, $sessionId)
+    {
+        return $query->where('session_id', $sessionId);
+    }
+
+    // Methods
+    public function markAsNotified()
+    {
+        $this->update([
+            'is_notified' => true,
+            'notified_at' => now()
+        ]);
+    }
+
+    public function canNotify()
+    {
+        return !$this->is_notified && $this->product && $this->product->isInStock();
+    }
+
+    public function getFormattedMobileAttribute()
+    {
+        if (!$this->customer_mobile) {
+            return null;
+        }
+
+        // Ensure mobile starts with +91
+        $mobile = preg_replace('/[^0-9]/', '', $this->customer_mobile);
+        
+        if (strlen($mobile) === 10) {
+            return '+91' . $mobile;
+        } elseif (strlen($mobile) === 13 && substr($mobile, 0, 3) === '91') {
+            return '+' . $mobile;
+        }
+        
+        return $this->customer_mobile;
+    }
+
+    public function getNotificationChannelsAttribute()
+    {
+        $channels = [];
+        
+        if (in_array($this->notification_type, ['email', 'both']) && $this->customer_email) {
+            $channels[] = 'email';
+        }
+        
+        if (in_array($this->notification_type, ['whatsapp', 'both']) && $this->customer_mobile) {
+            $channels[] = 'whatsapp';
+        }
+        
+        return $channels;
+    }
+
+    // Static methods
+    public static function createNotification($productId, $customerData, $sessionId = null)
+    {
+        // Get the product to determine company_id
+        $product = \App\Models\Product::find($productId);
+        if (!$product) {
+            throw new \Exception('Product not found');
+        }
+        
+        $companyId = $product->company_id ?? session('company_id') ?? 1;
+        
+        // Check if similar notification already exists
+        $existing = self::where('product_id', $productId)
+            ->where('company_id', $companyId)
+            ->where(function($query) use ($customerData, $sessionId) {
+                if (!empty($customerData['email'])) {
+                    $query->where('customer_email', $customerData['email']);
+                }
+                if (!empty($customerData['mobile'])) {
+                    $query->orWhere('customer_mobile', $customerData['mobile']);
+                }
+                if ($sessionId) {
+                    $query->orWhere('session_id', $sessionId);
+                }
+            })
+            ->where('is_notified', false)
+            ->first();
+
+        if ($existing) {
+            // Update existing notification with new data
+            $existing->update(array_filter([
+                'customer_name' => $customerData['name'] ?? $existing->customer_name,
+                'customer_email' => $customerData['email'] ?? $existing->customer_email,
+                'customer_mobile' => $customerData['mobile'] ?? $existing->customer_mobile,
+                'notification_type' => $customerData['notification_type'] ?? $existing->notification_type,
+                'session_id' => $sessionId ?? $existing->session_id,
+                'metadata' => array_merge($existing->metadata ?? [], [
+                    'updated_at' => now()->toISOString(),
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent()
+                ])
+            ]));
+            
+            return $existing;
+        }
+
+        // Create new notification
+        return self::create([
+            'company_id' => $companyId,
+            'product_id' => $productId,
+            'customer_name' => $customerData['name'] ?? null,
+            'customer_email' => $customerData['email'] ?? null,
+            'customer_mobile' => $customerData['mobile'] ?? null,
+            'notification_type' => $customerData['notification_type'] ?? 'both',
+            'session_id' => $sessionId,
+            'metadata' => [
+                'ip' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+                'created_via' => 'web'
+            ]
+        ]);
+    }
+
+    public static function getActiveNotificationsForProduct($productId)
+    {
+        return self::where('product_id', $productId)
+            ->where('is_notified', false)
+            ->with('product')
+            ->get();
+    }
+}

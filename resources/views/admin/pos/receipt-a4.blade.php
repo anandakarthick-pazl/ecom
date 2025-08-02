@@ -430,16 +430,29 @@
         <table class="items-table">
             <thead>
                 <tr>
-                    <th width="35%">Item Details</th>
+                    <th width="30%">Item Details</th>
                     <th width="8%" class="text-center">Qty</th>
-                    <th width="12%" class="text-right">Rate</th>
-                    <th width="12%" class="text-right">Discount</th>
+                    <th width="12%" class="text-right">Selling Price</th>
+                    <th width="10%" class="text-right">Line Total</th>
+                    <th width="10%" class="text-right">Discount</th>
                     <th width="10%" class="text-right">Tax</th>
-                    <th width="13%" class="text-right">Amount</th>
+                    <th width="10%" class="text-right">Net Amount</th>
+                    <th width="10%" class="text-right">Final Total</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($sale->items as $item)
+                @php
+                    $unitPrice = $item->unit_price ?? 0;
+                    $originalPrice = $item->original_price ?? $item->product->price ?? $unitPrice;
+                    $quantity = $item->quantity ?? 1;
+                    $lineTotal = $unitPrice * $quantity;
+                    $itemDiscount = $item->discount_amount ?? 0;
+                    $afterDiscount = $lineTotal - $itemDiscount;
+                    $taxAmount = $item->tax_amount ?? 0;
+                    $finalAmount = $afterDiscount + $taxAmount;
+                    $hasOfferPrice = $originalPrice > $unitPrice && $originalPrice != $unitPrice;
+                @endphp
                 <tr>
                     <td>
                         <div class="item-name">{{ $item->product->name ?? $item->product_name }}</div>
@@ -447,35 +460,39 @@
                             <div class="item-sku">SKU: {{ $item->product->sku }}</div>
                         @endif
                     </td>
-                    <td class="text-center">{{ $item->quantity }}</td>
-                    <td class="text-right">₹{{ number_format($item->unit_price, 2) }}</td>
+                    <td class="text-center">{{ $quantity }}</td>
                     <td class="text-right">
-                        @if(($item->discount_amount ?? 0) > 0)
-                            <div class="discount-text">-₹{{ number_format($item->discount_amount, 2) }}</div>
+                        @if($hasOfferPrice)
+                            <strong style="color: #27ae60;">Offer: ₹{{ number_format($unitPrice, 2) }}</strong><br>
+                            <span style="font-size: 8px; color: #999;">MRP: ₹{{ number_format($originalPrice, 2) }}</span>
+                            @if($item->offer_applied)
+                                <div style="font-size: 8px; color: #27ae60;">{{ $item->offer_applied }}</div>
+                            @endif
+                        @else
+                            <strong style="color: #27ae60;">₹{{ number_format($unitPrice, 2) }}</strong><br>
+                            {{-- <span style="font-size: 8px; color: #666;">(Selling Price)</span> --}}
+                        @endif
+                    </td>
+                    <td class="text-right"><strong>₹{{ number_format($lineTotal, 2) }}</strong></td>
+                    <td class="text-right">
+                        @if($itemDiscount > 0)
+                            <div class="discount-text">-₹{{ number_format($itemDiscount, 2) }}</div>
                             <div class="discount-text">({{ number_format($item->discount_percentage ?? 0, 1) }}%)</div>
                         @else
                             -
                         @endif
                     </td>
                     <td class="text-right">
-                        @if(($item->tax_percentage ?? 0) > 0)
-                            <div>{{ $item->tax_percentage }}%</div>
-                            <div class="tax-text">₹{{ number_format($item->tax_amount ?? 0, 2) }}</div>
+                        @if($taxAmount > 0)
+                            <div>{{ $item->tax_percentage ?? 0 }}%</div>
+                            <div class="tax-text">₹{{ number_format($taxAmount, 2) }}</div>
                         @else
                             -
                         @endif
                     </td>
-                    <td class="text-right">
-                        @php
-                            $itemGross = $item->quantity * $item->unit_price;
-                            $itemDiscount = $item->discount_amount ?? 0;
-                            $itemNet = $itemGross - $itemDiscount;
-                            $itemTotal = $itemNet + ($item->tax_amount ?? 0);
-                        @endphp
-                        @if($itemDiscount > 0)
-                            <div class="strikethrough">₹{{ number_format($itemGross, 2) }}</div>
-                        @endif
-                        <strong>₹{{ number_format($itemTotal, 2) }}</strong>
+                    <td class="text-right"><strong>₹{{ number_format($afterDiscount, 2) }}</strong></td>
+                    <td class="text-right" style="background-color: #f0f8f0;">
+                        <strong style="color: #27ae60;">₹{{ number_format($finalAmount, 2) }}</strong>
                     </td>
                 </tr>
                 @endforeach
@@ -487,26 +504,43 @@
             <div class="totals-section">
                 <table class="totals-table">
                     @php
-                        $itemsSubtotal = $sale->items->sum(function($item) {
-                            return $item->quantity * $item->unit_price;
+                        $itemsGrossTotal = $sale->items->sum(function($item) {
+                            $originalPrice = $item->original_price ?? $item->product->price ?? $item->unit_price;
+                            return $originalPrice * $item->quantity;
+                        });
+                        $itemsSellingTotal = $sale->items->sum(function($item) {
+                            return $item->unit_price * $item->quantity;
                         });
                         $totalItemDiscounts = $sale->items->sum('discount_amount');
+                        $totalOfferSavings = $itemsGrossTotal - $itemsSellingTotal;
                     @endphp
+                    
+                    @if($totalOfferSavings > 0)
+                    <tr>
+                        <td class="total-label">Items MRP Total:</td>
+                        <td class="total-amount">₹{{ number_format($itemsGrossTotal, 2) }}</td>
+                    </tr>
+                    
+                    <tr style="background-color: #e8f5e8;">
+                        <td class="total-label">Offer Savings:</td>
+                        <td class="total-amount" style="color: #27ae60;">-₹{{ number_format($totalOfferSavings, 2) }}</td>
+                    </tr>
+                    @endif
+                    
+                    <tr>
+                        <td class="total-label">Items Selling Total:</td>
+                        <td class="total-amount">₹{{ number_format($itemsSellingTotal, 2) }}</td>
+                    </tr>
                     
                     @if($totalItemDiscounts > 0)
                     <tr>
-                        <td class="total-label">Items Gross Total:</td>
-                        <td class="total-amount">₹{{ number_format($itemsSubtotal, 2) }}</td>
-                    </tr>
-                    
-                    <tr>
-                        <td class="total-label">Item Discounts:</td>
+                        <td class="total-label">Additional Item Discounts:</td>
                         <td class="total-amount">-₹{{ number_format($totalItemDiscounts, 2) }}</td>
                     </tr>
                     @endif
                     
                     <tr>
-                        <td class="total-label">Subtotal:</td>
+                        <td class="total-label">Subtotal (After Discounts):</td>
                         <td class="total-amount">₹{{ number_format($sale->subtotal, 2) }}</td>
                     </tr>
                     
@@ -526,13 +560,13 @@
                     
                     @if($sale->discount_amount > 0)
                     <tr>
-                        <td class="total-label">Additional Discount:</td>
+                        <td class="total-label">Bill Discount:</td>
                         <td class="total-amount">-₹{{ number_format($sale->discount_amount, 2) }}</td>
                     </tr>
                     @endif
                     
                     <tr class="grand-total">
-                        <td class="total-label">TOTAL AMOUNT:</td>
+                        <td class="total-label">FINAL AMOUNT:</td>
                         <td class="total-amount">₹{{ number_format($sale->total_amount, 2) }}</td>
                     </tr>
                 </table>

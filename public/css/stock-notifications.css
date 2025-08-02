@@ -1,0 +1,336 @@
+/* Stock Notification System Styles */
+
+/* Out of Stock Product Cards */
+.out-of-stock-product {
+    position: relative;
+    opacity: 0.8;
+}
+
+.out-of-stock-product::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 40%, rgba(255, 0, 0, 0.1) 50%, transparent 60%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.out-of-stock-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #dc3545;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 2;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Notification Modal Styles */
+.notification-options .form-check {
+    padding: 0.75rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.notification-options .form-check:hover {
+    background-color: #f8f9fa;
+    border-color: #0d6efd;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
+}
+
+.notification-options .form-check-input:checked + .form-check-label {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.notification-options .form-check-input:checked ~ * {
+    color: #0d6efd;
+}
+
+.notification-options .form-check-label {
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+}
+
+/* Out of Stock Animation */
+.out-of-stock-icon {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { 
+        transform: scale(1); 
+        opacity: 1; 
+    }
+    50% { 
+        transform: scale(1.1); 
+        opacity: 0.8; 
+    }
+    100% { 
+        transform: scale(1); 
+        opacity: 1; 
+    }
+}
+
+@keyframes pulse {
+    0% { 
+        transform: scale(1); 
+        opacity: 1; 
+    }
+    50% { 
+        transform: scale(1.1); 
+        opacity: 0.8; 
+    }
+    100% { 
+        transform: scale(1); 
+        opacity: 1; 
+    }
+}
+
+/* Modal Enhancements */
+.modal-content {
+    border: none;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    border-radius: 12px 12px 0 0;
+    border-bottom: none;
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+/* Input Group Styling */
+.input-group-text {
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+    min-width: 45px;
+    justify-content: center;
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Button Styles */
+.notify-when-available {
+    transition: all 0.3s ease;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.notify-when-available:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 15px rgba(13, 110, 253, 0.4);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    border: none;
+}
+
+/* Toast Notification Styles */
+.toast {
+    min-width: 300px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: none;
+    border-radius: 8px;
+}
+
+.toast-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    font-weight: 600;
+}
+
+.bg-success-subtle {
+    background-color: #d1eddd !important;
+    border-left: 4px solid #28a745;
+}
+
+.bg-danger-subtle {
+    background-color: #f8d7da !important;
+    border-left: 4px solid #dc3545;
+}
+
+.bg-info-subtle {
+    background-color: #d1ecf1 !important;
+    border-left: 4px solid #17a2b8;
+}
+
+.bg-warning-subtle {
+    background-color: #fff3cd !important;
+    border-left: 4px solid #ffc107;
+}
+
+/* Loading States */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading .spinner-border {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .modal-dialog {
+        margin: 1rem;
+    }
+    
+    .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .notification-options .form-check-label {
+        font-size: 14px;
+    }
+    
+    .toast {
+        min-width: 280px;
+    }
+}
+
+/* Product Grid Integration */
+.product-card .notify-when-available {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.product-card .out-of-stock-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 18px;
+    z-index: 2;
+    border-radius: inherit;
+}
+
+/* Admin Dashboard Styles */
+.stock-notification-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #007bff;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #007bff;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Accessibility */
+.notify-when-available:focus,
+.btn-primary:focus {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Animation for successful subscription */
+@keyframes checkmark {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.notification-success .fas {
+    animation: checkmark 0.6s ease-in-out;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .modal-content {
+        background-color: #2d3748;
+        color: #e2e8f0;
+    }
+    
+    .modal-header {
+        border-bottom-color: #4a5568;
+    }
+    
+    .form-control {
+        background-color: #4a5568;
+        border-color: #718096;
+        color: #e2e8f0;
+    }
+    
+    .input-group-text {
+        background-color: #4a5568;
+        border-color: #718096;
+        color: #e2e8f0;
+    }
+    
+    .notification-options .form-check {
+        border-color: #718096;
+        background-color: #2d3748;
+    }
+    
+    .notification-options .form-check:hover {
+        background-color: #4a5568;
+    }
+}

@@ -80,9 +80,7 @@
             </table>
         </div>
 
-        <div class="d-flex justify-content-center mt-3">
-            {{ $categories->links() }}
-        </div>
+        @include('admin.components.pagination', ['items' => $categories, 'type' => 'categories'])
         @else
         <div class="text-center py-4">
             <i class="fas fa-tags fa-3x text-muted mb-3"></i>

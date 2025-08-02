@@ -4,6 +4,182 @@
 @section('meta_description', $category->meta_description ?: $category->description)
 @section('meta_keywords', $category->meta_keywords)
 
+@push('styles')
+<style>
+/* Import compact grid styles */
+.products-grid-compact {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Ultra Small Product Cards for Category Page */
+.products-grid-compact .product-card {
+    font-size: 0.7rem;
+    border-radius: 8px;
+}
+
+.products-grid-compact .product-image-container {
+    height: 80px !important;
+}
+
+.products-grid-compact .product-content {
+    padding: 0.4rem;
+}
+
+.products-grid-compact .product-title {
+    font-size: 0.7rem;
+    line-height: 1.1;
+    margin-bottom: 0.2rem;
+    height: 2.2rem;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.products-grid-compact .product-category {
+    font-size: 0.6rem;
+    margin-bottom: 0.2rem;
+}
+
+.products-grid-compact .product-description {
+    display: none;
+}
+
+.products-grid-compact .current-price {
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.products-grid-compact .original-price {
+    font-size: 0.65rem;
+}
+
+.products-grid-compact .btn-add-cart {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.65rem;
+    border-radius: 4px;
+    white-space: nowrap !important; /* Prevent text wrapping */
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.products-grid-compact .quantity-selector {
+    margin-bottom: 0.2rem;
+    gap: 0.25rem;
+}
+
+.products-grid-compact .qty-btn {
+    width: 20px;
+    height: 20px;
+    font-size: 0.6rem;
+    border-radius: 4px;
+}
+
+.products-grid-compact .qty-input {
+    width: 30px;
+    height: 20px;
+    font-size: 0.65rem;
+    border-radius: 4px;
+}
+
+.products-grid-compact .badge-discount {
+    font-size: 0.6rem;
+    padding: 0.15rem 0.3rem;
+    border-radius: 4px;
+}
+
+.products-grid-compact .offer-info {
+    display: none !important; /* Completely hide offer info in compact grid */
+}
+
+.products-grid-compact .product-footer {
+    margin-top: 0.3rem;
+}
+
+.products-grid-compact .price-section {
+    margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .products-grid-compact {
+        grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
+        gap: 0.4rem;
+    }
+    
+    .products-grid-compact .product-image-container {
+        height: 70px !important;
+    }
+    
+    .products-grid-compact .product-title {
+        font-size: 0.65rem;
+        height: 2rem;
+    }
+    
+    .products-grid-compact .current-price {
+        font-size: 0.75rem;
+    }
+    
+    .products-grid-compact .btn-add-cart {
+        padding: 0.25rem 0.4rem;
+        font-size: 0.6rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .products-grid-compact {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.3rem;
+    }
+    
+    .products-grid-compact .product-image-container {
+        height: 60px !important;
+    }
+    
+    .products-grid-compact .product-title {
+        font-size: 0.6rem;
+        height: 1.8rem;
+    }
+    
+    .products-grid-compact .current-price {
+        font-size: 0.7rem;
+    }
+    
+    .products-grid-compact .btn-add-cart {
+        padding: 0.2rem 0.3rem;
+        font-size: 0.55rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .products-grid-compact {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.25rem;
+    }
+    
+    .products-grid-compact .product-image-container {
+        height: 55px !important;
+    }
+    
+    .products-grid-compact .product-title {
+        font-size: 0.55rem;
+        height: 1.6rem;
+    }
+    
+    .products-grid-compact .current-price {
+        font-size: 0.65rem;
+    }
+    
+    .products-grid-compact .btn-add-cart {
+        padding: 0.15rem 0.25rem;
+        font-size: 0.5rem;
+    }
+}
+</style>
+@endpush
+
 @section('content')
 <div class="container my-5">
     <nav aria-label="breadcrumb">
@@ -20,76 +196,44 @@
                 @if($category->description)
                     <p class="lead text-muted">{{ $category->description }}</p>
                 @endif
+                
+                {{-- Show active category offers --}}
+                @if(isset($categoryOffers) && $categoryOffers->count() > 0)
+                    <div class="alert alert-success mb-4">
+                        <h5 class="alert-heading"><i class="fas fa-fire"></i> Special Offers on {{ $category->name }}!</h5>
+                        @foreach($categoryOffers as $offer)
+                            <div class="mb-2">
+                                <span class="badge bg-danger me-2">{{ $offer->name }}</span>
+                                <span class="fw-bold">
+                                    @if($offer->discount_type === 'percentage')
+                                        Get {{ $offer->value }}% OFF
+                                    @else
+                                        Get ₹{{ number_format($offer->value, 2) }} OFF
+                                    @endif
+                                </span>
+                                @if($offer->minimum_amount)
+                                    <small class="text-muted">(on orders above ₹{{ number_format($offer->minimum_amount, 2) }})</small>
+                                @endif
+                                @if($offer->code)
+                                    <span class="badge bg-info ms-2">Code: {{ $offer->code }}</span>
+                                @endif
+                        @include('partials.product-card-modern', ['product' => $product])
+                        @endforeach
+                        <small class="text-muted">
+                            <i class="fas fa-clock"></i> Valid till {{ $categoryOffers->first()->end_date->format('d M Y') }}
+                        </small>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
 
-    @if($products->count() > 0)
-    <div class="row">
-        @foreach($products as $product)
-        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-            <div class="card h-100 border-0 shadow-sm product-card">
-                @if($product->featured_image)
-                    <img src="{{ $product->featured_image_url }}" class="card-img-top" alt="{{ $product->name }}" style="height: 250px; object-fit: cover;">
-                @else
-                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
-                        <i class="fas fa-image fa-2x text-muted"></i>
-                    </div>
-                @endif
-                
-                @if($product->discount_percentage > 0)
-                    <div class="position-absolute top-0 start-0 m-2">
-                        <span class="badge bg-danger">{{ $product->discount_percentage }}% OFF</span>
-                    </div>
-                @endif
-                
-                <div class="card-body d-flex flex-column">
-                    <h6 class="card-title">{{ $product->name }}</h6>
-                    <p class="card-text text-muted small">{{ Str::limit($product->short_description, 80) }}</p>
-                    
-                    <div class="mt-auto">
-                        <div class="price-section mb-2">
-                            @if($product->discount_price)
-                                <span class="h6 text-primary">₹{{ number_format($product->discount_price, 2) }}</span>
-                                <small class="text-muted text-decoration-line-through ms-1">₹{{ number_format($product->price, 2) }}</small>
-                            @else
-                                <span class="h6 text-primary">₹{{ number_format($product->price, 2) }}</span>
-                            @endif
-                        </div>
-                        
-                        <div class="product-actions">
-                            @if($product->isInStock())
-                                <div class="d-flex align-items-center gap-2 mb-2">
-                                    <div class="input-group input-group-sm quantity-selector">
-                                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="decrementQuantity({{ $product->id }})">
-                                            <i class="fas fa-minus"></i>
-                                        </button>
-                                        <input type="number" class="form-control text-center" id="quantity-{{ $product->id }}" value="1" min="1" max="{{ $product->stock }}" style="max-width: 60px;">
-                                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="incrementQuantity({{ $product->id }})">
-                                            <i class="fas fa-plus"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            @endif
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('product', $product->slug) }}" class="btn btn-outline-primary btn-sm flex-grow-1">View</a>
-                                @if($product->isInStock())
-                                    <button onclick="addToCartWithQuantity({{ $product->id }})" class="btn btn-primary btn-sm flex-grow-1">
-                                        <i class="fas fa-cart-plus"></i> Add
-                                    </button>
-                                @else
-                                    <button class="btn btn-secondary btn-sm" disabled>
-                                        <i class="fas fa-times"></i> Out of Stock
-                                    </button>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        @if($products->count() > 0)
+        <div class="products-grid-compact">
+            @foreach($products as $product)
+                @include('partials.product-card-modern', ['product' => $product])
+            @endforeach
         </div>
-        @endforeach
-    </div>
 
     <!-- Pagination -->
     @if(($frontendPaginationSettings['enabled'] ?? true) && isset($products) && method_exists($products, 'appends'))
@@ -117,5 +261,105 @@
 .product-card:hover {
     transform: translateY(-5px);
 }
+
+.offer-product {
+    border: 2px solid #28a745 !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fff9 100%);
+}
+
+.offer-product .card-header {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    border-color: #2196f3;
+}
+
+.badge.bg-danger {
+    background: linear-gradient(135deg, #dc3545, #e57373) !important;
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+}
+
+.badge.bg-success {
+    background: linear-gradient(135deg, #28a745, #4caf50) !important;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
 </style>
+
+@push('scripts')
+<script>
+// Quantity selector functions
+function incrementQuantity(productId) {
+    const input = document.getElementById('quantity-' + productId);
+    const max = parseInt(input.getAttribute('max'));
+    let value = parseInt(input.value);
+    if (value < max) {
+        input.value = value + 1;
+    }
+}
+
+function decrementQuantity(productId) {
+    const input = document.getElementById('quantity-' + productId);
+    let value = parseInt(input.value);
+    if (value > 1) {
+        input.value = value - 1;
+    }
+}
+
+function addToCartWithQuantity(productId) {
+    const quantity = parseInt(document.getElementById('quantity-' + productId).value);
+    
+    fetch('{{ route("cart.add") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            product_id: productId,
+            quantity: quantity
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            showToast('Product added to cart!', 'success');
+            // Update cart count if function exists
+            if (typeof updateCartCount === 'function') {
+                updateCartCount();
+            }
+        } else {
+            showToast(data.message || 'Failed to add to cart', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to add to cart', 'error');
+    });
+}
+
+function showToast(message, type = 'info') {
+    // Simple toast notification
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> 
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
+</script>
+@endpush
 @endsection

@@ -3,6 +3,230 @@
 @section('title', 'All Products - ' . ($globalCompany->company_name ?? 'Your Store'))
 @section('meta_description', 'Browse all our products. Find what you need from our complete product catalog.')
 
+@push('styles')
+<style>
+/* Ultra Compact Grid Styles - Remove white space */
+.products-grid-compact {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
+    gap: 0.4rem !important;
+    margin-bottom: 1.5rem !important;
+    align-items: start !important; /* Prevent stretching */
+}
+
+/* Remove flex stretching and minimize white space */
+.products-grid-compact .product-card {
+    font-size: 0.7rem !important;
+    border-radius: 8px !important;
+    display: block !important; /* Remove flex */
+    height: auto !important; /* Allow natural height */
+    min-height: unset !important; /* Remove min-height */
+}
+
+.products-grid-compact .product-image-container {
+    height: 80px !important;
+    margin-bottom: 0.3rem !important;
+}
+
+.products-grid-compact .product-content {
+    padding: 0.4rem !important;
+    display: block !important; /* Remove flex */
+}
+
+.products-grid-compact .product-title {
+    font-size: 0.7rem !important;
+    line-height: 1.1 !important;
+    margin-bottom: 0.2rem !important;
+    height: 2.2rem !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+}
+
+.products-grid-compact .product-category {
+    font-size: 0.6rem !important;
+    margin-bottom: 0.2rem !important;
+}
+
+.products-grid-compact .product-description {
+    display: none !important;
+}
+
+.products-grid-compact .current-price {
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+}
+
+.products-grid-compact .original-price {
+    font-size: 0.65rem !important;
+}
+
+/* Remove flex from product footer to prevent stretching */
+.products-grid-compact .product-footer {
+    margin-top: 0.3rem !important;
+    display: block !important; /* Remove flex */
+}
+
+.products-grid-compact .price-section {
+    margin-bottom: 0.4rem !important;
+    display: block !important;
+}
+
+.products-grid-compact .product-actions {
+    display: block !important; /* Remove flex */
+}
+
+.products-grid-compact .btn-add-cart {
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0.65rem !important;
+    border-radius: 4px !important;
+    width: 100% !important;
+    display: block !important;
+    margin-top: 0.3rem !important;
+    white-space: nowrap !important; /* Prevent text wrapping */
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.products-grid-compact .quantity-selector {
+    margin-bottom: 0.2rem !important;
+    gap: 0.25rem !important;
+    display: flex !important;
+    justify-content: center !important;
+}
+
+.products-grid-compact .qty-btn {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 0.6rem !important;
+    border-radius: 4px !important;
+}
+
+.products-grid-compact .qty-input {
+    width: 30px !important;
+    height: 20px !important;
+    font-size: 0.65rem !important;
+    border-radius: 4px !important;
+}
+
+.products-grid-compact .badge-discount {
+    font-size: 0.6rem !important;
+    padding: 0.15rem 0.3rem !important;
+    border-radius: 4px !important;
+}
+
+.products-grid-compact .offer-info {
+    display: none !important; /* Completely hide offer info in compact grid */
+}
+
+/* Remove savings info to save space */
+.products-grid-compact .savings-info {
+    display: none !important;
+}
+
+/* Out of stock styles - compact */
+.products-grid-compact .out-of-stock-section {
+    display: block !important;
+}
+
+.products-grid-compact .btn-out-stock {
+    padding: 0.3rem !important;
+    font-size: 0.65rem !important;
+    border-radius: 4px !important;
+    width: 100% !important;
+    margin-bottom: 0.2rem !important;
+}
+
+@media (max-width: 768px) {
+    .products-grid-compact {
+        grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)) !important;
+        gap: 0.3rem !important;
+    }
+    
+    .products-grid-compact .product-image-container {
+        height: 70px !important;
+    }
+    
+    .products-grid-compact .product-title {
+        font-size: 0.65rem !important;
+        height: 2rem !important;
+    }
+    
+    .products-grid-compact .current-price {
+        font-size: 0.75rem !important;
+    }
+    
+    .products-grid-compact .btn-add-cart {
+        padding: 0.25rem 0.4rem !important;
+        font-size: 0.6rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .products-grid-compact {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 0.25rem !important;
+    }
+    
+    .products-grid-compact .product-image-container {
+        height: 60px !important;
+    }
+    
+    .products-grid-compact .product-title {
+        font-size: 0.6rem !important;
+        height: 1.8rem !important;
+    }
+    
+    .products-grid-compact .current-price {
+        font-size: 0.7rem !important;
+    }
+    
+    .products-grid-compact .btn-add-cart {
+        padding: 0.2rem 0.3rem !important;
+        font-size: 0.55rem !important;
+    }
+    
+    .products-grid-compact .qty-btn {
+        width: 18px !important;
+        height: 18px !important;
+        font-size: 0.55rem !important;
+    }
+    
+    .products-grid-compact .qty-input {
+        width: 25px !important;
+        height: 18px !important;
+        font-size: 0.6rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .products-grid-compact {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 0.2rem !important;
+    }
+    
+    .products-grid-compact .product-image-container {
+        height: 55px !important;
+    }
+    
+    .products-grid-compact .product-title {
+        font-size: 0.55rem !important;
+        height: 1.6rem !important;
+    }
+    
+    .products-grid-compact .current-price {
+        font-size: 0.65rem !important;
+    }
+    
+    .products-grid-compact .btn-add-cart {
+        padding: 0.15rem 0.25rem !important;
+        font-size: 0.5rem !important;
+    }
+}
+</style>
+@endpush
+
 @section('content')
 <div class="products-page">
     <!-- Page Header -->
@@ -37,6 +261,37 @@
             </div>
         </div>
         @endif
+        
+        {{-- Show category-specific offers when filtering --}}
+        @if(isset($categoryOffers) && $categoryOffers->count() > 0)
+            <div class="alert alert-success mb-4">
+                <h5 class="alert-heading">
+                    <i class="fas fa-fire"></i> 
+                    Special Offers on {{ $categoryOffers->first()->category->name ?? 'Selected Category' }}!
+                </h5>
+                @foreach($categoryOffers as $offer)
+                    <div class="mb-2">
+                        <span class="badge bg-danger me-2">{{ $offer->name }}</span>
+                        <span class="fw-bold">
+                            @if($offer->discount_type === 'percentage')
+                                Get {{ $offer->value }}% OFF
+                            @else
+                                Get ₹{{ number_format($offer->value, 2) }} OFF
+                            @endif
+                        </span>
+                        @if($offer->minimum_amount)
+                            <small class="text-muted">(on orders above ₹{{ number_format($offer->minimum_amount, 2) }})</small>
+                        @endif
+                        @if($offer->code)
+                            <span class="badge bg-info ms-2">Code: {{ $offer->code }}</span>
+                        @endif
+                    </div>
+                @endforeach
+                <small class="text-muted">
+                    <i class="fas fa-clock"></i> Valid till {{ $categoryOffers->first()->end_date->format('d M Y') }}
+                </small>
+            </div>
+        @endif
 
         <!-- Loading Spinner -->
         <div class="loading-container" id="loading-spinner" style="display: none;">
@@ -47,7 +302,7 @@
         <!-- Products Grid -->
         <div class="products-container" id="products-container">
             @if($products->count() > 0)
-                <div class="products-grid">
+                <div class="products-grid-compact">
                     @foreach($products as $product)
                         @include('partials.product-card-modern', ['product' => $product])
                     @endforeach

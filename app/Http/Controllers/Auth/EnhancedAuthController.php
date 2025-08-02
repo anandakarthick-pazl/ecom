@@ -30,7 +30,9 @@ class EnhancedAuthController extends Controller
             'domain' => $host,
             'session_id' => session()->getId(),
             'user_agent' => $request->userAgent(),
-            'is_tenant_domain' => !in_array($host, ['localhost', '127.0.0.1'])
+            'is_tenant_domain' => !in_array($host, ['localhost', '127.0.0.1']),
+            'raw_host' => $request->getHost(),
+            'full_url' => $request->fullUrl()
         ]);
 
         // First, check if user exists and verify password manually for better debugging

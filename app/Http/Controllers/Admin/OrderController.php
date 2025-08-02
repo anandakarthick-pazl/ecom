@@ -63,7 +63,12 @@ class OrderController extends Controller
     public function show(Order $order)
     {
         $order->load('items.product', 'customer');
-        return view('admin.orders.show', compact('order'));
+        
+        // Get the default bill format setting for the current company
+        $companyId = session('selected_company_id');
+        $defaultBillFormat = AppSetting::getForTenant('default_bill_format', $companyId) ?? 'a4_sheet';
+        
+        return view('admin.orders.show', compact('order', 'defaultBillFormat'));
     }
 
     public function updatePaymentStatus(Request $request, Order $order)
@@ -870,6 +875,53 @@ class OrderController extends Controller
     }
 
     /**
+     * Print invoice with format detection - displays in browser for printing
+     */
+    public function printInvoice(Order $order)
+    {
+        try {
+            $companyId = $this->getCurrentTenantId();
+            if (!$companyId) {
+                return redirect()->back()->with('error', 'Company context not found');
+            }
+
+            // Get the default format setting
+            $defaultFormat = AppSetting::getForTenant('default_bill_format', $companyId) ?? 'a4_sheet';
+            $requestedFormat = request()->get('format', $defaultFormat);
+            
+            Log::info('Printing invoice', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'format' => $requestedFormat,
+                'default_format' => $defaultFormat
+            ]);
+
+            // Load order relationships if not already loaded
+            if (!$order->relationLoaded('items')) {
+                $order->load(['items.product', 'customer']);
+            }
+
+            // Get company settings
+            $companySettings = $this->getCompanySettings($order->company_id);
+            
+            // Return print view based on format
+            if ($requestedFormat === 'thermal') {
+                return view('admin.orders.print-thermal', compact('order', 'companySettings'));
+            } else {
+                return view('admin.orders.print-a4', compact('order', 'companySettings'));
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Invoice printing failed', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()->with('error', 'Failed to print invoice: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Send invoice via email (enhanced functionality)
      */
     public function sendInvoice(Order $order)
@@ -880,22 +932,41 @@ class OrderController extends Controller
                 return redirect()->back()->with('error', 'Customer email is not available for this order.');
             }
 
+            // Get format from request or use default
+            $companyId = $this->getCurrentTenantId();
+            $defaultFormat = AppSetting::getForTenant('default_bill_format', $companyId) ?? 'a4_sheet';
+            $requestedFormat = request()->get('format', $defaultFormat);
+
             Log::info('Sending invoice email', [
                 'order_id' => $order->id,
                 'order_number' => $order->order_number,
-                'customer_email' => $order->customer_email
+                'customer_email' => $order->customer_email,
+                'format' => $requestedFormat
             ]);
 
-            // Send email with auto-generated PDF
-            // The OrderInvoiceMail class will automatically generate the PDF
+            // Generate invoice PDF first
+            $billService = new BillPDFService();
+            $pdfResult = $billService->generateOrderBill($order, $requestedFormat);
+            
+            if (!$pdfResult['success']) {
+                return redirect()->back()->with('error', 'Failed to generate invoice: ' . $pdfResult['error']);
+            }
+
+            // Send email with the generated PDF
             Mail::to($order->customer_email)
-                ->send(new OrderInvoiceMail($order));
+                ->send(new OrderInvoiceMail($order, $pdfResult['file_path']));
+
+            // Clean up temporary file
+            if (file_exists($pdfResult['file_path'])) {
+                unlink($pdfResult['file_path']);
+            }
 
             // Log successful sending
             Log::info('Invoice email sent successfully', [
                 'order_id' => $order->id,
                 'order_number' => $order->order_number,
-                'customer_email' => $order->customer_email
+                'customer_email' => $order->customer_email,
+                'format' => $requestedFormat
             ]);
 
             // Create notification for admin
@@ -907,11 +978,13 @@ class OrderController extends Controller
                     'order_id' => $order->id,
                     'order_number' => $order->order_number,
                     'customer_email' => $order->customer_email,
+                    'format' => $requestedFormat,
                     'sent_at' => now()->toDateTimeString()
                 ]
             );
 
-            return redirect()->back()->with('success', "Invoice sent successfully to {$order->customer_email}");
+            $formatLabel = $requestedFormat === 'thermal' ? 'receipt' : 'invoice';
+            return redirect()->back()->with('success', "Invoice {$formatLabel} sent successfully to {$order->customer_email}");
 
         } catch (\Exception $e) {
             Log::error('Invoice email sending failed', [
@@ -923,6 +996,41 @@ class OrderController extends Controller
             ]);
 
             return redirect()->back()->with('error', 'Failed to send invoice: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download invoice with format-aware generation
+     */
+    public function downloadInvoice(Order $order)
+    {
+        try {
+            $companyId = $this->getCurrentTenantId();
+            if (!$companyId) {
+                return response()->json(['error' => 'Company context not found'], 400);
+            }
+
+            // Get format from request or use default
+            $defaultFormat = AppSetting::getForTenant('default_bill_format', $companyId) ?? 'a4_sheet';
+            $requestedFormat = request()->get('format', $defaultFormat);
+            
+            Log::info('Downloading invoice', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'format' => $requestedFormat
+            ]);
+
+            // Generate and return the PDF for download
+            $billService = new BillPDFService();
+            return $billService->downloadOrderBill($order, $requestedFormat);
+            
+        } catch (\Exception $e) {
+            Log::error('Invoice download failed', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()->with('error', 'Failed to download invoice: ' . $e->getMessage());
         }
     }
 

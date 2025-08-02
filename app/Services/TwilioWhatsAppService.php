@@ -612,6 +612,77 @@ class TwilioWhatsAppService
     }
 
     /**
+     * Send simple WhatsApp message without attachments
+     */
+    public function sendSimpleMessage($phoneNumber, $message)
+    {
+        try {
+            if (!$this->config || !$this->config->isConfigured()) {
+                throw new \Exception('WhatsApp is not configured for this company');
+            }
+
+            if (!$this->client) {
+                throw new \Exception('Twilio client not initialized');
+            }
+
+            // Validate customer phone number
+            $customerPhone = $this->formatPhoneNumber($phoneNumber);
+            if (!$customerPhone) {
+                throw new \Exception('Invalid phone number: ' . $phoneNumber);
+            }
+
+            // Send WhatsApp message
+            $messageResult = $this->client->messages->create(
+                $customerPhone, // To
+                [
+                    'from' => $this->config->getWhatsAppNumber(),
+                    'body' => $message
+                ]
+            );
+
+            // Log successful sending
+            Log::info('WhatsApp simple message sent successfully', [
+                'phone' => $customerPhone,
+                'message_sid' => $messageResult->sid,
+                'company_id' => $this->config->company_id ?? null,
+                'message_length' => strlen($message)
+            ]);
+
+            return [
+                'success' => true,
+                'message_sid' => $messageResult->sid,
+                'message' => 'Message sent successfully via WhatsApp',
+                'sent_to' => $customerPhone,
+                'sent_at' => now()
+            ];
+
+        } catch (TwilioException $e) {
+            Log::error('Twilio WhatsApp simple message error', [
+                'phone' => $phoneNumber,
+                'error' => $e->getMessage(),
+                'code' => $e->getCode()
+            ]);
+
+            return [
+                'success' => false,
+                'error' => 'WhatsApp sending failed: ' . $e->getMessage(),
+                'error_code' => $e->getCode()
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('WhatsApp simple message service error', [
+                'phone' => $phoneNumber,
+                'error' => $e->getMessage()
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * Test URL generation without sending message (for debugging)
      */
     public function testUrlGeneration($pdfPath, Order $order)

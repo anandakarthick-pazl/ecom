@@ -403,7 +403,7 @@
                                         </div>
                                         <button onclick="addToCartWithQuantity({{ $product->id }})" class="add-to-cart-btn offer-btn">
                                             <i class="fas fa-cart-plus"></i>
-                                            <span>Grab Deal</span>
+                                            <span>Add to Cart</span>
                                         </button>
                                     @else
                                         <button class="out-of-stock-btn" disabled>

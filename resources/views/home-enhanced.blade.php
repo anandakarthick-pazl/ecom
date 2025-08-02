@@ -24,7 +24,7 @@
             <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
                 <div class="hero-container-compact">
                     @if($banner->image)
-                        <img src="{{ $banner->image_url }}" class="hero-image" alt="{{ $banner->alt_text ?: $banner->title }}">
+                        <img src="{{ $banner->image_url }}" class="hero-image" alt="{{ $banner->alt_text ?: $banner->title }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     @else
                         <div class="hero-placeholder">
                             <div class="hero-gradient"></div>
@@ -50,6 +50,21 @@
             </div>
         </button>
         @endif
+    </div>
+</section>
+@else
+<!-- No Banners Fallback -->
+<section class="hero-section-compact">
+    <div class="hero-container-compact">
+        <div class="hero-placeholder">
+            <div class="hero-gradient"></div>
+        </div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content text-center">
+            <h1 class="text-white">Welcome to Our Store</h1>
+            <p class="text-white">Discover amazing products at great prices</p>
+            <a href="{{ route('products') }}" class="btn btn-primary">Shop Now</a>
+        </div>
     </div>
 </section>
 @endif
@@ -559,12 +574,200 @@
     font-weight: 600;
 }
 
-/* Compact Products Grid */
+/* Compact Products Grid - Extra Small Layout for More Products */
 .products-grid-compact {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Reduced from 260px */
-    gap: 1rem; /* Reduced from 1.5rem */
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); /* Further reduced from 140px to 110px */
+    gap: 0.5rem; /* Reduced from 0.75rem */
     margin-bottom: 1.5rem;
+}
+
+/* Remove flex stretching and minimize white space */
+.products-grid-compact .product-card {
+    font-size: 0.7rem; /* Even smaller font size */
+    border-radius: 8px; /* Smaller border radius */
+    display: block !important; /* Remove flex */
+    height: auto !important; /* Allow natural height */
+    min-height: unset !important; /* Remove min-height */
+    flex-direction: unset !important; /* Remove flex direction */
+}
+
+.products-grid-compact .product-image-container,
+.products-grid-compact .product-card-header {
+    height: 80px !important; /* Further reduced from 100px to 80px */
+}
+
+.products-grid-compact .product-content {
+    padding: 0.4rem; /* Further reduced padding */
+    display: block !important; /* Remove flex */
+    flex: unset !important; /* Remove flex grow */
+}
+
+.products-grid-compact .product-title {
+    font-size: 0.7rem; /* Even smaller title */
+    line-height: 1.1;
+    margin-bottom: 0.2rem;
+    height: 2.2rem; /* Fixed height for consistency */
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.products-grid-compact .product-category {
+    font-size: 0.6rem; /* Even smaller category text */
+    margin-bottom: 0.2rem;
+}
+
+.products-grid-compact .product-description {
+    font-size: 0.65rem; /* Even smaller description */
+    line-height: 1.2;
+    margin-bottom: 0.4rem;
+    height: 2.4rem; /* Fixed height for consistency */
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.products-grid-compact .current-price {
+    font-size: 0.8rem; /* Smaller price */
+    font-weight: 700;
+}
+
+.products-grid-compact .original-price {
+    font-size: 0.65rem; /* Even smaller original price */
+}
+
+.products-grid-compact .btn-add-cart {
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0.65rem !important;
+    border-radius: 4px !important;
+    width: 100% !important;
+    display: block !important;
+    margin-top: 0.3rem !important;
+    white-space: nowrap !important; /* Prevent text wrapping */
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.products-grid-compact .quantity-selector {
+    margin-bottom: 0.2rem; /* Further reduced margin */
+    gap: 0.25rem;
+    display: flex !important;
+    justify-content: center !important;
+}
+
+.products-grid-compact .qty-btn {
+    width: 20px; /* Even smaller quantity buttons */
+    height: 20px;
+    font-size: 0.6rem;
+    border-radius: 4px;
+}
+
+.products-grid-compact .qty-input {
+    width: 30px; /* Even smaller quantity input */
+    height: 20px;
+    font-size: 0.65rem;
+    border-radius: 4px;
+}
+
+.products-grid-compact .badge-discount {
+    font-size: 0.6rem; /* Even smaller discount badge */
+    padding: 0.15rem 0.3rem;
+    border-radius: 4px;
+}
+
+.products-grid-compact .badge-special-offer {
+    font-size: 0.55rem; /* Even smaller special offer badge */
+    padding: 0.15rem 0.3rem;
+    border-radius: 4px;
+}
+
+.products-grid-compact .offer-info {
+    display: none !important; /* Completely hide offer info in compact grid */
+}
+
+.products-grid-compact .savings-info {
+    font-size: 0.6rem; /* Even smaller savings text */
+}
+
+/* Remove flex from product footer to prevent stretching */
+.products-grid-compact .product-footer {
+    margin-top: 0.3rem; /* Reduced spacing */
+    display: block !important; /* Remove flex */
+    margin-top: auto; /* Remove auto margin */
+}
+
+.products-grid-compact .price-section {
+    margin-bottom: 0.5rem; /* Reduced spacing */
+    display: block !important;
+}
+
+.products-grid-compact .product-actions {
+    display: block !important; /* Remove flex */
+}
+
+.products-grid-compact .quick-btn {
+    width: 28px; /* Smaller quick action buttons */
+    height: 28px;
+    font-size: 0.7rem;
+}
+
+.products-grid-compact .badge-featured {
+    width: 24px; /* Smaller featured badge */
+    height: 24px;
+    font-size: 0.7rem;
+}
+
+.products-grid-compact .stock-message {
+    font-size: 0.65rem; /* Smaller stock message */
+}
+
+.products-grid-compact .btn-notify {
+    padding: 0.3rem;
+    font-size: 0.65rem;
+    border-radius: 4px;
+}
+
+.products-grid-compact .btn-out-stock {
+    padding: 0.3rem;
+    font-size: 0.65rem;
+    border-radius: 4px;
+}
+
+.products-grid-compact .restock-info {
+    font-size: 0.6rem;
+}
+
+/* Remove savings info to save space */
+.products-grid-compact .savings-info {
+    display: none !important;
+}
+
+/* Out of stock styles - compact */
+.products-grid-compact .out-of-stock-section {
+    display: block !important;
+}
+
+.products-grid-compact .btn-out-stock,
+.products-grid-compact .btn-notify {
+    padding: 0.3rem !important;
+    font-size: 0.65rem !important;
+    border-radius: 4px !important;
+    width: 100% !important;
+    margin-bottom: 0.2rem !important;
+}
+
+.products-grid-compact .restock-info {
+    font-size: 0.6rem !important;
+    line-height: 1.2 !important;
+    margin-top: 0.2rem !important;
+}
+
+/* Hide descriptions on very small cards to save space */
+.products-grid-compact .product-description {
+    display: none;
 }
 
 /* Compact Features Section */
@@ -649,18 +852,19 @@
     }
     
     .products-grid-compact {
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)); /* Even smaller for mobile */
+        gap: 0.4rem;
     }
     
     .categories-grid-compact {
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 0.5rem;
     }
     
     .tabs-nav-compact {
-        flex-direction: column;
-        max-width: 150px;
+        flex-wrap: wrap;
+        justify-content: center;
+        max-width: 100%;
     }
     
     .section-title-compact {
@@ -676,11 +880,35 @@
         gap: 0.75rem;
         padding: 1rem;
     }
+    
+    /* Make mobile cards even smaller */
+    .products-grid-compact .product-image-container {
+        height: 70px !important;
+    }
+    
+    .products-grid-compact .product-content {
+        padding: 0.3rem;
+    }
+    
+    .products-grid-compact .product-title {
+        font-size: 0.65rem;
+        height: 2rem;
+    }
+    
+    .products-grid-compact .current-price {
+        font-size: 0.75rem;
+    }
+    
+    .products-grid-compact .btn-add-cart {
+        padding: 0.25rem 0.4rem;
+        font-size: 0.6rem;
+    }
 }
 
 @media (max-width: 576px) {
     .products-grid-compact {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(4, 1fr); /* Show 4 products per row on small screens */
+        gap: 0.3rem;
     }
     
     .hero-container-compact {
@@ -693,6 +921,98 @@
     
     .categories-grid-compact {
         grid-template-columns: repeat(3, 1fr);
+    }
+    
+    /* Ultra small cards for mobile */
+    .products-grid-compact .product-image-container {
+        height: 60px !important;
+    }
+    
+    .products-grid-compact .product-content {
+        padding: 0.25rem;
+    }
+    
+    .products-grid-compact .product-title {
+        font-size: 0.6rem;
+        height: 1.8rem;
+        line-height: 1;
+    }
+    
+    .products-grid-compact .product-category {
+        font-size: 0.55rem;
+        margin-bottom: 0.1rem;
+    }
+    
+    .products-grid-compact .current-price {
+        font-size: 0.7rem;
+    }
+    
+    .products-grid-compact .original-price {
+        font-size: 0.6rem;
+    }
+    
+    .products-grid-compact .btn-add-cart {
+        padding: 0.2rem 0.3rem;
+        font-size: 0.55rem;
+    }
+    
+    .products-grid-compact .qty-btn {
+        width: 18px;
+        height: 18px;
+        font-size: 0.55rem;
+    }
+    
+    .products-grid-compact .qty-input {
+        width: 25px;
+        height: 18px;
+        font-size: 0.6rem;
+    }
+    
+    .products-grid-compact .product-footer {
+        margin-top: 0.2rem;
+    }
+    
+    .products-grid-compact .price-section {
+        margin-bottom: 0.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .products-grid-compact {
+        grid-template-columns: repeat(3, 1fr); /* Show 3 products per row on very small screens */
+        gap: 0.25rem;
+    }
+    
+    /* Even smaller for very small screens */
+    .products-grid-compact .product-image-container {
+        height: 55px !important;
+    }
+    
+    .products-grid-compact .product-content {
+        padding: 0.2rem;
+    }
+    
+    .products-grid-compact .product-title {
+        font-size: 0.55rem;
+        height: 1.6rem;
+    }
+    
+    .products-grid-compact .current-price {
+        font-size: 0.65rem;
+    }
+    
+    .products-grid-compact .btn-add-cart {
+        padding: 0.15rem 0.25rem;
+        font-size: 0.5rem;
+    }
+    
+    .tabs-nav-compact {
+        padding: 0.3rem;
+    }
+    
+    .tab-link-compact {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.7rem;
     }
 }
 

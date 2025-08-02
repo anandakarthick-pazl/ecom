@@ -58,6 +58,47 @@ class NotificationController extends Controller
 
         return response()->json(['success' => true]);
     }
+    
+    public function markAsReadById($id)
+    {
+        $notification = Notification::find($id);
+        
+        if (!$notification) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Notification not found'
+            ], 404);
+        }
+        
+        // Check if notification belongs to current tenant
+        if (method_exists($notification, 'belongsToCurrentTenant') && !$notification->belongsToCurrentTenant()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied'
+            ], 403);
+        }
+        
+        $notification->markAsRead();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Notification marked as read'
+        ]);
+    }
+    
+    public function markAsReadByIdFromBody(Request $request)
+    {
+        $id = $request->get('id') ?? $request->get('notification_id');
+        
+        if (!$id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Notification ID is required'
+            ], 400);
+        }
+        
+        return $this->markAsReadById($id);
+    }
 
     public function markAllAsRead()
     {
@@ -68,12 +109,77 @@ class NotificationController extends Controller
 
         return response()->json(['success' => true]);
     }
+    
+    public function bulkMarkAsRead(Request $request)
+    {
+        $notificationIds = $request->get('notification_ids', []);
+        
+        if (empty($notificationIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No notification IDs provided'
+            ], 400);
+        }
+        
+        $updated = Notification::currentTenant()
+            ->forAdmin()
+            ->whereIn('id', $notificationIds)
+            ->unread()
+            ->update([
+                'is_read' => true,
+                'read_at' => now()
+            ]);
+        
+        return response()->json([
+            'success' => true,
+            'updated_count' => $updated
+        ]);
+    }
+    
+    public function getUnreadCount()
+    {
+        $count = Notification::currentTenant()
+            ->forAdmin()
+            ->unread()
+            ->count();
+            
+        return response()->json([
+            'count' => $count
+        ]);
+    }
 
     public function destroy(Notification $notification)
     {
         $notification->delete();
 
         return response()->json(['success' => true]);
+    }
+    
+    public function destroyById($id)
+    {
+        $notification = Notification::find($id);
+        
+        if (!$notification) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Notification not found'
+            ], 404);
+        }
+        
+        // Check if notification belongs to current tenant
+        if (method_exists($notification, 'belongsToCurrentTenant') && !$notification->belongsToCurrentTenant()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Access denied'
+            ], 403);
+        }
+        
+        $notification->delete();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Notification deleted successfully'
+        ]);
     }
 
     public function checkNew(Request $request)

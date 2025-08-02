@@ -195,7 +195,7 @@
                                 <label for="upi_qr_code" class="form-label">UPI QR Code</label>
                                 @if($paymentMethod->upi_qr_code)
                                     <div class="mb-2">
-                                        <img src="{{ Storage::url($paymentMethod->upi_qr_code) }}" 
+                                        <img src="{{ $paymentMethod->getQrCodeUrl() }}" 
                                              class="img-thumbnail" style="max-width: 200px;">
                                         <small class="d-block text-muted">Current QR code</small>
                                     </div>
@@ -233,7 +233,7 @@
                                 <label for="upi_qr_code" class="form-label">Google Pay QR Code</label>
                                 @if($paymentMethod->upi_qr_code)
                                     <div class="mb-2">
-                                        <img src="{{ Storage::url($paymentMethod->upi_qr_code) }}" 
+                                        <img src="{{ $paymentMethod->getQrCodeUrl() }}" 
                                              class="img-thumbnail" style="max-width: 200px;">
                                         <small class="d-block text-muted">Current Google Pay QR code</small>
                                     </div>

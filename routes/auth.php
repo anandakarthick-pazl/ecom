@@ -66,7 +66,7 @@ Route::get('/login', function () {
 
 // Enhanced login POST route with better error handling
 Route::post('/login', [App\Http\Controllers\Auth\EnhancedAuthController::class, 'processLogin'])
-    ->name('login.enhanced')
+    ->name('login.post')
     ->middleware('guest');
 
 // Universal login POST route (LEGACY - for backward compatibility)
@@ -241,6 +241,39 @@ Route::middleware(['tenant'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
+| Password Reset Routes
+|--------------------------------------------------------------------------
+*/
+
+// Forgot Password Routes
+Route::get('/forgot-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'showForgotPasswordForm'])
+    ->name('password.request')
+    ->middleware('guest');
+
+Route::post('/forgot-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendResetLinkEmail'])
+    ->name('password.email')
+    ->middleware('guest');
+
+// Reset Password Routes
+Route::get('/reset-password/{token}', [\App\Http\Controllers\Auth\ResetPasswordController::class, 'showResetPasswordForm'])
+    ->name('password.reset')
+    ->middleware('guest');
+
+Route::post('/reset-password', [\App\Http\Controllers\Auth\ResetPasswordController::class, 'resetPassword'])
+    ->name('password.update')
+    ->middleware('guest');
+
+// Admin Forgot Password Routes
+Route::get('/admin/forgot-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'showAdminForgotPasswordForm'])
+    ->name('admin.password.request')
+    ->middleware('guest');
+
+Route::post('/admin/forgot-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendAdminResetLinkEmail'])
+    ->name('admin.password.email')
+    ->middleware('guest');
+
+/*
+|--------------------------------------------------------------------------
 | Session Management Routes
 |--------------------------------------------------------------------------
 */
@@ -286,6 +319,56 @@ Route::post('/logout-legacy', function () {
 /*
 |--------------------------------------------------------------------------
 | Development/Debug Routes
+|--------------------------------------------------------------------------
+*/
+
+// Debug route to check domain and company setup
+Route::get('/debug/domain-check', function() {
+    if (!app()->environment(['local', 'development'])) {
+        abort(404);
+    }
+    
+    $host = request()->getHost();
+    $company = null;
+    
+    try {
+        $company = \App\Models\SuperAdmin\Company::where('domain', $host)->first();
+    } catch (\Exception $e) {
+        // Handle error
+    }
+    
+    return response()->json([
+        'current_domain' => $host,
+        'company_found' => !is_null($company),
+        'company_details' => $company ? [
+            'id' => $company->id,
+            'name' => $company->name,
+            'domain' => $company->domain,
+            'status' => $company->status
+        ] : null,
+        'all_companies' => \App\Models\SuperAdmin\Company::all()->map(function($c) {
+            return [
+                'id' => $c->id,
+                'name' => $c->name, 
+                'domain' => $c->domain,
+                'status' => $c->status
+            ];
+        }),
+        'admin_users_for_company' => $company ? \App\Models\User::where('company_id', $company->id)
+                                                   ->whereIn('role', ['admin', 'manager'])
+                                                   ->get(['id', 'email', 'role', 'status'])
+                                                   ->toArray() : [],
+        'super_admins' => \App\Models\User::where('is_super_admin', true)
+                                          ->get(['id', 'email', 'role', 'status'])
+                                          ->toArray(),
+        'environment' => app()->environment(),
+        'session_id' => session()->getId()
+    ]);
+})->middleware(['web']);
+
+/*
+|--------------------------------------------------------------------------
+| Development/Debug Routes (Original)
 |--------------------------------------------------------------------------
 */
 

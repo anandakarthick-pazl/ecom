@@ -8,7 +8,10 @@ use App\Models\PosSaleItem;
 use App\Models\Product;
 use App\Models\Customer;
 use App\Models\AppSetting;
+use App\Models\Commission;
+use App\Models\Offer;
 use App\Services\BillPDFService;
+use App\Services\OfferService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -17,20 +20,57 @@ use Illuminate\Support\Facades\Cache;
 
 class PosController extends Controller
 {
-    public function index()
+    protected $offerService;
+
+    public function __construct(OfferService $offerService)
     {
-        $products = Product::active()
-            ->where('stock', '>', 0)
-            ->currentTenant() // Filter products by current company
-            ->orderBy('name')
-            ->get()
-            ->groupBy(function ($product) {
-                return $product->category->name ?? 'Uncategorized';
+        $this->offerService = $offerService;
+    }
+    public function index(Request $request)
+    {
+        // Base query for products
+        $query = Product::active()
+            ->currentTenant()
+            ->with(['category', 'offers' => function($query) {
+                $query->active()->current();
+            }])
+            ->orderBy('name');
+
+        // Search functionality
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('barcode', 'like', '%' . $search . '%')
+                  ->orWhere('sku', 'like', '%' . $search . '%');
             });
+        }
+
+        // Category filter - Fixed to use category ID
+        if ($request->has('category') && !empty($request->category)) {
+            $query->where('category_id', $request->category);
+        }
+
+        // Paginate products - 25 per page
+        $products = $query->paginate(25)->appends($request->query());
+
+        // Apply offers to paginated products
+        $productsWithOffers = $this->offerService->applyOffersToProducts($products->getCollection());
+        $products->setCollection($productsWithOffers);
+        
+        // Get all categories for filter - Fixed to get from Category model
+        $categories = \App\Models\Category::active()
+            ->currentTenant()
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('name', 'asc')
+            ->get();
 
         $customers = Customer::currentTenant()->orderBy('name')->get();
 
-        return view('admin.pos.index', compact('products', 'customers'));
+        // Get active offers for display
+        $activeOffers = Offer::active()->current()->currentTenant()->get();
+
+        return view('admin.pos.index', compact('products', 'categories', 'customers', 'activeOffers'));
     }
 
     public function store(Request $request)
@@ -50,7 +90,12 @@ class PosController extends Controller
             'discount_amount' => 'nullable|numeric|min:0',
             'paid_amount' => 'required|numeric|min:0',
             'payment_method' => 'required|in:cash,card,upi,gpay,paytm,phonepe',
-            'notes' => 'nullable|string'
+            'notes' => 'nullable|string',
+            // Commission fields
+            'commission_enabled' => 'sometimes|in:0,1,true,false',
+            'reference_name' => 'nullable|string|max:255',
+            'commission_percentage' => 'nullable|numeric|min:0|max:100',
+            'commission_notes' => 'nullable|string|max:500'
         ]);
 
         try {
@@ -59,17 +104,23 @@ class PosController extends Controller
             // Calculate totals and tax
             $subtotal = 0;
             $totalTax = 0;
+            $totalOfferSavings = 0;
             $customTaxEnabled = $request->boolean('custom_tax_enabled', false);
 
             foreach ($request->items as $item) {
                 $product = Product::findOrFail($item['product_id']);
 
-                // Calculate item amounts properly
-                $itemGrossAmount = $item['quantity'] * $item['unit_price'];
+                // Get effective price with offers
+                $effectivePrice = $this->offerService->getEffectivePrice($product);
+                $offerSavings = ($product->price - $effectivePrice) * $item['quantity'];
+                $totalOfferSavings += $offerSavings;
+
+                // Calculate item amounts using effective price
+                $itemGrossAmount = $effectivePrice * $item['quantity'];
                 $itemDiscountAmount = $item['discount_amount'] ?? 0;
                 $itemNetAmount = $itemGrossAmount - $itemDiscountAmount;
 
-                $subtotal += $itemNetAmount; // Subtotal is net amount after item-level discounts
+                $subtotal += $itemNetAmount;
 
                 // Calculate tax for this item only if not using custom tax
                 if (!$customTaxEnabled) {
@@ -101,9 +152,9 @@ class PosController extends Controller
             // Get current company ID from request or session
             $companyId = $request->get('current_company_id') ?? session('selected_company_id');
 
-            // Create POS sale
+            // Create POS sale with offer savings
             $sale = PosSale::create([
-                'company_id' => $companyId, // Explicitly set company_id
+                'company_id' => $companyId,
                 'sale_date' => now()->toDateString(),
                 'customer_name' => $request->customer_name,
                 'customer_phone' => $request->customer_phone,
@@ -119,7 +170,7 @@ class PosController extends Controller
                 'change_amount' => $changeAmount,
                 'payment_method' => $request->payment_method,
                 'status' => 'completed',
-                'notes' => $request->notes,
+                'notes' => $request->notes . ($totalOfferSavings > 0 ? "\nOffer Savings: ₹" . number_format($totalOfferSavings, 2) : ''),
                 'tax_notes' => $customTaxEnabled ? $request->tax_notes : null,
                 'cashier_id' => Auth::id()
             ]);
@@ -128,8 +179,12 @@ class PosController extends Controller
             foreach ($request->items as $item) {
                 $product = Product::findOrFail($item['product_id']);
 
-                // Calculate item amounts
-                $itemSubtotal = $item['quantity'] * $item['unit_price'];
+                // Get effective price with offers
+                $effectivePrice = $this->offerService->getEffectivePrice($product);
+                $offerDetails = $this->offerService->getOfferDetails($product);
+
+                // Calculate item amounts using effective price
+                $itemSubtotal = $effectivePrice * $item['quantity'];
                 $discountAmount = $item['discount_amount'] ?? 0;
                 $discountPercentage = $itemSubtotal > 0 ? round(($discountAmount / $itemSubtotal) * 100, 2) : 0;
                 $netAmount = $itemSubtotal - $discountAmount;
@@ -142,22 +197,60 @@ class PosController extends Controller
 
                 $totalAmount = $netAmount + $itemTax;
 
+                // Store original price and offer information
+                $notes = '';
+                if ($offerDetails && $effectivePrice < $product->price) {
+                    $offerSavings = ($product->price - $effectivePrice) * $item['quantity'];
+                    $notes = "Offer Applied: {$offerDetails['offer']->name} - Saved ₹" . number_format($offerSavings, 2);
+                }
+
                 PosSaleItem::create([
                     'pos_sale_id' => $sale->id,
                     'product_id' => $item['product_id'],
                     'product_name' => $product->name,
                     'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
+                    'unit_price' => $effectivePrice, // Store effective price
+                    'original_price' => $product->price, // Store original price for reference
                     'discount_amount' => $discountAmount,
                     'discount_percentage' => $discountPercentage,
                     'tax_percentage' => $product->tax_percentage,
                     'tax_amount' => $itemTax,
                     'total_amount' => $totalAmount,
+                    'offer_applied' => $offerDetails ? $offerDetails['offer']->name : null,
+                    'offer_savings' => $offerDetails ? ($product->price - $effectivePrice) * $item['quantity'] : 0,
+                    'notes' => $notes,
                     'company_id' => $companyId
                 ]);
 
                 // Update product stock
                 $product->decrement('stock', $item['quantity']);
+
+                // Update offer usage count if applicable
+                if ($offerDetails && $offerDetails['offer']->usage_limit) {
+                    $offerDetails['offer']->increment('used_count');
+                }
+            }
+
+            // Create commission record if enabled
+            $commissionEnabled = in_array($request->get('commission_enabled'), ['1', 1, true, 'true', 'on', 'yes'], true);
+            
+            if ($commissionEnabled && 
+                !empty($request->reference_name) && 
+                !empty($request->commission_percentage)) {
+                
+                Commission::createFromPosSale(
+                    $sale,
+                    $request->reference_name,
+                    $request->commission_percentage,
+                    $request->commission_notes
+                );
+
+                Log::info('Commission created for POS sale', [
+                    'sale_id' => $sale->id,
+                    'reference_name' => $request->reference_name,
+                    'commission_percentage' => $request->commission_percentage,
+                    'commission_amount' => ($sale->total_amount * $request->commission_percentage) / 100
+                ]);
             }
 
             DB::commit();
@@ -166,7 +259,11 @@ class PosController extends Controller
                 'success' => true,
                 'message' => 'Sale completed successfully!',
                 'sale_id' => $sale->id,
-                'invoice_number' => $sale->invoice_number
+                'invoice_number' => $sale->invoice_number,
+                'total_savings' => $totalOfferSavings,
+                'commission_created' => $commissionEnabled && 
+                    !empty($request->reference_name) && 
+                    !empty($request->commission_percentage)
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -179,7 +276,7 @@ class PosController extends Controller
 
     public function sales(Request $request)
     {
-        $query = PosSale::with(['items.product', 'cashier'])
+        $query = PosSale::with(['items.product', 'cashier', 'commission'])
             ->currentTenant(); // Filter by current company
 
         if ($request->status) {
@@ -206,27 +303,58 @@ class PosController extends Controller
             $query->whereDate('sale_date', '<=', $request->date_to);
         }
 
-        $sales = $query->latest()->paginate(20);
+        // Add commission filter
+        if ($request->commission_status) {
+            switch ($request->commission_status) {
+                case 'with_commission':
+                    $query->whereHas('commission');
+                    break;
+                case 'without_commission':
+                    $query->whereDoesntHave('commission');
+                    break;
+                case 'pending':
+                    $query->whereHas('commission', function($q) {
+                        $q->where('status', 'pending');
+                    });
+                    break;
+                case 'paid':
+                    $query->whereHas('commission', function($q) {
+                        $q->where('status', 'paid');
+                    });
+                    break;
+            }
+        }
 
-        return view('admin.pos.sales', compact('sales'));
+        $sales = $query->latest()->paginate(20);
+        
+        // Get the default bill format setting for the current company
+        $companyId = session('selected_company_id');
+        $defaultBillFormat = AppSetting::getForTenant('default_bill_format', $companyId) ?? 'a4_sheet';
+        
+        return view('admin.pos.sales', compact('sales', 'defaultBillFormat'));
     }
 
     public function show(PosSale $sale)
     {
-        $sale->load(['items.product', 'cashier']);
+        $sale->load(['items.product', 'cashier', 'commission']);
         return view('admin.pos.show', compact('sale'));
     }
 
     public function receipt(PosSale $sale)
     {
         try {
-            // Load sale relationships with all necessary data
+            // Load sale relationships with all necessary data including original_price
             $sale->load([
                 'items' => function ($query) {
-                    $query->select(['id', 'pos_sale_id', 'product_id', 'product_name', 'quantity', 'unit_price', 'discount_amount', 'discount_percentage', 'tax_percentage', 'tax_amount', 'total_amount']);
+                    $query->select([
+                        'id', 'pos_sale_id', 'product_id', 'product_name', 'quantity', 
+                        'unit_price', 'original_price', 'discount_amount', 'discount_percentage', 
+                        'tax_percentage', 'tax_amount', 'total_amount', 'offer_applied', 
+                        'offer_savings', 'notes', 'company_id'
+                    ]);
                 },
                 'items.product' => function ($query) {
-                    $query->select(['id', 'name', 'sku', 'tax_percentage']);
+                    $query->select(['id', 'name', 'sku', 'tax_percentage', 'price']);
                 },
                 'cashier' => function ($query) {
                     $query->select(['id', 'name', 'email']);
@@ -258,6 +386,150 @@ class PosController extends Controller
             ];
 
             return view('admin.pos.receipt', compact('sale', 'globalCompany'));
+        }
+    }
+
+    public function enhancedReceipt(PosSale $sale)
+    {
+        try {
+            // Load sale relationships with enhanced data including original prices and offers
+            $sale->load([
+                'items' => function ($query) {
+                    $query->select([
+                        'id', 'pos_sale_id', 'product_id', 'product_name', 'quantity', 
+                        'unit_price', 'original_price', 'discount_amount', 'discount_percentage', 
+                        'tax_percentage', 'tax_amount', 'total_amount', 'offer_applied', 
+                        'offer_savings', 'notes'
+                    ]);
+                },
+                'items.product' => function ($query) {
+                    $query->select(['id', 'name', 'sku', 'tax_percentage', 'price']);
+                },
+                'cashier' => function ($query) {
+                    $query->select(['id', 'name', 'email']);
+                }
+            ]);
+
+            // Get enhanced company data
+            $globalCompany = $this->getEnhancedCompanyData($sale->company_id);
+            $globalCompany = $this->normalizeCompanyData($globalCompany);
+
+            // Determine format from request
+            $format = request()->get('format', 'a4');
+            
+            // Use enhanced templates
+            if ($format === 'thermal') {
+                $viewName = view()->exists('admin.pos.receipt-thermal-enhanced') 
+                    ? 'admin.pos.receipt-thermal-enhanced' 
+                    : 'admin.pos.receipt';
+            } else {
+                $viewName = view()->exists('admin.pos.receipt-a4-enhanced') 
+                    ? 'admin.pos.receipt-a4-enhanced' 
+                    : 'admin.pos.receipt-a4';
+            }
+
+            return view($viewName, compact('sale', 'globalCompany'));
+        } catch (\Exception $e) {
+            Log::error('Enhanced receipt display failed', [
+                'sale_id' => $sale->id,
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+
+            // Fallback to regular receipt
+            return $this->receipt($sale);
+        }
+    }
+
+    public function downloadEnhancedBill(PosSale $sale)
+    {
+        try {
+            Log::info('Enhanced bill download started', ['sale_id' => $sale->id]);
+
+            // Load sale data with enhanced relationships
+            $sale->load([
+                'items' => function ($query) {
+                    $query->select([
+                        'id', 'pos_sale_id', 'product_id', 'product_name', 'quantity', 
+                        'unit_price', 'original_price', 'discount_amount', 'discount_percentage', 
+                        'tax_percentage', 'tax_amount', 'total_amount', 'offer_applied', 
+                        'offer_savings', 'notes'
+                    ]);
+                },
+                'items.product' => function ($query) {
+                    $query->select(['id', 'name', 'sku', 'tax_percentage', 'price']);
+                },
+                'cashier' => function ($query) {
+                    $query->select(['id', 'name', 'email']);
+                }
+            ]);
+
+            // Get enhanced company data
+            $globalCompany = $this->getEnhancedCompanyData($sale->company_id);
+            $globalCompany = $this->normalizeCompanyData($globalCompany);
+
+            // Get format preference
+            $format = request()->get('format', 'a4_enhanced');
+
+            // Select enhanced template
+            if ($format === 'thermal') {
+                $viewName = view()->exists('admin.pos.receipt-thermal-enhanced') 
+                    ? 'admin.pos.receipt-thermal-enhanced' 
+                    : 'admin.pos.receipt';
+                $paperSize = [0, 0, 226.77, 841.89]; // 80mm thermal paper
+            } else {
+                $viewName = view()->exists('admin.pos.receipt-a4-enhanced') 
+                    ? 'admin.pos.receipt-a4-enhanced' 
+                    : 'admin.pos.receipt-a4';
+                $paperSize = 'A4';
+            }
+
+            Log::info('Using enhanced template: ' . $viewName);
+
+            // Create PDF
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, [
+                'sale' => $sale,
+                'globalCompany' => $globalCompany
+            ]);
+
+            $pdf->setPaper($paperSize, 'portrait');
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => false,
+                'defaultFont' => $format === 'thermal' ? 'Courier' : 'DejaVu Sans',
+                'dpi' => $format === 'thermal' ? 96 : 150,
+                'debugKeepTemp' => false
+            ]);
+
+            // Generate enhanced filename
+            $companySlug = str_slug($globalCompany->company_name ?? 'receipt');
+            $formatSuffix = $format === 'thermal' ? 'thermal' : 'enhanced';
+            $filename = "enhanced_{$formatSuffix}_receipt_{$companySlug}_{$sale->invoice_number}_" . date('Y-m-d_H-i-s') . '.pdf';
+
+            Log::info('Enhanced bill generated successfully', [
+                'filename' => $filename,
+                'company' => $globalCompany->company_name,
+                'template' => $viewName,
+                'format' => $format
+            ]);
+
+            return response()->streamDownload(function () use ($pdf) {
+                echo $pdf->output();
+            }, $filename, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Enhanced bill download failed', [
+                'sale_id' => $sale->id,
+                'error' => $e->getMessage(),
+                'line' => $e->getLine()
+            ]);
+
+            // Fallback to regular bill download
+            return $this->downloadBill($sale);
         }
     }
 
@@ -330,12 +602,20 @@ class PosController extends Controller
 
     public function getProduct(Product $product)
     {
+        // Apply offers to get effective price
+        $offerDetails = $this->offerService->getOfferDetails($product);
+        $effectivePrice = $this->offerService->getEffectivePrice($product);
+
         return response()->json([
             'id' => $product->id,
             'name' => $product->name,
             'price' => $product->price,
+            'effective_price' => $effectivePrice,
             'stock' => $product->stock,
-            'barcode' => $product->barcode ?? null
+            'barcode' => $product->barcode ?? null,
+            'has_offer' => $effectivePrice < $product->price,
+            'offer_details' => $offerDetails,
+            'discount_percentage' => $offerDetails ? $offerDetails['discount_percentage'] : 0
         ]);
     }
 
@@ -345,14 +625,77 @@ class PosController extends Controller
 
         $products = Product::active()
             ->where('stock', '>', 0)
+            ->currentTenant()
             ->where(function ($query) use ($search) {
                 $query->where('name', 'like', '%' . $search . '%')
                     ->orWhere('barcode', 'like', '%' . $search . '%');
             })
             ->limit(10)
-            ->get(['id', 'name', 'price', 'stock', 'barcode']);
+            ->get();
 
-        return response()->json($products);
+        // Apply offers to products
+        $products = $this->offerService->applyOffersToProducts($products);
+
+        return response()->json($products->map(function($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'price' => $product->price,
+                'effective_price' => $product->effective_price,
+                'stock' => $product->stock,
+                'barcode' => $product->barcode,
+                'has_offer' => $product->has_offer ?? false,
+                'discount_percentage' => $product->discount_percentage ?? 0
+            ];
+        }));
+    }
+
+    public function calculateOffers(Request $request)
+    {
+        $request->validate([
+            'items' => 'required|array',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+        ]);
+
+        $offerCalculations = [];
+        $totalSavings = 0;
+
+        foreach ($request->items as $item) {
+            $product = Product::findOrFail($item['product_id']);
+            $quantity = $item['quantity'];
+            
+            // Get best offer for this product
+            $offerDetails = $this->offerService->getOfferDetails($product);
+            
+            if ($offerDetails) {
+                $itemTotal = $product->price * $quantity;
+                $discountedTotal = $offerDetails['discounted_price'] * $quantity;
+                $savings = $itemTotal - $discountedTotal;
+                
+                $offerCalculations[] = [
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'original_price' => $product->price,
+                    'discounted_price' => $offerDetails['discounted_price'],
+                    'quantity' => $quantity,
+                    'original_total' => $itemTotal,
+                    'discounted_total' => $discountedTotal,
+                    'savings' => $savings,
+                    'offer_name' => $offerDetails['offer']->name,
+                    'discount_percentage' => $offerDetails['discount_percentage']
+                ];
+                
+                $totalSavings += $savings;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'offer_calculations' => $offerCalculations,
+            'total_savings' => $totalSavings,
+            'has_offers' => !empty($offerCalculations)
+        ]);
     }
 
     public function dailySummary(Request $request)
@@ -389,14 +732,18 @@ class PosController extends Controller
             // Get format (default to A4)
             $format = request()->get('format', 'a4_sheet');
 
-            // Select template - try clean version first, then fixed version
+            // Select template - prioritize enhanced versions first
             $viewName = 'admin.pos.receipt-a4';
             if ($format === 'thermal') {
-                $viewName = 'admin.pos.receipt-pdf';
+                $viewName = 'admin.pos.receipt';
             }
 
-            // Try clean template first (best option)
-            if ($format !== 'thermal' && view()->exists('admin.pos.receipt-a4-clean')) {
+            // Try enhanced templates first (best option with product-wise details)
+            if ($format !== 'thermal' && view()->exists('admin.pos.receipt-a4-enhanced')) {
+                $viewName = 'admin.pos.receipt-a4-enhanced';
+            } elseif ($format === 'thermal' && view()->exists('admin.pos.receipt-thermal-enhanced')) {
+                $viewName = 'admin.pos.receipt-thermal-enhanced';
+            } elseif ($format !== 'thermal' && view()->exists('admin.pos.receipt-a4-clean')) {
                 $viewName = 'admin.pos.receipt-a4-clean';
             } elseif ($format === 'thermal' && view()->exists('admin.pos.receipt-pdf-clean')) {
                 $viewName = 'admin.pos.receipt-pdf-clean';
@@ -1364,29 +1711,29 @@ class PosController extends Controller
             // Get format preference (default to A4)
             $format = request()->get('format', 'a4_enhanced');
 
-            // Select the appropriate template based on format
-            $viewName = 'admin.pos.invoices.enhanced-a4-invoice';
+            // Select the appropriate template based on format - prioritize enhanced versions
+            $viewName = 'admin.pos.receipt-a4-enhanced';
             $paperSize = 'A4';
             $orientation = 'portrait';
             
             if ($format === 'thermal') {
-                $viewName = 'admin.pos.invoices.thermal-receipt';
+                $viewName = 'admin.pos.receipt-thermal-enhanced';
                 $paperSize = [0, 0, 226.77, 841.89]; // 80mm thermal paper
             } elseif ($format === 'simple') {
-                $viewName = 'admin.pos.receipt-a4-clean';
+                $viewName = 'admin.pos.receipt-a4-enhanced';
             }
             
             // Fallback to existing templates if enhanced doesn't exist
             if (!view()->exists($viewName)) {
                 if ($format === 'thermal') {
-                    $viewName = 'admin.pos.receipt-pdf-clean';
+                    $viewName = 'admin.pos.receipt';
                     if (!view()->exists($viewName)) {
                         $viewName = 'admin.pos.receipt-pdf';
                     }
                 } else {
-                    $viewName = 'admin.pos.receipt-a4-clean';
+                    $viewName = 'admin.pos.receipt-a4';
                     if (!view()->exists($viewName)) {
-                        $viewName = 'admin.pos.receipt-a4';
+                        $viewName = 'admin.pos.receipt-a4-clean';
                     }
                 }
             }

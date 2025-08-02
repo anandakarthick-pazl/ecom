@@ -72,10 +72,71 @@ class Banner extends Model
     }
 
     /**
-     * Get image URL with fallback
+     * Get image URL with specific format - CUSTOM VERSION
+     * Format: http://domain/storage/public/banner/banners/filename.jpeg
      */
     public function getImageUrlAttribute()
     {
-        return $this->getImageUrlWithFallback($this->image, 'banners');
+        if (!$this->image) {
+            return $this->getFallbackImageUrl('banners');
+        }
+        
+        // Extract just the filename from the stored path
+        $filename = basename($this->image);
+        
+        // Build the URL in the exact format requested:
+        // http://greenvalleyherbs.local:8000/storage/public/banner/banners/filename.jpeg
+        $url = asset('storage/public/banner/banners/' . $filename);
+        
+        return $url;
+    }
+    
+    /**
+     * Clean the image path to remove redundant folders
+     */
+    public function cleanImagePath($imagePath)
+    {
+        if (!$imagePath) {
+            return null;
+        }
+        
+        // Remove multiple path variations that might be wrong
+        $cleanPath = $imagePath;
+        
+        // Remove 'public/' prefix if present
+        $cleanPath = str_replace('public/', '', $cleanPath);
+        
+        // Remove duplicate 'banners/' if present (like 'banners/banners/')
+        $cleanPath = preg_replace('/banners\/banners\//', 'banners/', $cleanPath);
+        
+        // Remove 'banner/' prefix if it exists (should be 'banners/')
+        $cleanPath = str_replace('banner/banners/', 'banners/', $cleanPath);
+        
+        // Ensure it starts with 'banners/' if it doesn't already
+        if (strpos($cleanPath, 'banners/') !== 0) {
+            $filename = basename($cleanPath);
+            $cleanPath = 'banners/' . $filename;
+        }
+        
+        return $cleanPath;
+    }
+    
+    /**
+     * Check if file exists in storage
+     */
+    private function fileExistsInStorage($cleanPath)
+    {
+        if (!$cleanPath) {
+            return false;
+        }
+        
+        try {
+            // Check if file exists in the public storage disk
+            return \Storage::disk('public')->exists($cleanPath);
+        } catch (\Exception $e) {
+            // If storage check fails, check physical file
+            $fullPath = storage_path('app/public/' . $cleanPath);
+            return file_exists($fullPath);
+        }
     }
 }

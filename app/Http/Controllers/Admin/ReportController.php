@@ -81,7 +81,7 @@ class ReportController extends Controller
     public function salesReport(Request $request)
     {
         // Add tenant filtering
-        $posQuery = PosSale::with(['cashier', 'items.product'])
+        $posQuery = PosSale::with(['cashier', 'items.product', 'commission'])
             ->where('status', 'completed')
             ->currentTenant(); // Add tenant filtering
         
@@ -103,8 +103,33 @@ class ReportController extends Controller
             $posQuery->where('payment_method', $request->payment_method);
         }
 
+        // Add commission status filter
+        if ($request->commission_status) {
+            switch ($request->commission_status) {
+                case 'with_commission':
+                    $posQuery->whereHas('commission');
+                    break;
+                case 'without_commission':
+                    $posQuery->whereDoesntHave('commission');
+                    break;
+                case 'pending':
+                    $posQuery->whereHas('commission', function($q) {
+                        $q->where('status', 'pending');
+                    });
+                    break;
+                case 'paid':
+                    $posQuery->whereHas('commission', function($q) {
+                        $q->where('status', 'paid');
+                    });
+                    break;
+            }
+        }
+
         $posSales = $posQuery->latest()->get();
         $onlineOrders = $onlineQuery->latest()->get();
+
+        // Calculate commission statistics
+        $commissionStats = $this->getCommissionStats($request);
 
         $summary = [
             'pos_sales_count' => $posSales->count(),
@@ -114,6 +139,13 @@ class ReportController extends Controller
             'total_sales' => $posSales->sum('total_amount') + $onlineOrders->sum('total'),
             'cash_sales' => $posSales->where('payment_method', 'cash')->sum('total_amount'),
             'digital_sales' => $posSales->whereIn('payment_method', ['card', 'upi', 'gpay', 'paytm', 'phonepe'])->sum('total_amount'),
+            // Commission statistics
+            'total_commission_amount' => $commissionStats['total_commission_amount'],
+            'pending_commission_amount' => $commissionStats['pending_commission_amount'],
+            'paid_commission_amount' => $commissionStats['paid_commission_amount'],
+            'total_commission_count' => $commissionStats['total_commission_count'],
+            'pending_commission_count' => $commissionStats['pending_commission_count'],
+            'paid_commission_count' => $commissionStats['paid_commission_count'],
         ];
 
         if ($request->export) {
@@ -121,7 +153,7 @@ class ReportController extends Controller
             return Excel::download(new SalesReportExport($posSales, $onlineOrders, $summary), $filename);
         }
 
-        return view('admin.reports.sales', compact('posSales', 'onlineOrders', 'summary'));
+        return view('admin.reports.sales', compact('posSales', 'onlineOrders', 'summary', 'commissionStats'));
     }
 
     public function purchaseOrderReport(Request $request)
@@ -452,6 +484,47 @@ class ReportController extends Controller
             ];
         }
         return $monthlySales;
+    }
+
+    private function getCommissionStats($request)
+    {
+        // Import Commission model
+        $commissionQuery = \App\Models\Commission::currentTenant();
+
+        // Apply date filters if provided
+        if ($request->date_from) {
+            $commissionQuery->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->date_to) {
+            $commissionQuery->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Get all commissions
+        $allCommissions = $commissionQuery->get();
+        
+        // Calculate statistics
+        $stats = [
+            'total_commission_amount' => $allCommissions->sum('commission_amount'),
+            'pending_commission_amount' => $allCommissions->where('status', 'pending')->sum('commission_amount'),
+            'paid_commission_amount' => $allCommissions->where('status', 'paid')->sum('commission_amount'),
+            'cancelled_commission_amount' => $allCommissions->where('status', 'cancelled')->sum('commission_amount'),
+            'total_commission_count' => $allCommissions->count(),
+            'pending_commission_count' => $allCommissions->where('status', 'pending')->count(),
+            'paid_commission_count' => $allCommissions->where('status', 'paid')->count(),
+            'cancelled_commission_count' => $allCommissions->where('status', 'cancelled')->count(),
+            // Top performers
+            'top_performers' => $allCommissions->groupBy('reference_name')->map(function ($commissions, $name) {
+                return [
+                    'name' => $name,
+                    'total_commission' => $commissions->sum('commission_amount'),
+                    'count' => $commissions->count(),
+                    'avg_commission' => $commissions->avg('commission_amount'),
+                ];
+            })->sortByDesc('total_commission')->take(5)->values(),
+        ];
+
+        return $stats;
     }
 
     private function getTopProducts($limit = 10)

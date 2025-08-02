@@ -14,7 +14,7 @@ class BranchController extends BaseAdminController
 {
     public function index(Request $request)
     {
-        $companyId = $this->getCompanyId();
+        $companyId = $this->getCurrentCompanyId();
         
         $query = Branch::where('company_id', $companyId)
             ->with(['users' => function($q) {
@@ -94,7 +94,7 @@ class BranchController extends BaseAdminController
 
     public function create()
     {
-        $companyId = $this->getCompanyId();
+        $companyId = $this->getCurrentCompanyId();
         $nextCode = Branch::generateBranchCode($companyId);
         
         return view('admin.branches.create', compact('nextCode'));
@@ -102,7 +102,7 @@ class BranchController extends BaseAdminController
 
     public function store(Request $request)
     {
-        $companyId = $this->getCompanyId();
+        $companyId = $this->getCurrentCompanyId();
         
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
@@ -312,7 +312,7 @@ class BranchController extends BaseAdminController
     // Helper method to check authorization
     private function authorize($action, $branch = null)
     {
-        if ($branch && $branch->company_id !== $this->getCompanyId()) {
+        if ($branch && $branch->company_id !== $this->getCurrentCompanyId()) {
             abort(403, 'Unauthorized access to branch.');
         }
     }

@@ -12,6 +12,55 @@
 </a>
 @endsection
 
+@push('scripts')
+<script>
+function markCommissionAsPaid(commissionId) {
+    if (confirm('Mark this commission as paid?')) {
+        $.ajax({
+            url: `/admin/commissions/${commissionId}/mark-paid`,
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                location.reload();
+            },
+            error: function(xhr) {
+                const response = xhr.responseJSON;
+                alert('Error: ' + (response ? response.message : 'Failed to update commission status'));
+            }
+        });
+    }
+}
+
+function cancelCommission(commissionId) {
+    const reason = prompt('Please provide a reason for cancelling this commission:');
+    if (reason && reason.trim()) {
+        $.ajax({
+            url: `/admin/commissions/${commissionId}/cancel`,
+            method: 'POST',
+            data: {
+                reason: reason.trim(),
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                location.reload();
+            },
+            error: function(xhr) {
+                const response = xhr.responseJSON;
+                alert('Error: ' + (response ? response.message : 'Failed to cancel commission'));
+            }
+        });
+    }
+}
+
+function showRefundModal(saleId) {
+    // Refund functionality - to be implemented
+    alert('Refund functionality coming soon!');
+}
+</script>
+@endpush
+
 @section('content')
 <div class="row">
     <div class="col-lg-8">
@@ -76,6 +125,90 @@
                 @endif
             </div>
         </div>
+        
+        <!-- Commission Information -->
+        @php
+            $commission = $sale->commission;
+        @endphp
+        
+        @if($commission)
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-percentage"></i> Commission Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-5">Reference Name:</dt>
+                                <dd class="col-sm-7">{{ $commission->reference_name }}</dd>
+                                
+                                <dt class="col-sm-5">Commission %:</dt>
+                                <dd class="col-sm-7">{{ $commission->formatted_commission_percentage }}</dd>
+                                
+                                <dt class="col-sm-5">Base Amount:</dt>
+                                <dd class="col-sm-7">{{ $commission->formatted_base_amount }}</dd>
+                            </dl>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-5">Commission Amount:</dt>
+                                <dd class="col-sm-7"><strong class="text-success">{{ $commission->formatted_commission_amount }}</strong></dd>
+                                
+                                <dt class="col-sm-5">Status:</dt>
+                                <dd class="col-sm-7">
+                                    <span class="badge bg-{{ $commission->status_color }}">
+                                        {{ $commission->status_text }}
+                                    </span>
+                                </dd>
+                                
+                                <dt class="col-sm-5">Created:</dt>
+                                <dd class="col-sm-7">{{ $commission->created_at->format('M d, Y h:i A') }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                    
+                    @if($commission->notes)
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <strong>Commission Notes:</strong>
+                                <p class="text-muted">{{ $commission->notes }}</p>
+                            </div>
+                        </div>
+                    @endif
+                    
+                    @if($commission->status === 'pending' && auth()->user()->can('manage-commissions'))
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-success btn-sm" 
+                                            onclick="markCommissionAsPaid({{ $commission->id }})">
+                                        <i class="fas fa-check"></i> Mark as Paid
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-sm" 
+                                            onclick="cancelCommission({{ $commission->id }})">
+                                        <i class="fas fa-times"></i> Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                    
+                    @if($commission->status === 'paid' && $commission->paid_at)
+                        <div class="alert alert-success mt-3">
+                            <i class="fas fa-check-circle"></i>
+                            <strong>Commission Paid:</strong> {{ $commission->paid_at->format('M d, Y h:i A') }}
+                            @if($commission->paidBy)
+                                by {{ $commission->paidBy->name }}
+                            @endif
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @endif
         
         <!-- Sale Items -->
         <div class="card mt-4">

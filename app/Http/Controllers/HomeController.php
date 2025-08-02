@@ -9,10 +9,19 @@ use App\Models\Order;
 use App\Models\AppSetting;
 use Illuminate\Http\Request;
 use App\Traits\HasPagination;
+use App\Services\OfferService;
+use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
 {
     use HasPagination;
+    
+    protected $offerService;
+    
+    public function __construct(OfferService $offerService)
+    {
+        $this->offerService = $offerService;
+    }
     public function index(Request $request)
     {
         $banners = Banner::active()
@@ -20,18 +29,21 @@ class HomeController extends Controller
             ->byPosition('top')
             ->orderBy('sort_order')
             ->get();
+            // echo "<pre>";print_R( $banners);exit;
 
+        // Featured products - include out of stock but prioritize in-stock
         $featuredProducts = Product::active()
             ->featured()
-            ->inStock()
             ->with('category')
-            ->limit(8)
+            ->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END') // In-stock first
+            ->orderBy('sort_order')
+            ->limit(50) // Increased to 50 for better display
             ->get();
 
         $categories = Category::active()
             ->parent()
             ->withCount(['products' => function ($query) {
-                $query->active()->where('stock', '>', 0);
+                $query->active(); // Count all active products, not just in-stock
             }])
             ->orderBy('sort_order')
             ->limit(6)
@@ -42,27 +54,27 @@ class HomeController extends Controller
         $products = collect();
 
         // Get frontend pagination settings using the trait
-        $frontendPaginationSettings = $this->getFrontendPaginationSettings($request, '12');
+        $frontendPaginationSettings = $this->getFrontendPaginationSettings($request, '50'); // Set to 50 for better display
         $frontendPaginationControls = $this->getPaginationControlsData($request, 'frontend');
 
         if ($activeMenu === 'all') {
-            // All Products
+            // All Products - include out of stock but prioritize in-stock
             $query = Product::active()
-                ->inStock()
                 ->with('category')
+                ->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END') // In-stock first
                 ->orderBy('sort_order');
 
-            $products = $this->applyFrontendPagination($query, $request, '12');
+            $products = $this->applyFrontendPagination($query, $request, '50'); // Set to 50 for better display
         } elseif ($activeMenu === 'offers') {
-            // Offer Products (products with discount_price)
+            // Offer Products - include out of stock offers
             $query = Product::active()
-                ->inStock()
                 ->whereNotNull('discount_price')
                 ->where('discount_price', '>', 0)
                 ->with('category')
+                ->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END') // In-stock first
                 ->orderBy('sort_order');
 
-            $products = $this->applyFrontendPagination($query, $request, '12');
+            $products = $this->applyFrontendPagination($query, $request, '50'); // Set to 50 for better display
         }
 
         return view('home-enhanced', compact(
@@ -78,7 +90,7 @@ class HomeController extends Controller
 
     public function products(Request $request)
     {
-        $query = Product::active()->inStock()->with('category');
+        $query = Product::active()->with('category');
 
         // Filter by category if specified
         if ($request->has('category') && $request->category != 'all') {
@@ -87,21 +99,45 @@ class HomeController extends Controller
             });
         }
 
+        // Order by stock status (in-stock first) then by sort order
+        $query->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END')
+              ->orderBy('sort_order');
+
         // Apply frontend pagination using the trait
-        $products = $this->applyFrontendPagination($query->orderBy('sort_order'), $request, '12');
+        $products = $this->applyFrontendPagination($query, $request, '50'); // Increased for compact display
+        
+        // Apply offers to products using the OfferService
+        if (method_exists($products, 'getCollection')) {
+            // For paginated results
+            $productsCollection = $products->getCollection();
+            $productsWithOffers = $this->offerService->applyOffersToProducts($productsCollection);
+            $products->setCollection($productsWithOffers);
+        } else {
+            // For regular collection
+            $products = $this->offerService->applyOffersToProducts($products);
+        }
 
         // Get frontend pagination settings and controls
-        $frontendPaginationSettings = $this->getFrontendPaginationSettings($request, '12');
+        $frontendPaginationSettings = $this->getFrontendPaginationSettings($request, '50'); // Increased for compact display
         $frontendPaginationControls = $this->getPaginationControlsData($request, 'frontend');
 
-        // Get categories that have products
+        // Get categories that have products (including out of stock)
         $categories = Category::active()
             ->parent()
             ->whereHas('products', function ($q) {
-                $q->active()->where('stock', '>', 0);
+                $q->active(); // Include all active products, not just in-stock
             })
             ->orderBy('sort_order')
             ->get();
+        
+        // Get category-specific offers if filtering by category
+        $categoryOffers = collect();
+        if ($request->has('category') && $request->category != 'all') {
+            $category = Category::where('slug', $request->category)->active()->first();
+            if ($category) {
+                $categoryOffers = $this->offerService->getCategoryOffers($category);
+            }
+        }
 
         if ($request->ajax()) {
             $paginationHtml = '';
@@ -113,7 +149,7 @@ class HomeController extends Controller
             $productsCount = method_exists($products, 'count') ? $products->count() : count($products);
 
             if ($productsCount > 0) {
-                $productsHtml = '<div class="products-grid">';
+                $productsHtml = '<div class="products-grid-compact">';
                 foreach ($products as $product) {
                     $productsHtml .= view('partials.product-card-modern', compact('product'))->render();
                 }
@@ -146,6 +182,7 @@ class HomeController extends Controller
         return view('products', compact(
             'products',
             'categories',
+            'categoryOffers',
             'frontendPaginationSettings',
             'frontendPaginationControls'
         ));
@@ -153,11 +190,35 @@ class HomeController extends Controller
 
     public function offerProducts(Request $request)
     {
+        // Start with products that have manual discount_price OR products with category/product offers
         $query = Product::active()
-            ->inStock()
-            ->whereNotNull('discount_price')
-            ->where('discount_price', '>', 0)
-            ->with('category');
+            ->with('category')
+            ->where(function($q) {
+                // Products with manual discount_price
+                $q->whereNotNull('discount_price')
+                  ->where('discount_price', '>', 0);
+                
+                // OR products that have category-specific offers
+                $q->orWhereHas('category', function($categoryQuery) {
+                    $categoryQuery->whereHas('offers', function($offerQuery) {
+                        $offerQuery->where('type', 'category')
+                                  ->where('is_active', true)
+                                  ->where('start_date', '<=', now())
+                                  ->where('end_date', '>=', now());
+                    });
+                });
+                
+                // OR products that have product-specific offers
+                $q->orWhereExists(function($productOfferQuery) {
+                    $productOfferQuery->select(DB::raw(1))
+                                     ->from('offers')
+                                     ->where('type', 'product')
+                                     ->whereColumn('offers.product_id', 'products.id')
+                                     ->where('is_active', true)
+                                     ->where('start_date', '<=', now())
+                                     ->where('end_date', '>=', now());
+                });
+            });
 
         // Filter by category if specified
         if ($request->has('category') && $request->category != 'all') {
@@ -166,21 +227,46 @@ class HomeController extends Controller
             });
         }
 
+        // Order by stock status (in-stock first) then by sort order
+        $query->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END')
+              ->orderBy('sort_order');
+
         // Apply frontend pagination using the trait
-        $products = $this->applyFrontendPagination($query->orderBy('sort_order'), $request, '12');
+        $products = $this->applyFrontendPagination($query, $request, '50'); // Increased for compact display
+        
+        // Apply offers to products using the OfferService
+        if (method_exists($products, 'getCollection')) {
+            // For paginated results
+            $productsCollection = $products->getCollection();
+            $productsWithOffers = $this->offerService->applyOffersToProducts($productsCollection);
+            $products->setCollection($productsWithOffers);
+        } else {
+            // For regular collection
+            $products = $this->offerService->applyOffersToProducts($products);
+        }
 
         // Get frontend pagination settings and controls
-        $frontendPaginationSettings = $this->getFrontendPaginationSettings($request, '12');
+        $frontendPaginationSettings = $this->getFrontendPaginationSettings($request, '50'); // Increased for compact display
         $frontendPaginationControls = $this->getPaginationControlsData($request, 'frontend');
 
-        // Get categories that have offer products
+        // Get categories that have offer products (including products with category offers)
         $categories = Category::active()
             ->parent()
-            ->whereHas('products', function ($q) {
-                $q->active()
-                    ->where('stock', '>', 0)
-                    ->whereNotNull('discount_price')
-                    ->where('discount_price', '>', 0);
+            ->where(function($q) {
+                // Categories with products that have manual discount_price
+                $q->whereHas('products', function ($productQuery) {
+                    $productQuery->active()
+                                ->whereNotNull('discount_price')
+                                ->where('discount_price', '>', 0);
+                });
+                
+                // OR categories that have category-specific offers
+                $q->orWhereHas('offers', function($offerQuery) {
+                    $offerQuery->where('type', 'category')
+                              ->where('is_active', true)
+                              ->where('start_date', '<=', now())
+                              ->where('end_date', '>=', now());
+                });
             })
             ->orderBy('sort_order')
             ->get();
@@ -195,7 +281,7 @@ class HomeController extends Controller
             $productsCount = method_exists($products, 'count') ? $products->count() : count($products);
 
             if ($productsCount > 0) {
-                $productsHtml = '<div class="products-grid offers">';
+                $productsHtml = '<div class="products-grid-compact offers">';
                 foreach ($products as $product) {
                     $productsHtml .= view('partials.product-card-modern', ['product' => $product, 'offer' => true])->render();
                 }
@@ -241,20 +327,35 @@ class HomeController extends Controller
 
         $query = Product::where('category_id', $category->id)
             ->active()
-            ->inStock()
             ->with('category')
+            ->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END') // In-stock first
             ->orderBy('sort_order');
 
         // Apply frontend pagination using the trait
         $products = $this->applyFrontendPagination($query, request(), '12');
+        
+        // Apply offers to products using the OfferService
+        if (method_exists($products, 'getCollection')) {
+            // For paginated results
+            $productsCollection = $products->getCollection();
+            $productsWithOffers = $this->offerService->applyOffersToProducts($productsCollection);
+            $products->setCollection($productsWithOffers);
+        } else {
+            // For regular collection
+            $products = $this->offerService->applyOffersToProducts($products);
+        }
 
         // Get frontend pagination settings and controls
         $frontendPaginationSettings = $this->getFrontendPaginationSettings(request(), '12');
         $frontendPaginationControls = $this->getPaginationControlsData(request(), 'frontend');
+        
+        // Get category-specific offers for display
+        $categoryOffers = $this->offerService->getCategoryOffers($category);
 
         return view('category', compact(
             'category',
             'products',
+            'categoryOffers',
             'frontendPaginationSettings',
             'frontendPaginationControls'
         ));
@@ -267,10 +368,12 @@ class HomeController extends Controller
             ->with('category')
             ->firstOrFail();
 
+        // Related products - prioritize in-stock but include out-of-stock
         $relatedProducts = Product::where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->active()
-            ->inStock()
+            ->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END') // In-stock first
+            ->orderBy('sort_order')
             ->limit(4)
             ->get();
 
@@ -288,15 +391,15 @@ class HomeController extends Controller
         $productQuery = Product::where('name', 'LIKE', "%{$query}%")
             ->orWhere('description', 'LIKE', "%{$query}%")
             ->active()
-            ->inStock()
             ->with('category')
+            ->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END') // In-stock first
             ->orderBy('sort_order');
 
         // Apply frontend pagination using the trait
-        $products = $this->applyFrontendPagination($productQuery, $request, '12');
+        $products = $this->applyFrontendPagination($productQuery, $request, '50'); // Increased for compact display
 
         // Get frontend pagination settings and controls
-        $frontendPaginationSettings = $this->getFrontendPaginationSettings($request, '12');
+        $frontendPaginationSettings = $this->getFrontendPaginationSettings($request, '50'); // Increased for compact display
         $frontendPaginationControls = $this->getPaginationControlsData($request, 'frontend');
 
         return view('search', compact(

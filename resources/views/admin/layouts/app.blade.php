@@ -814,6 +814,12 @@
                 </a>
             </li>
             
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('admin.social-media.*') ? 'active' : '' }}" href="{{ route('admin.social-media.index') }}">
+                    <i class="fas fa-share-alt"></i> Social Media
+                </a>
+            </li>
+            
             <!-- Reports Section -->
             <div class="nav-section">Reports & Analytics</div>
             
@@ -1079,6 +1085,8 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="{{ asset('js/force-sound-enable.js') }}"></script>
+    <script src="{{ asset('js/notification-sound-manager.js') }}"></script>
     
     <script>
         // Global variables for notifications
@@ -1086,6 +1094,18 @@
         let notificationCheckInterval;
         let soundEnabled = {{ \App\Models\AppSetting::get('sound_notifications', true) ? 'true' : 'false' }};
         let popupEnabled = {{ \App\Models\AppSetting::get('popup_notifications', true) ? 'true' : 'false' }};
+        
+        // Auto-enable sound on page load for admin
+        $(document).ready(function() {
+            // Force enable sound for admin users
+            if (window.notificationSoundManager) {
+                // Give the sound manager a moment to initialize
+                setTimeout(function() {
+                    window.notificationSoundManager.forceEnable();
+                    console.log('Sound auto-enabled for admin panel');
+                }, 1000);
+            }
+        });
         
         // Mobile sidebar toggle
         $('#sidebarToggle').click(function() {
@@ -1116,8 +1136,23 @@
         
         // Initialize notifications if we're on an admin page
         if (window.location.pathname.includes('/admin')) {
+            // Auto-request notification permission
+            if ("Notification" in window && Notification.permission === "default") {
+                Notification.requestPermission().then(permission => {
+                    console.log('Notification permission:', permission);
+                });
+            }
+            
             loadNotifications();
             startNotificationChecking();
+            
+            // Enable sound immediately for admin users
+            setTimeout(function() {
+                if (window.notificationSoundManager) {
+                    window.notificationSoundManager.forceEnable();
+                    console.log('Sound forcefully enabled for admin');
+                }
+            }, 500);
         }
         
         // Load notifications function
@@ -1222,16 +1257,47 @@
         
         // Handle new order notification
         function handleNewOrderNotification(notification) {
-            // Play sound if enabled
+            console.log('Handling new order notification:', notification);
+            
+            // Always try to play sound for new orders (high priority)
             if (soundEnabled) {
-                playNotificationSound();
+                console.log('Attempting to play notification sound...');
+                
+                // Force enable and play sound
+                if (window.notificationSoundManager) {
+                    window.notificationSoundManager.forceEnable();
+                    window.notificationSoundManager.play().then(() => {
+                        console.log('Order notification sound played successfully');
+                    }).catch(error => {
+                        console.log('Sound play failed, trying fallback:', error);
+                        // Try alternative sound method
+                        tryFallbackSound();
+                    });
+                } else if (window.playNotificationSound) {
+                    playNotificationSound();
+                } else {
+                    console.log('No sound manager available');
+                    tryFallbackSound();
+                }
             }
             
             // Show browser notification if supported
             if ("Notification" in window && Notification.permission === "granted") {
                 new Notification(notification.title, {
                     body: notification.message,
-                    icon: '/favicon.ico'
+                    icon: '/favicon.ico',
+                    requireInteraction: true // Keep notification visible
+                });
+            } else if ("Notification" in window && Notification.permission !== "denied") {
+                // Request permission if not already granted
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        new Notification(notification.title, {
+                            body: notification.message,
+                            icon: '/favicon.ico',
+                            requireInteraction: true
+                        });
+                    }
                 });
             }
             
@@ -1239,11 +1305,76 @@
             if (popupEnabled) {
                 showOrderPopup(notification);
             }
+            
+            // Flash the browser tab title for attention
+            flashTabTitle('New Order!');
         }
         
+        // Fallback sound method
+        function tryFallbackSound() {
+            try {
+                // Try to create a simple beep
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjGH0fPTgjMGHm7A7+OZURE');
+                audio.volume = 0.5;
+                audio.play().catch(e => {
+                    console.log('Fallback sound also failed:', e);
+                    // Last resort - try to make system beep
+                    try {
+                        // This might work in some browsers
+                        console.log('\a'); // ASCII bell character
+                    } catch (e2) {
+                        console.log('All sound methods failed');
+                    }
+                });
+            } catch (e) {
+                console.log('Fallback sound creation failed:', e);
+            }
+        }
+        
+        // Flash tab title to get attention
+        let originalTitle = document.title;
+        let titleFlashInterval = null;
+        
+        function flashTabTitle(message, duration = 10000) {
+            if (titleFlashInterval) {
+                clearInterval(titleFlashInterval);
+            }
+            
+            let isOriginal = false;
+            titleFlashInterval = setInterval(() => {
+                document.title = isOriginal ? originalTitle : `🔔 ${message}`;
+                isOriginal = !isOriginal;
+            }, 1000);
+            
+            // Stop flashing after duration
+            setTimeout(() => {
+                if (titleFlashInterval) {
+                    clearInterval(titleFlashInterval);
+                    titleFlashInterval = null;
+                    document.title = originalTitle;
+                }
+            }, duration);
+        }
+        
+        // Stop title flashing when user focuses the tab
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && titleFlashInterval) {
+                clearInterval(titleFlashInterval);
+                titleFlashInterval = null;
+                document.title = originalTitle;
+                // Also enable sound when user comes back
+                if (window.notificationSoundManager) {
+                    window.notificationSoundManager.forceEnable();
+                }
+            }
+        });
+        
         // Show order popup notification
+        let currentNotificationId = null; // Track current notification
+        
         function showOrderPopup(notification) {
             const orderData = notification.data || {};
+            currentNotificationId = notification.id; // Store notification ID
             
             // Format order details
             let orderDetails = `
@@ -1269,6 +1400,9 @@
                 $('#viewOrderBtn').attr('href', `/admin/orders/${orderData.order_id}`);
             }
             
+            // Store notification ID in the toast for easy access
+            $('#newOrderToast').attr('data-notification-id', notification.id);
+            
             // Show the toast
             const toastEl = document.getElementById('newOrderToast');
             const toast = new bootstrap.Toast(toastEl, {
@@ -1283,17 +1417,30 @@
             }, 1000);
         }
         
-        // Play notification sound
-        function playNotificationSound() {
-            try {
-                const audio = document.getElementById('notificationSound');
-                if (audio) {
-                    audio.currentTime = 0;
-                    audio.play().catch(e => console.log('Could not play notification sound:', e));
-                }
-            } catch (e) {
-                console.log('Error playing notification sound:', e);
+        // Sound functions are now handled by NotificationSoundManager
+        // Functions are available globally as playNotificationSound() and stopNotificationSound()
+        
+        // Function to mark notification as read
+        function markNotificationAsReadById(notificationId, callback = null) {
+            if (!notificationId) {
+                console.log('No notification ID provided');
+                if (callback) callback();
+                return;
             }
+            
+            $.post(`/admin/notifications/mark-read-by-id/${notificationId}`, {
+                _token: '{{ csrf_token() }}'
+            })
+            .done(function(response) {
+                console.log('Notification marked as read:', response);
+                // Refresh notification list
+                loadNotifications();
+                if (callback) callback();
+            })
+            .fail(function(xhr) {
+                console.error('Failed to mark notification as read:', xhr.responseJSON);
+                if (callback) callback();
+            });
         }
         
         // Mark all notifications as read
@@ -1305,11 +1452,71 @@
             });
         });
         
-        // Request notification permission
-        if ("Notification" in window && Notification.permission === "default") {
-            Notification.requestPermission();
-        }
+        // Request notification permission is now handled in initialization above
+        
+        // Add event listeners to stop sound when notification actions are clicked
+        $(document).on('click', '#viewOrderBtn', function(e) {
+            stopNotificationSound();
+            
+            // Get notification ID from the toast
+            const notificationId = $('#newOrderToast').attr('data-notification-id') || currentNotificationId;
+            
+            // Mark notification as read
+            if (notificationId) {
+                markNotificationAsReadById(notificationId, function() {
+                    console.log('Notification marked as read - View Order clicked');
+                });
+            }
+            
+            // Optional: Also hide the toast when viewing order
+            setTimeout(function() {
+                const toastEl = document.getElementById('newOrderToast');
+                const toast = bootstrap.Toast.getInstance(toastEl);
+                if (toast) {
+                    toast.hide();
+                }
+            }, 100);
+            
+            // Allow the link to work normally (don't prevent default)
+        });
+        
+        // Stop sound when dismiss button is clicked
+        $(document).on('click', '[data-bs-dismiss="toast"]', function() {
+            const targetToast = $(this).closest('.toast');
+            if (targetToast.attr('id') === 'newOrderToast') {
+                stopNotificationSound();
+                
+                // Get notification ID and mark as read
+                const notificationId = targetToast.attr('data-notification-id') || currentNotificationId;
+                if (notificationId) {
+                    markNotificationAsReadById(notificationId, function() {
+                        console.log('Notification marked as read - Dismiss clicked');
+                    });
+                }
+            }
+        });
+        
+        // Also stop sound when toast is closed by any means
+        $('#newOrderToast').on('hidden.bs.toast', function () {
+            stopNotificationSound();
+            
+            // Mark as read if not already done
+            const notificationId = $(this).attr('data-notification-id') || currentNotificationId;
+            if (notificationId) {
+                markNotificationAsReadById(notificationId, function() {
+                    console.log('Notification marked as read - Toast closed');
+                });
+            }
+            
+            // Clear the stored notification ID
+            currentNotificationId = null;
+            $(this).removeAttr('data-notification-id');
+        });
     </script>
+    
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- Session Manager for handling session expiration -->
     <script src="{{ asset('js/session-manager.js') }}"></script>

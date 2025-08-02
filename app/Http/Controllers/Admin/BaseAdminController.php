@@ -478,5 +478,54 @@ class BaseAdminController extends Controller
         $redirect = $redirectRoute ? route($redirectRoute) : back();
         return redirect($redirect)->with('error', $message);
     }
+    /**
+     * Ensure result is always a paginator to prevent links() method errors
+     * 
+     * @param mixed $result
+     * @param \Illuminate\Http\Request $request
+     * @param int $perPage
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     */
+    protected function ensurePaginator($result, $request, $perPage = 20)
+    {
+        // If it's already a paginator, return as is
+        if (method_exists($result, 'links')) {
+            return $result;
+        }
+        
+        // If it's a Collection, convert to manual paginator
+        if ($result instanceof \Illuminate\Support\Collection) {
+            return $this->createManualPaginator($result, $request, $perPage);
+        }
+        
+        // If it's something else, throw error
+        throw new \Exception('Invalid result type for pagination');
+    }
+    
+    /**
+     * Create a manual paginator from a collection
+     * 
+     * @param \Illuminate\Support\Collection $items
+     * @param \Illuminate\Http\Request $request
+     * @param int $perPage
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     */
+    protected function createManualPaginator($items, $request, $perPage = 20)
+    {
+        $page = (int) $request->get('page', 1);
+        $total = $items->count();
+        $currentPageItems = $items->slice(($page - 1) * $perPage, $perPage)->values();
+        
+        return new \Illuminate\Pagination\LengthAwarePaginator(
+            $currentPageItems,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'pageName' => 'page',
+            ]
+        );
+    }
 
 }

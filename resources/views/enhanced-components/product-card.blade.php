@@ -108,8 +108,9 @@
                     <i class="fas fa-cart-plus me-1"></i> Add to Cart
                 </button>
             @else
-                <button class="btn btn-secondary flex-grow-1" disabled>
-                    <i class="fas fa-times me-1"></i> Out of Stock
+                <button onclick="notifyWhenAvailable({{ $product->id }})" 
+                        class="btn btn-warning flex-grow-1">
+                    <i class="fas fa-bell me-1"></i> Notify Me
                 </button>
             @endif
         </div>
@@ -455,4 +456,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Notification function for out-of-stock products (Enhanced version)
+if (typeof window.notifyWhenAvailable === 'undefined') {
+    window.notifyWhenAvailable = function(productId) {
+        const productCard = document.querySelector(`[data-product-id="${productId}"]`);
+        const productName = productCard ? productCard.querySelector('.product-title-enhanced')?.textContent || 'this product' : 'this product';
+        
+        if (typeof window.showEnhancedNotification === 'function') {
+            window.showEnhancedNotification(`✅ We'll notify you when "${productName}" is back in stock!`, 'success', 4000);
+        } else if (typeof window.showToast === 'function') {
+            window.showToast(`✅ We'll notify you when "${productName}" is back in stock!`, 'success');
+        } else {
+            alert(`✅ We'll notify you when "${productName}" is back in stock!`);
+        }
+        
+        // Trigger celebration effect for enhanced cards
+        if (typeof window.enhancedFireworks !== 'undefined') {
+            setTimeout(() => {
+                window.enhancedFireworks.createCelebrationBurst();
+            }, 300);
+        }
+    };
+}
 </script>

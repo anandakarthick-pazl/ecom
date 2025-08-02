@@ -135,10 +135,19 @@
                                         <label class="form-check-label w-100" for="payment_{{ $method->id }}">
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <div>
-                                                    <strong>
-                                                        <i class="{{ $method->getIcon() }} text-{{ $method->getColor() }}"></i>
-                                                        {{ $method->display_name }}
-                                                    </strong>
+                                                    <div class="d-flex align-items-center">
+                                                        @if($method->hasImage())
+                                                            <img src="{{ $method->getImageUrl() }}" 
+                                                                 alt="{{ $method->display_name }}" 
+                                                                 class="payment-method-image me-3"
+                                                                 style="width: 40px; height: 40px; object-fit: contain; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                        @else
+                                                            <i class="{{ $method->getIcon() }} text-{{ $method->getColor() }} me-3" style="font-size: 1.8rem;"></i>
+                                                        @endif
+                                                        <div>
+                                                            <strong>{{ $method->display_name }}</strong>
+                                                        </div>
+                                                    </div>
                                                     @if($method->description)
                                                         <br><small class="text-muted">{{ $method->description }}</small>
                                                     @endif
@@ -159,10 +168,10 @@
                                                                 <strong>UPI ID:</strong> {{ $method->upi_id }}<br>
                                                             @endif
                                                             @if($method->upi_qr_code)
-                                                                <img src="{{ Storage::url($method->upi_qr_code) }}" 
-                                                                     alt="UPI QR Code" 
-                                                                     class="img-fluid mt-2" 
-                                                                     style="max-width: 150px;">
+                                                            <img src="{{ $method->getQrCodeUrl() }}" 
+                                                            alt="UPI QR Code" 
+                                                            class="img-fluid mt-2" 
+                                                            style="max-width: 150px;">
                                                             @endif
                                                         </div>
                                                     @endif
@@ -174,7 +183,7 @@
                                                             @endif
                                                             @if($method->upi_qr_code)
                                                                 <div class="text-center mt-2">
-                                                                    <img src="{{ Storage::url($method->upi_qr_code) }}" 
+                                                                    <img src="{{ $method->getQrCodeUrl() }}" 
                                                                          alt="Google Pay QR Code" 
                                                                          class="img-fluid border rounded" 
                                                                          style="max-width: 200px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
@@ -226,16 +235,49 @@
                 </div>
                 <div class="card-body">
                     @foreach($cartItems as $item)
+                    @php
+                        $hasDiscount = $item->product->discount_price && $item->product->discount_price > 0;
+                        $offerPrice = $hasDiscount ? $item->product->discount_price : $item->product->price;
+                        $originalPrice = $item->product->price;
+                    @endphp
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="flex-grow-1">
-                            <h6 class="mb-0">{{ $item->product->name }}</h6>
-                            <small class="text-muted">Qty: {{ $item->quantity }} × ₹{{ number_format($item->price, 2) }}</small>
+                            <div class="d-flex align-items-center">
+                                <h6 class="mb-0 me-2">{{ $item->product->name }}</h6>
+                                @if($hasDiscount)
+                                    <span class="badge bg-success text-white small">OFFER</span>
+                                @endif
+                            </div>
+                            <div class="product-pricing-info">
+                                @if($hasDiscount)
+                                    <small class="text-muted">Qty: {{ $item->quantity }} × 
+                                        <span class="text-success fw-bold">₹{{ number_format($offerPrice, 2) }}</span>
+                                        <span class="text-decoration-line-through text-muted ms-1">₹{{ number_format($originalPrice, 2) }}</span>
+                                    </small>
+                                    <br>
+                                    <small class="text-success">
+                                        <i class="fas fa-tag"></i> You save ₹{{ number_format(($originalPrice - $offerPrice) * $item->quantity, 2) }}
+                                    </small>
+                                @else
+                                    <small class="text-muted">Qty: {{ $item->quantity }} × ₹{{ number_format($item->price, 2) }}</small>
+                                @endif
+                            </div>
                             @if($item->product->tax_percentage > 0)
                                 <br><small class="text-muted">GST: {{ $item->product->tax_percentage }}% = ₹{{ number_format($item->product->getTaxAmount($item->price) * $item->quantity, 2) }}</small>
                             @endif
                         </div>
                         <div class="text-end">
-                            <strong>₹{{ number_format($item->total, 2) }}</strong>
+                            @if($hasDiscount)
+                                <div class="offer-pricing">
+                                    <strong class="text-success">₹{{ number_format($item->total, 2) }}</strong>
+                                    <br>
+                                    <small class="text-decoration-line-through text-muted">
+                                        ₹{{ number_format($originalPrice * $item->quantity, 2) }}
+                                    </small>
+                                </div>
+                            @else
+                                <strong>₹{{ number_format($item->total, 2) }}</strong>
+                            @endif
                             @if($item->product->tax_percentage > 0)
                                 <br><small class="text-muted">+Tax</small>
                             @endif
@@ -245,10 +287,29 @@
                     
                     <hr>
                     
+                    @php
+                        // Calculate total savings from discounts
+                        $totalSavings = 0;
+                        foreach($cartItems as $item) {
+                            if($item->product->discount_price && $item->product->discount_price > 0) {
+                                $originalPrice = $item->product->price;
+                                $offerPrice = $item->product->discount_price;
+                                $totalSavings += ($originalPrice - $offerPrice) * $item->quantity;
+                            }
+                        }
+                    @endphp
+                    
                     <div class="d-flex justify-content-between mb-2">
                         <span>Subtotal:</span>
                         <span>₹{{ number_format($subtotal, 2) }}</span>
                     </div>
+                    
+                    @if($totalSavings > 0)
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-success"><i class="fas fa-tag"></i> Total Savings:</span>
+                        <span class="text-success fw-bold">₹{{ number_format($totalSavings, 2) }}</span>
+                    </div>
+                    @endif
                     
                     @php
                         // Calculate tax amounts
@@ -371,6 +432,33 @@
 
 @push('styles')
 <style>
+/* Offer pricing styles */
+.product-pricing-info {
+    line-height: 1.4;
+}
+
+.offer-pricing {
+    text-align: right;
+}
+
+.text-decoration-line-through {
+    text-decoration: line-through !important;
+    opacity: 0.7;
+}
+
+.offer-pricing strong {
+    font-size: 1.1rem;
+}
+
+.offer-pricing small {
+    font-size: 0.85rem;
+}
+
+/* Enhanced savings highlight */
+.text-success i {
+    color: #28a745 !important;
+}
+
 /* Google Pay QR Code Display Styles */
 .gpay-details {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -417,6 +505,22 @@
     border-color: #2196f3;
 }
 
+/* Payment method image styling */
+.payment-method-image {
+    transition: transform 0.2s ease;
+    background: #fff;
+    border: 1px solid #e9ecef;
+}
+
+.payment-method-image:hover {
+    transform: scale(1.05);
+}
+
+.payment-method-option input:checked + label .payment-method-image {
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.25) !important;
+}
+
 /* WhatsApp Mobile Number Input Enhancement */
 .input-group .input-group-text.bg-success {
     border-color: #28a745;
@@ -431,6 +535,40 @@
 .form-control.is-valid {
     border-color: #28a745;
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='m2.3 6.73.67-.17C3.14 6.55 3 6.11 3 6c0-.55-.45-1-1-1s-1 .45-1 1c0 .14.11.2.23.2C1.48 6.2 1.8 6.47 2.3 6.73z'/%3e%3c/svg%3e");
+}
+
+/* Commission Section Styling */
+.form-check-input:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.commission-preview {
+    animation: slideInDown 0.3s ease-in-out;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-control.is-invalid {
+    border-color: #dc3545;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 4.6-1.6 1.6'/%3e%3cpath d='m5.8 4.6-1.6 1.6'/%3e%3c/svg%3e");
+}
+
+.commission-amount-highlight {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 0.75rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
 }
 </style>
 @endpush
@@ -454,6 +592,9 @@ $(document).ready(function() {
         const selectedMethod = initiallySelected.closest('.payment-method-option');
         selectedMethod.find('.bank-details, .upi-details, .gpay-details').show();
     }
+    
+    // Initialize commission functionality
+    initializeCommission();
 });
 
 // Store base total
@@ -536,6 +677,9 @@ $('#checkoutForm').on('submit', function(e) {
         return false;
     }
     
+    // Validate commission fields if enabled
+    // Commission functionality removed for online orders
+    
     // AUTO-ADD +91 TO MOBILE NUMBER FOR WHATSAPP
     const mobileWithCountryCode = '+91' + mobile;
     
@@ -560,6 +704,17 @@ $('#checkoutForm').on('submit', function(e) {
     // Prevent multiple submissions
     $(this).off('submit');
 });
+
+// Initialize on page load
+initializePage();
+
+// Show toast message
+function showToast(message, type = 'success') {
+    // Simple alert for now - you can enhance this with proper toast library
+    alert(message);
+}
+
+
 </script>
 @endpush
 @endsection

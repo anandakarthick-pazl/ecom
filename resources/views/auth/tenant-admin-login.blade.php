@@ -150,7 +150,7 @@
                             <input type="checkbox" name="remember" class="w-4 h-4 text-primary-600 border-2 border-gray-300 rounded focus:ring-primary-500" {{ old('remember') ? 'checked' : '' }}>
                             <span class="ml-2 text-sm text-gray-700">Remember me</span>
                         </label>
-                        <a href="#" class="text-sm text-primary-600 hover:text-primary-800 font-medium">
+                        <a href="{{ route('admin.password.request') }}" class="text-sm text-primary-600 hover:text-primary-800 font-medium">
                             Forgot password?
                         </a>
                     </div>

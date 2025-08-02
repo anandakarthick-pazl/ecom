@@ -4,9 +4,14 @@
 @section('page_title', 'Banners')
 
 @section('page_actions')
-<a href="{{ route('admin.banners.create') }}" class="btn btn-primary">
-    <i class="fas fa-plus"></i> Add Banner
-</a>
+<div class="d-flex gap-2">
+    <a href="{{ route('admin.banners.upload-logs') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-history"></i> Upload Logs
+    </a>
+    <a href="{{ route('admin.banners.create') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add Banner
+    </a>
+</div>
 @endsection
 
 @section('content')

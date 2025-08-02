@@ -160,10 +160,44 @@ class PaymentMethod extends Model
         return !empty($this->image);
     }
 
-    // Get image URL or null
+    // Get image URL with custom format
     public function getImageUrl()
     {
-        return $this->image ? Storage::url($this->image) : null;
+        if (!$this->image) {
+            return null;
+        }
+        
+        // Handle both old format (just filename) and new format (payment-methods/filename)
+        if (strpos($this->image, 'payment-methods/') === 0) {
+            // New format: payment-methods/filename.jpg
+            return asset('storage/' . $this->image);
+        } else {
+            // Old format: just filename.jpg (for backward compatibility)
+            return asset('storage/payment-methods/' . $this->image);
+        }
+    }
+    
+    // Get admin-friendly image URL for display in admin panel
+    public function getAdminImageUrl()
+    {
+        return $this->getImageUrl();
+    }
+    
+    // Get QR code URL for UPI/GPay payments
+    public function getQrCodeUrl()
+    {
+        if (!$this->upi_qr_code) {
+            return null;
+        }
+        
+        // Handle both old format (just filename) and new format (payment-methods/filename)
+        if (strpos($this->upi_qr_code, 'payment-methods/') === 0) {
+            // New format: payment-methods/filename.jpg
+            return asset('storage/' . $this->upi_qr_code);
+        } else {
+            // Old format: just filename.jpg (for backward compatibility)
+            return asset('storage/payment-methods/' . $this->upi_qr_code);
+        }
     }
 
     // Get configuration based on type

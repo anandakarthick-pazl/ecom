@@ -63,6 +63,12 @@ class PosSale extends Model
         return $this->belongsTo(User::class, 'cashier_id');
     }
 
+    public function commission()
+    {
+        return $this->hasOne(Commission::class, 'reference_id')
+                    ->where('reference_type', 'pos_sale');
+    }
+
     public function getStatusColorAttribute()
     {
         return match($this->status) {

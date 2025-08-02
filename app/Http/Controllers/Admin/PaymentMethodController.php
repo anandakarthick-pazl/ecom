@@ -220,14 +220,14 @@ class PaymentMethodController extends Controller
         
         // Handle payment method image upload
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('payment-methods', 'public');
-            $validated['image'] = $path;
+            $filename = $this->storePaymentMethodFile($request->file('image'));
+            $validated['image'] = $filename;
         }
         
         // Handle UPI/G Pay QR code upload
         if (in_array($request->type, ['upi', 'gpay']) && $request->hasFile('upi_qr_code')) {
-            $path = $request->file('upi_qr_code')->store('payment-methods/upi', 'public');
-            $validated['upi_qr_code'] = $path;
+            $filename = $this->storePaymentMethodFile($request->file('upi_qr_code'));
+            $validated['upi_qr_code'] = $filename;
         }
 
         $paymentMethod = PaymentMethod::create($validated);
@@ -322,22 +322,22 @@ class PaymentMethodController extends Controller
         if ($request->hasFile('image')) {
             // Delete old image if exists
             if ($paymentMethod->image) {
-                Storage::disk('public')->delete($paymentMethod->image);
+                $this->deletePaymentMethodFile($paymentMethod->image);
             }
             
-            $path = $request->file('image')->store('payment-methods', 'public');
-            $validated['image'] = $path;
+            $filename = $this->storePaymentMethodFile($request->file('image'));
+            $validated['image'] = $filename;
         }
         
         // Handle UPI/G Pay QR code upload
         if (in_array($paymentMethod->type, ['upi', 'gpay']) && $request->hasFile('upi_qr_code')) {
             // Delete old QR code
             if ($paymentMethod->upi_qr_code) {
-                Storage::disk('public')->delete($paymentMethod->upi_qr_code);
+                $this->deletePaymentMethodFile($paymentMethod->upi_qr_code);
             }
             
-            $path = $request->file('upi_qr_code')->store('payment-methods/upi', 'public');
-            $validated['upi_qr_code'] = $path;
+            $filename = $this->storePaymentMethodFile($request->file('upi_qr_code'));
+            $validated['upi_qr_code'] = $filename;
         }
 
         $paymentMethod->update($validated);
@@ -357,12 +357,12 @@ class PaymentMethodController extends Controller
     {
         // Delete payment method image if exists
         if ($paymentMethod->image) {
-            Storage::disk('public')->delete($paymentMethod->image);
+            $this->deletePaymentMethodFile($paymentMethod->image);
         }
         
         // Delete QR code if exists
         if ($paymentMethod->upi_qr_code) {
-            Storage::disk('public')->delete($paymentMethod->upi_qr_code);
+            $this->deletePaymentMethodFile($paymentMethod->upi_qr_code);
         }
         
         $paymentMethod->delete();
@@ -397,5 +397,42 @@ class PaymentMethodController extends Controller
         }
 
         return response()->json(['success' => true]);
+    }
+    
+    /**
+     * Store payment method file in custom location
+     * Path: public/storage/payment-methods/
+     */
+    private function storePaymentMethodFile($file)
+    {
+        $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+        $destinationPath = public_path('storage/payment-methods/');
+        
+        // Create directory if it doesn't exist
+        if (!file_exists($destinationPath)) {
+            mkdir($destinationPath, 0755, true);
+        }
+        
+        // Move the file to the destination
+        $file->move($destinationPath, $filename);
+        
+        // Return the path format expected by getImageUrl() method
+        return 'payment-methods/' . $filename;
+    }
+    
+    /**
+     * Delete payment method file from custom location
+     */
+    private function deletePaymentMethodFile($filename)
+    {
+        if ($filename) {
+            // Handle both old format (just filename) and new format (payment-methods/filename)
+            $baseFilename = basename($filename);
+            $filePath = public_path('storage/payment-methods/' . $baseFilename);
+            
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+        }
     }
 }

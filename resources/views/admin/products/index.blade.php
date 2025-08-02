@@ -319,7 +319,7 @@
 <!-- Quick Stats Bar -->
 <div class="quick-stats">
     <div class="quick-stat">
-        <span class="quick-stat-number">{{ $products->total() ?? 0 }}</span>
+        <span class="quick-stat-number">{{ method_exists($products, 'total') ? $products->total() : $products->count() }}</span>
         <span class="quick-stat-label">Total Products</span>
     </div>
     <div class="quick-stat">
@@ -608,15 +608,21 @@
         <div class="pagination-container">
             <div class="pagination-info">
                 <p class="small text-muted mb-0">
-                    Showing <span class="fw-semibold text-primary">{{ $products->firstItem() }}</span>
-                    to <span class="fw-semibold text-primary">{{ $products->lastItem() }}</span>
-                    of <span class="fw-semibold text-primary">{{ $products->total() }}</span>
-                    products
+                    @if(method_exists($products, 'firstItem'))
+                        Showing <span class="fw-semibold text-primary">{{ $products->firstItem() }}</span>
+                        to <span class="fw-semibold text-primary">{{ $products->lastItem() }}</span>
+                        of <span class="fw-semibold text-primary">{{ $products->total() }}</span>
+                        products
+                    @else
+                        Showing <span class="fw-semibold text-primary">{{ $products->count() }}</span> products
+                    @endif
                 </p>
             </div>
-            <div class="pagination-nav">
-                {{ $products->withQueryString()->links() }}
-            </div>
+            @if(method_exists($products, 'links'))
+                <div class="pagination-nav">
+                    {{ $products->withQueryString()->links() }}
+                </div>
+            @endif
         </div>
         @else
         <div class="text-center py-5">

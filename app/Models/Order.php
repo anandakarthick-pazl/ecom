@@ -16,7 +16,9 @@ class Order extends Model
         'delivery_address', 'city', 'state', 'pincode',
         'subtotal', 'discount', 'delivery_charge', 'tax_amount', 'cgst_amount', 'sgst_amount', 'total',
         'status', 'notes', 'admin_notes', 'shipped_at', 'delivered_at', 'company_id', 'branch_id',
-        'payment_method', 'payment_status', 'payment_transaction_id', 'payment_details', 'paid_at'
+        'payment_method', 'payment_status', 'payment_transaction_id', 'payment_details', 'paid_at',
+        // Commission fields
+        'commission_enabled', 'reference_name', 'commission_percentage', 'commission_notes'
     ];
 
     protected $casts = [
@@ -31,6 +33,8 @@ class Order extends Model
         'delivered_at' => 'datetime',
         'payment_details' => 'array',
         'paid_at' => 'datetime',
+        'commission_enabled' => 'boolean',
+        'commission_percentage' => 'decimal:2',
     ];
 
     public static function boot()
@@ -72,6 +76,16 @@ class Order extends Model
     public function items()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function commissions()
+    {
+        return $this->hasMany(Commission::class, 'reference_id')->where('reference_type', 'order');
+    }
+
+    public function commission()
+    {
+        return $this->hasOne(Commission::class, 'reference_id')->where('reference_type', 'order');
     }
 
     public function scopeByStatus($query, $status)
@@ -158,5 +172,49 @@ class Order extends Model
     public function isPaid()
     {
         return $this->payment_status === 'paid';
+    }
+
+    /**
+     * Create commission record for this order if commission is enabled
+     */
+    public function createCommissionRecord()
+    {
+        if (!$this->commission_enabled || empty($this->reference_name) || empty($this->commission_percentage)) {
+            return null;
+        }
+
+        // Check if commission record already exists
+        if ($this->commission) {
+            return $this->commission;
+        }
+
+        return Commission::createFromOrder(
+            $this,
+            $this->reference_name,
+            $this->commission_percentage,
+            $this->commission_notes
+        );
+    }
+
+    /**
+     * Get formatted commission information
+     */
+    public function getCommissionInfoAttribute()
+    {
+        if (!$this->commission_enabled) {
+            return null;
+        }
+
+        $commissionAmount = ($this->total * $this->commission_percentage) / 100;
+        
+        return [
+            'enabled' => true,
+            'reference_name' => $this->reference_name,
+            'percentage' => $this->commission_percentage,
+            'amount' => $commissionAmount,
+            'notes' => $this->commission_notes,
+            'formatted_percentage' => number_format($this->commission_percentage, 2) . '%',
+            'formatted_amount' => '₹' . number_format($commissionAmount, 2)
+        ];
     }
 }

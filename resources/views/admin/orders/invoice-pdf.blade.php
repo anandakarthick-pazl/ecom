@@ -315,13 +315,15 @@
         <thead>
             <tr>
                 <th style="width: 5%;">#</th>
-                <th style="width: 30%;">Product Details</th>
-                <th style="width: 8%;" class="text-center">Qty</th>
-                <th style="width: 12%;" class="text-right">Unit Price</th>
+                <th style="width: 25%;">Product Details</th>
+                <th style="width: 6%;" class="text-center">Qty</th>
+                <th style="width: 10%;" class="text-right">MRP</th>
+                <th style="width: 10%;" class="text-right">Offer Price</th>
+                <th style="width: 8%;" class="text-center">Discount %</th>
                 <th style="width: 8%;" class="text-center">Tax %</th>
-                <th style="width: 12%;" class="text-right">Tax Amount</th>
-                <th style="width: 10%;" class="text-right">Discount</th>
-                <th style="width: 15%;" class="text-right">Line Total</th>
+                <th style="width: 10%;" class="text-right">Tax Amount</th>
+                <th style="width: 10%;" class="text-right">Savings</th>
+                <th style="width: 8%;" class="text-right">Line Total</th>
             </tr>
         </thead>
         <tbody>
@@ -348,17 +350,40 @@
                         @if(!empty($item->product->sku))
                             <div class="product-sku">SKU: {{ $item->product->sku }}</div>
                         @endif
+                        @if(!empty($item->offer_name))
+                            <div class="product-sku" style="color: #e74c3c; font-weight: bold;">🏷️ {{ $item->offer_name }}</div>
+                        @endif
                         @if(!empty($item->product_description))
                             <div class="product-sku">{{ $item->product_description }}</div>
                         @endif
                     </td>
                     <td class="text-center">{{ number_format($quantity) }}</td>
-                    <td class="text-right">RS {{ number_format($unitPrice, 2) }}</td>
+                    <td class="text-right">
+                        @if($item->mrp_price > 0)
+                            RS {{ number_format($item->mrp_price, 2) }}
+                        @else
+                            RS {{ number_format($unitPrice, 2) }}
+                        @endif
+                    </td>
+                    <td class="text-right">
+                        @if($item->mrp_price > 0 && $item->mrp_price > $unitPrice)
+                            <span style="color: #27ae60; font-weight: bold;">RS {{ number_format($unitPrice, 2) }}</span>
+                        @else
+                            RS {{ number_format($unitPrice, 2) }}
+                        @endif
+                    </td>
+                    <td class="text-center">
+                        @if($item->effective_discount_percentage > 0)
+                            <span style="color: #e74c3c; font-weight: bold;">{{ number_format($item->effective_discount_percentage, 1) }}%</span>
+                        @else
+                            -
+                        @endif
+                    </td>
                     <td class="text-center">{{ number_format($taxPercentage, 1) }}%</td>
                     <td class="text-right">RS {{ number_format($taxAmount, 2) }}</td>
                     <td class="text-right">
-                        @if($itemDiscount > 0)
-                            RS {{ number_format($itemDiscount, 2) }}
+                        @if($item->savings > 0)
+                            <span style="color: #e74c3c; font-weight: bold;">RS {{ number_format($item->savings, 2) }}</span>
                         @else
                             -
                         @endif
@@ -380,7 +405,20 @@
                 $igstAmount = $order->igst_amount ?? 0;
                 $deliveryCharge = $order->delivery_charge ?? 0;
                 $totalAmount = $order->total ?? 0;
+                $totalMrp = $order->items->sum('mrp_total');
+                $totalSavings = $order->items->sum('savings');
             @endphp
+            
+            @if($totalSavings > 0)
+                <tr>
+                    <td class="label-col">Total MRP:</td>
+                    <td class="amount-col">RS {{ number_format($totalMrp, 2) }}</td>
+                </tr>
+                <tr class="discount-row">
+                    <td class="label-col">You Saved (Offers):</td>
+                    <td class="amount-col">-RS {{ number_format($totalSavings, 2) }}</td>
+                </tr>
+            @endif
             
             <tr class="subtotal-row">
                 <td class="label-col">Subtotal:</td>
@@ -389,7 +427,7 @@
             
             @if($totalDiscount > 0)
                 <tr class="discount-row">
-                    <td class="label-col">Total Discount:</td>
+                    <td class="label-col">Additional Discount:</td>
                     <td class="amount-col">-RS {{ number_format($totalDiscount, 2) }}</td>
                 </tr>
             @endif

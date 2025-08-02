@@ -1,117 +1,192 @@
 @extends('admin.layouts.app')
 
-
-
 @section('page_actions')
-    <div class="btn-group">
-        <a href="{{ route('admin.orders.invoice', $order) }}" class="btn btn-secondary">
-            <i class="fas fa-print"></i> Print Invoice
+    <div class="btn-group invoice-actions-group">
+        @php
+            $companyId = session('selected_company_id');
+            $defaultBillFormat = \App\Models\AppSetting::getForTenant('default_bill_format', $companyId) ?? 'a4_sheet';
+            $isThermal = $defaultBillFormat === 'thermal';
+            $formatLabel = $isThermal ? 'Receipt (Thermal)' : 'Invoice (A4)';
+            $formatIcon = $isThermal ? 'fa-receipt' : 'fa-file-invoice';
+        @endphp
+
+        <!-- Print Invoice -->
+        <a href="{{ route('admin.orders.print-invoice', $order) }}?format={{ $defaultBillFormat }}" 
+           class="btn btn-secondary" target="_blank"
+           title="Print {{ $formatLabel }}"
+           onclick="openPrintWindow(this.href); return false;">
+            <i class="fas {{ $formatIcon }}"></i> Print {{ $formatLabel }}
         </a>
+
+        <!-- Send Invoice via Email -->
         @if ($order->customer_email)
             <form action="{{ route('admin.orders.send-invoice', $order) }}" method="POST" class="d-inline">
                 @csrf
+                <input type="hidden" name="format" value="{{ $defaultBillFormat }}">
                 <button type="submit" class="btn btn-success"
-                    onclick="return confirm('Send invoice PDF to {{ $order->customer_email }}?')">
-                    <i class="fas fa-paper-plane"></i> Send Invoice
+                    onclick="return confirm('Send {{ strtolower($formatLabel) }} to {{ $order->customer_email }}?')"
+                    title="Send {{ $formatLabel }} via Email">
+                    <i class="fas fa-paper-plane"></i> Send {{ $formatLabel }}
                 </button>
             </form>
-        @endif
-
-        <a href="{{ route('admin.orders.download-bill', $order) }}" class="btn btn-info">
-            <i class="fas fa-download"></i> Download Invoice
-        </a>
-
-        @if ($order->customer_mobile)
-            <button type="button" class="btn btn-whatsapp" id="whatsapp-bill-btn" data-order-id="{{ $order->id }}"
-                data-customer-phone="{{ $order->customer_mobile }}">
-                <i class="fab fa-whatsapp"></i> Send Invoice via WhatsApp
+        @else
+            <button type="button" class="btn btn-success" disabled 
+                title="Customer email not available">
+                <i class="fas fa-paper-plane"></i> Send {{ $formatLabel }}
             </button>
         @endif
+
+        <!-- Download Invoice -->
+        <a href="{{ route('admin.orders.download-invoice', $order) }}?format={{ $defaultBillFormat }}" 
+           class="btn btn-info"
+           title="Download {{ $formatLabel }}">
+            <i class="fas fa-download"></i> Download {{ $formatLabel }}
+        </a>
+
+        <!-- Send via WhatsApp -->
+        @if ($order->customer_mobile)
+            <button type="button" class="btn btn-whatsapp" id="whatsapp-bill-btn" 
+                data-order-id="{{ $order->id }}"
+                data-customer-phone="{{ $order->customer_mobile }}" 
+                data-format="{{ $defaultBillFormat }}"
+                title="Send {{ $formatLabel }} via WhatsApp">
+                <i class="fab fa-whatsapp"></i> Send via WhatsApp
+            </button>
+        @else
+            <button type="button" class="btn btn-whatsapp" disabled 
+                title="Customer mobile not available">
+                <i class="fab fa-whatsapp"></i> Send via WhatsApp
+            </button>
+        @endif
+        
         <a href="{{ route('admin.orders.index') }}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left"></i> Back to Orders
         </a>
     </div>
+
+    <!-- Format Settings Info -->
+    {{-- <div class="format-info-badge mt-2">
+        <small class="text-muted">
+            <i class="fas fa-cog"></i> Current format: 
+            <span class="badge bg-{{ $isThermal ? 'warning' : 'primary' }}">{{ $formatLabel }}</span>
+            <a href="{{ route('admin.settings.index') }}#bill-format" class="text-decoration-none ms-2">
+                <i class="fas fa-edit"></i> Change Format
+            </a>
+        </small>
+    </div> --}}
 @endsection
 
 @section('content')
     <div class="row">
         <div class="col-md-8">
             <!-- Order Details -->
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">Order Information</h6>
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-shopping-cart"></i> Order Information
+                    </h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>Customer Details</h6>
-                            <p class="mb-1"><strong>Name:</strong> {{ $order->customer_name }}</p>
-                            <p class="mb-1"><strong>Mobile:</strong> {{ $order->customer_mobile }}</p>
-                            @if ($order->customer_email)
+                            <h6 class="section-title">Customer Details</h6>
+                            <div class="customer-info">
                                 <p class="mb-1">
-                                    <strong>Email:</strong>
-                                    <span class="text-success">
-                                        <i class="fas fa-envelope"></i> {{ $order->customer_email }}
-                                    </span>
+                                    <strong><i class="fas fa-user"></i> Name:</strong> 
+                                    {{ $order->customer_name }}
                                 </p>
-                            @else
                                 <p class="mb-1">
-                                    <strong>Email:</strong>
-                                    <span class="text-muted">
-                                        <i class="fas fa-times-circle"></i> Not provided
-                                    </span>
+                                    <strong><i class="fas fa-phone"></i> Mobile:</strong> 
+                                    <span class="text-primary">{{ $order->customer_mobile }}</span>
                                 </p>
-                            @endif
-                            <p class="mb-3"><strong>Customer ID:</strong> #{{ $order->customer_id }}</p>
+                                @if ($order->customer_email)
+                                    <p class="mb-1">
+                                        <strong><i class="fas fa-envelope"></i> Email:</strong>
+                                        <span class="text-success">{{ $order->customer_email }}</span>
+                                    </p>
+                                @else
+                                    <p class="mb-1">
+                                        <strong><i class="fas fa-envelope"></i> Email:</strong>
+                                        <span class="text-muted">Not provided</span>
+                                    </p>
+                                @endif
+                                <p class="mb-3">
+                                    <strong><i class="fas fa-id-badge"></i> Customer ID:</strong> 
+                                    #{{ $order->customer_id }}
+                                </p>
+                            </div>
 
-                            <h6>Delivery Address</h6>
-                            <address>
-                                {{ $order->delivery_address }}<br>
-                                {{ $order->city }}@if ($order->state)
-                                    , {{ $order->state }}
-                                @endif {{ $order->pincode }}
-                            </address>
+                            <h6 class="section-title">Delivery Address</h6>
+                            <div class="delivery-address">
+                                <address class="mb-0">
+                                    <i class="fas fa-map-marker-alt text-danger"></i>
+                                    {{ $order->delivery_address }}<br>
+                                    {{ $order->city }}@if ($order->state), {{ $order->state }}@endif {{ $order->pincode }}
+                                </address>
+                            </div>
                         </div>
 
                         <div class="col-md-6">
-                            <h6>Order Details</h6>
-                            <p class="mb-1"><strong>Order Number:</strong> {{ $order->order_number }}</p>
-                            <p class="mb-1"><strong>Order Date:</strong> {{ $order->created_at->format('M d, Y h:i A') }}
-                            </p>
-                            <p class="mb-1"><strong>Status:</strong>
-                                <span class="badge bg-{{ $order->status_color }}">{{ ucfirst($order->status) }}</span>
-                            </p>
+                            <h6 class="section-title">Order Details</h6>
+                            <div class="order-info">
+                                <p class="mb-1">
+                                    <strong><i class="fas fa-hashtag"></i> Order Number:</strong> 
+                                    <span class="badge bg-dark">{{ $order->order_number }}</span>
+                                </p>
+                                <p class="mb-1">
+                                    <strong><i class="fas fa-calendar"></i> Order Date:</strong> 
+                                    {{ $order->created_at->format('M d, Y h:i A') }}
+                                </p>
+                                <p class="mb-1">
+                                    <strong><i class="fas fa-info-circle"></i> Status:</strong>
+                                    <span class="badge bg-{{ $order->status_color }} status-badge">
+                                        {{ ucfirst($order->status) }}
+                                    </span>
+                                </p>
 
-                            @if ($order->shipped_at)
-                                <p class="mb-1"><strong>Shipped At:</strong>
-                                    {{ $order->shipped_at->format('M d, Y h:i A') }}</p>
-                            @endif
+                                @if ($order->shipped_at)
+                                    <p class="mb-1">
+                                        <strong><i class="fas fa-shipping-fast"></i> Shipped At:</strong>
+                                        {{ $order->shipped_at->format('M d, Y h:i A') }}
+                                    </p>
+                                @endif
 
-                            @if ($order->delivered_at)
-                                <p class="mb-1"><strong>Delivered At:</strong>
-                                    {{ $order->delivered_at->format('M d, Y h:i A') }}</p>
-                            @endif
+                                @if ($order->delivered_at)
+                                    <p class="mb-1">
+                                        <strong><i class="fas fa-check-circle"></i> Delivered At:</strong>
+                                        {{ $order->delivered_at->format('M d, Y h:i A') }}
+                                    </p>
+                                @endif
+                            </div>
                         </div>
                     </div>
 
                     @if ($order->notes)
                         <hr>
-                        <h6>Customer Notes</h6>
-                        <p class="text-muted">{{ $order->notes }}</p>
+                        <h6 class="section-title">Customer Notes</h6>
+                        <div class="alert alert-info">
+                            <i class="fas fa-sticky-note"></i>
+                            {{ $order->notes }}
+                        </div>
                     @endif
 
                     @if ($order->admin_notes)
                         <hr>
-                        <h6>Admin Notes</h6>
-                        <p class="text-muted">{{ $order->admin_notes }}</p>
+                        <h6 class="section-title">Admin Notes</h6>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-user-shield"></i>
+                            {{ $order->admin_notes }}
+                        </div>
                     @endif
                 </div>
             </div>
 
-            <!-- Payment Information -->
-            <div class="card mt-4">
+            <!-- Enhanced Payment Information -->
+            <div class="card mt-4 shadow-sm">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0">Payment Information</h6>
+                    <h6 class="mb-0">
+                        <i class="fas fa-credit-card"></i> Payment Information
+                    </h6>
                     @php
                         $paymentStatusColor = match ($order->payment_status) {
                             'paid' => 'success',
@@ -121,67 +196,63 @@
                             'refunded' => 'secondary',
                             default => 'secondary',
                         };
+                        
+                        $paymentStatusIcon = match ($order->payment_status) {
+                            'paid' => 'fa-check-circle',
+                            'failed' => 'fa-times-circle',
+                            'pending' => 'fa-clock',
+                            'processing' => 'fa-spinner',
+                            'refunded' => 'fa-undo',
+                            default => 'fa-question-circle',
+                        };
                     @endphp
-                    <span class="badge bg-{{ $paymentStatusColor }} fs-6">
-                        @if ($order->payment_status === 'paid')
-                            <i class="fas fa-check-circle"></i> Payment Success
-                        @elseif($order->payment_status === 'failed')
-                            <i class="fas fa-times-circle"></i> Payment Failed
-                        @elseif($order->payment_status === 'processing')
-                            <i class="fas fa-clock"></i> Payment Processing
-                        @elseif($order->payment_status === 'refunded')
-                            <i class="fas fa-undo"></i> Payment Refunded
-                        @else
-                            <i class="fas fa-exclamation-circle"></i> Payment Pending
-                        @endif
+                    <span class="badge bg-{{ $paymentStatusColor }} fs-6 payment-status-badge">
+                        <i class="fas {{ $paymentStatusIcon }}"></i>
+                        {{ ucfirst(str_replace('_', ' ', $order->payment_status)) }}
                     </span>
                 </div>
                 <div class="card-body">
-                    @php
-                        $paymentIcon = match ($order->payment_method) {
-                            'razorpay' => 'fas fa-credit-card',
-                            'cod' => 'fas fa-money-bill-wave',
-                            'bank_transfer' => 'fas fa-university',
-                            'upi' => 'fas fa-mobile-alt',
-                            'gpay' => 'fab fa-google-pay',
-                            default => 'fas fa-wallet',
-                        };
-
-                        $paymentMethodName = match ($order->payment_method) {
-                            'razorpay' => 'Online Payment (Razorpay)',
-                            'cod' => 'Cash on Delivery',
-                            'bank_transfer' => 'Bank Transfer',
-                            'upi' => 'UPI Payment',
-                            'gpay' => 'Google Pay (G Pay)',
-                            default => ucfirst(str_replace('_', ' ', $order->payment_method)),
-                        };
-                    @endphp
-
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>Payment Method</h6>
-                            <p class="mb-2">
-                                <i class="{{ $paymentIcon }} text-primary"></i>
-                                <strong>{{ $paymentMethodName }}</strong>
-                            </p>
+                            @php
+                                $paymentIcon = match ($order->payment_method) {
+                                    'razorpay' => 'fas fa-credit-card',
+                                    'cod' => 'fas fa-money-bill-wave',
+                                    'bank_transfer' => 'fas fa-university',
+                                    'upi' => 'fas fa-mobile-alt',
+                                    'gpay' => 'fab fa-google-pay',
+                                    default => 'fas fa-wallet',
+                                };
 
-                            <h6>Payment Status</h6>
-                            <p class="mb-2">
-                                <span class="badge bg-{{ $paymentStatusColor }} p-2">
-                                    {{ ucfirst(str_replace('_', ' ', $order->payment_status)) }}
-                                </span>
-                            </p>
+                                $paymentMethodName = match ($order->payment_method) {
+                                    'razorpay' => 'Online Payment (Razorpay)',
+                                    'cod' => 'Cash on Delivery',
+                                    'bank_transfer' => 'Bank Transfer',
+                                    'upi' => 'UPI Payment',
+                                    'gpay' => 'Google Pay (G Pay)',
+                                    default => ucfirst(str_replace('_', ' ', $order->payment_method)),
+                                };
+                            @endphp
 
-                            @if ($order->payment_transaction_id)
-                                <h6>Transaction ID</h6>
+                            <div class="payment-method-info">
+                                <h6 class="section-title">Payment Method</h6>
                                 <p class="mb-2">
-                                    <code>{{ $order->payment_transaction_id }}</code>
-                                    <button class="btn btn-sm btn-outline-secondary ms-2"
-                                        onclick="copyToClipboard('{{ $order->payment_transaction_id }}')">
-                                        <i class="fas fa-copy"></i> Copy
-                                    </button>
+                                    <i class="{{ $paymentIcon }} text-primary"></i>
+                                    <strong>{{ $paymentMethodName }}</strong>
                                 </p>
-                            @endif
+
+                                @if ($order->payment_transaction_id)
+                                    <h6 class="section-title">Transaction ID</h6>
+                                    <div class="input-group mb-2">
+                                        <input type="text" class="form-control form-control-sm" 
+                                               value="{{ $order->payment_transaction_id }}" readonly>
+                                        <button class="btn btn-outline-secondary btn-sm" type="button"
+                                                onclick="copyToClipboard('{{ $order->payment_transaction_id }}')">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
 
                         <div class="col-md-6">
@@ -192,7 +263,7 @@
                                         : $order->payment_details;
                                 @endphp
 
-                                <h6>Payment Details</h6>
+                                <h6 class="section-title">Payment Details</h6>
                                 <div class="payment-details">
                                     @if (isset($details['razorpay_payment_id']))
                                         <p class="mb-1">
@@ -222,13 +293,6 @@
                                         </p>
                                     @endif
 
-                                    @if (isset($details['wallet']))
-                                        <p class="mb-1">
-                                            <strong>Wallet:</strong>
-                                            {{ $details['wallet'] }}
-                                        </p>
-                                    @endif
-
                                     @if (isset($details['verified_at']))
                                         <p class="mb-1">
                                             <strong>Verified At:</strong>
@@ -251,22 +315,122 @@
                 </div>
             </div>
 
-            <!-- Order Items -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h6 class="mb-0">Order Items</h6>
+            <!-- Commission Information -->
+            @if($order->commission_enabled)
+                <div class="card mt-4 shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-percentage"></i> Commission Information
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="section-title">Reference Details</h6>
+                                <p class="mb-1">
+                                    <strong><i class="fas fa-user-tie"></i> Reference Name:</strong>
+                                    <span class="text-primary">{{ $order->reference_name }}</span>
+                                </p>
+                                <p class="mb-1">
+                                    <strong><i class="fas fa-percent"></i> Commission Rate:</strong>
+                                    <span class="badge bg-info">{{ number_format($order->commission_percentage, 2) }}%</span>
+                                </p>
+                                @if($order->commission_notes)
+                                    <p class="mb-0">
+                                        <strong><i class="fas fa-sticky-note"></i> Notes:</strong>
+                                        <span class="text-muted">{{ $order->commission_notes }}</span>
+                                    </p>
+                                @endif
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h6 class="section-title">Commission Calculation</h6>
+                                @php
+                                    $commissionAmount = ($order->total * $order->commission_percentage) / 100;
+                                @endphp
+                                <div class="commission-calculation">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Order Total:</span>
+                                        <span>₹{{ number_format($order->total, 2) }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Commission Rate:</span>
+                                        <span>{{ number_format($order->commission_percentage, 2) }}%</span>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Commission Amount:</strong>
+                                        <strong class="text-success fs-5">₹{{ number_format($commissionAmount, 2) }}</strong>
+                                    </div>
+                                </div>
+                                
+                                @if($order->commission)
+                                    <div class="mt-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle"></i> 
+                                            Commission Status: 
+                                            <span class="badge bg-{{ $order->commission->status_color }}">{{ $order->commission->status_text }}</span>
+                                        </small>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                        
+                        @if($order->commission)
+                            <hr>
+                            <div class="commission-record-info">
+                                <h6 class="section-title">Commission Record</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <small class="text-muted">
+                                            <strong>Record ID:</strong> #{{ $order->commission->id }}<br>
+                                            <strong>Created:</strong> {{ $order->commission->created_at->format('M d, Y h:i A') }}
+                                        </small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        @if($order->commission->paid_at)
+                                            <small class="text-success">
+                                                <strong>Paid At:</strong> {{ $order->commission->paid_at->format('M d, Y h:i A') }}<br>
+                                                @if($order->commission->paidBy)
+                                                    <strong>Paid By:</strong> {{ $order->commission->paidBy->name }}
+                                                @endif
+                                            </small>
+                                        @else
+                                            <small class="text-warning">
+                                                <i class="fas fa-clock"></i> Commission payment pending
+                                            </small>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @else
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Note:</strong> Commission record not found. This may need to be created manually.
+                            </div>
+                        @endif
+                    </div>
                 </div>
-                <div class="card-body">
+            @endif
+
+            <!-- Enhanced Order Items -->
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-list-alt"></i> Order Items ({{ $order->items->count() }} items)
+                    </h6>
+                </div>
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table">
-                            <thead>
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
                                 <tr>
                                     <th>Product</th>
                                     <th>Price</th>
                                     <th>Quantity</th>
-                                    <th>Tax %</th>
+                                    <th>Tax</th>
                                     <th>Tax Amount</th>
-                                    <th>Total</th>
+                                    <th class="text-end">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -276,72 +440,94 @@
                                             <div class="d-flex align-items-center">
                                                 @if ($item->product && $item->product->featured_image)
                                                     <img src="{{ Storage::url($item->product->featured_image) }}"
-                                                        class="me-2 rounded"
-                                                        style="width: 40px; height: 40px; object-fit: cover;">
+                                                        class="me-3 rounded"
+                                                        style="width: 50px; height: 50px; object-fit: cover;">
+                                                @else
+                                                    <div class="me-3 rounded bg-light d-flex align-items-center justify-content-center"
+                                                         style="width: 50px; height: 50px;">
+                                                        <i class="fas fa-image text-muted"></i>
+                                                    </div>
                                                 @endif
                                                 <div>
                                                     <strong>{{ $item->product_name }}</strong>
-                                                    @if ($item->product)
-                                                        <br><small
-                                                            class="text-muted">{{ $item->product->category->name ?? '' }}</small>
+                                                    @if ($item->product && $item->product->category)
+                                                        <br><small class="text-muted">
+                                                            <i class="fas fa-tag"></i> {{ $item->product->category->name }}
+                                                        </small>
                                                     @endif
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>RS {{ number_format($item->price, 2) }}</td>
-                                        <td>{{ $item->quantity }}</td>
+                                        <td>
+                                            <span class="fw-semibold">₹{{ number_format($item->price, 2) }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">{{ $item->quantity }}</span>
+                                        </td>
                                         <td>{{ $item->tax_percentage }}%</td>
-                                        <td>RS {{ number_format($item->tax_amount, 2) }}</td>
-                                        <td><strong>RS {{ number_format($item->total, 2) }}</strong></td>
+                                        <td>₹{{ number_format($item->tax_amount, 2) }}</td>
+                                        <td class="text-end">
+                                            <strong class="text-success">₹{{ number_format($item->total, 2) }}</strong>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="5" class="text-end"><strong>Subtotal:</strong></td>
-                                    <td><strong>RS {{ number_format($order->subtotal, 2) }}</strong></td>
-                                </tr>
-                                @if ($order->discount > 0)
-                                    <tr>
-                                        <td colspan="5" class="text-end"><strong>Discount:</strong></td>
-                                        <td><strong class="text-success">-RS
-                                                {{ number_format($order->discount, 2) }}</strong></td>
-                                    </tr>
-                                @endif
-                                <tr>
-                                    <td colspan="5" class="text-end"><strong>CGST:</strong></td>
-                                    <td><strong>RS {{ number_format($order->cgst_amount, 2) }}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td colspan="5" class="text-end"><strong>SGST:</strong></td>
-                                    <td><strong>RS {{ number_format($order->sgst_amount, 2) }}</strong></td>
-                                </tr>
-                                <tr>
-                                    <td colspan="5" class="text-end"><strong>Delivery Charge:</strong></td>
-                                    <td><strong>
-                                            @if ($order->delivery_charge == 0)
-                                                <span class="text-success">FREE</span>
-                                            @else
-                                                RS {{ number_format($order->delivery_charge, 2) }}
-                                            @endif
-                                        </strong></td>
-                                </tr>
-                                <tr class="table-success">
-                                    <td colspan="5" class="text-end"><strong>Total:</strong></td>
-                                    <td><strong>RS {{ number_format($order->total, 2) }}</strong></td>
-                                </tr>
-                            </tfoot>
                         </table>
+                    </div>
+                    
+                    <!-- Order Totals -->
+                    <div class="border-top bg-light p-3">
+                        <div class="row">
+                            <div class="col-md-6 offset-md-6">
+                                <table class="table table-sm mb-0">
+                                    <tr>
+                                        <td class="text-end fw-semibold">Subtotal:</td>
+                                        <td class="text-end">₹{{ number_format($order->subtotal, 2) }}</td>
+                                    </tr>
+                                    @if ($order->discount > 0)
+                                        <tr>
+                                            <td class="text-end fw-semibold">Discount:</td>
+                                            <td class="text-end text-success">-₹{{ number_format($order->discount, 2) }}</td>
+                                        </tr>
+                                    @endif
+                                    <tr>
+                                        <td class="text-end fw-semibold">CGST:</td>
+                                        <td class="text-end">₹{{ number_format($order->cgst_amount, 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end fw-semibold">SGST:</td>
+                                        <td class="text-end">₹{{ number_format($order->sgst_amount, 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-end fw-semibold">Delivery:</td>
+                                        <td class="text-end">
+                                            @if ($order->delivery_charge == 0)
+                                                <span class="text-success fw-bold">FREE</span>
+                                            @else
+                                                ₹{{ number_format($order->delivery_charge, 2) }}
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    <tr class="table-success">
+                                        <td class="text-end fw-bold">Total:</td>
+                                        <td class="text-end fw-bold fs-5">₹{{ number_format($order->total, 2) }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- Sidebar -->
         <div class="col-md-4">
             <!-- Order Status Update -->
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">Update Order Status</h6>
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">
+                        <i class="fas fa-edit"></i> Update Order Status
+                    </h6>
                 </div>
                 <div class="card-body">
                     <form action="{{ route('admin.orders.update-status', $order) }}" method="POST">
@@ -351,15 +537,20 @@
                         <div class="mb-3">
                             <label for="status" class="form-label">Status</label>
                             <select class="form-select" id="status" name="status" required>
-                                <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>Pending
+                                <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>
+                                    <i class="fas fa-clock"></i> Pending
                                 </option>
                                 <option value="processing" {{ $order->status == 'processing' ? 'selected' : '' }}>
-                                    Processing</option>
-                                <option value="shipped" {{ $order->status == 'shipped' ? 'selected' : '' }}>Shipped
+                                    <i class="fas fa-cogs"></i> Processing
                                 </option>
-                                <option value="delivered" {{ $order->status == 'delivered' ? 'selected' : '' }}>Delivered
+                                <option value="shipped" {{ $order->status == 'shipped' ? 'selected' : '' }}>
+                                    <i class="fas fa-shipping-fast"></i> Shipped
                                 </option>
-                                <option value="cancelled" {{ $order->status == 'cancelled' ? 'selected' : '' }}>Cancelled
+                                <option value="delivered" {{ $order->status == 'delivered' ? 'selected' : '' }}>
+                                    <i class="fas fa-check-circle"></i> Delivered
+                                </option>
+                                <option value="cancelled" {{ $order->status == 'cancelled' ? 'selected' : '' }}>
+                                    <i class="fas fa-times-circle"></i> Cancelled
                                 </option>
                             </select>
                         </div>
@@ -370,7 +561,7 @@
                                 placeholder="Add internal notes...">{{ $order->admin_notes }}</textarea>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100">
+                        <button type="submit" class="btn btn-warning w-100">
                             <i class="fas fa-save"></i> Update Status
                         </button>
                     </form>
@@ -378,9 +569,11 @@
             </div>
 
             <!-- Payment Status Update -->
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h6 class="mb-0">Update Payment Status</h6>
+            <div class="card mt-3 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-credit-card"></i> Update Payment Status
+                    </h6>
                 </div>
                 <div class="card-body">
                     <form action="{{ route('admin.orders.update-payment-status', $order) }}" method="POST">
@@ -391,15 +584,20 @@
                             <label for="payment_status" class="form-label">Payment Status</label>
                             <select class="form-select" id="payment_status" name="payment_status" required>
                                 <option value="pending" {{ $order->payment_status == 'pending' ? 'selected' : '' }}>
-                                    Pending</option>
-                                <option value="processing" {{ $order->payment_status == 'processing' ? 'selected' : '' }}>
-                                    Processing</option>
-                                <option value="paid" {{ $order->payment_status == 'paid' ? 'selected' : '' }}>Paid
+                                    Pending
                                 </option>
-                                <option value="failed" {{ $order->payment_status == 'failed' ? 'selected' : '' }}>Failed
+                                <option value="processing" {{ $order->payment_status == 'processing' ? 'selected' : '' }}>
+                                    Processing
+                                </option>
+                                <option value="paid" {{ $order->payment_status == 'paid' ? 'selected' : '' }}>
+                                    Paid
+                                </option>
+                                <option value="failed" {{ $order->payment_status == 'failed' ? 'selected' : '' }}>
+                                    Failed
                                 </option>
                                 <option value="refunded" {{ $order->payment_status == 'refunded' ? 'selected' : '' }}>
-                                    Refunded</option>
+                                    Refunded
+                                </option>
                             </select>
                         </div>
 
@@ -407,56 +605,57 @@
                             <label for="payment_notes" class="form-label">Payment Notes</label>
                             <textarea class="form-control" id="payment_notes" name="payment_notes" rows="3"
                                 placeholder="Add payment-related notes..."></textarea>
-                            <small class="text-muted">These notes will be added to admin notes with timestamp</small>
                         </div>
 
-                        @if ($order->payment_status !== 'paid')
-                            <div class="alert alert-info p-2 mb-3">
-                                <small>
-                                    <i class="fas fa-info-circle"></i>
-                                    Marking as "Paid" will automatically update order status to "Processing" if currently
-                                    pending.
-                                </small>
-                            </div>
-                        @endif
-
-                        <button type="submit" class="btn btn-warning w-100">
-                            <i class="fas fa-credit-card"></i> Update Payment Status
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-dollar-sign"></i> Update Payment
                         </button>
                     </form>
                 </div>
             </div>
 
-            <!-- Payment Status Card -->
-            <div class="card mt-3">
+            <!-- Payment Summary Card -->
+            <div class="card mt-3 shadow-sm">
                 <div class="card-header">
-                    <h6 class="mb-0">Payment Summary</h6>
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-pie"></i> Payment Summary
+                    </h6>
                 </div>
                 <div class="card-body text-center">
                     @if ($order->payment_status === 'paid')
-                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                        <h5 class="text-success">Payment Successful</h5>
-                        <p class="text-muted">RS {{ number_format($order->total, 2) }} received</p>
+                        <div class="payment-status-display text-success">
+                            <i class="fas fa-check-circle fa-3x mb-3"></i>
+                            <h5>Payment Successful</h5>
+                            <p class="text-muted">₹{{ number_format($order->total, 2) }} received</p>
+                        </div>
                     @elseif($order->payment_status === 'failed')
-                        <i class="fas fa-times-circle fa-3x text-danger mb-3"></i>
-                        <h5 class="text-danger">Payment Failed</h5>
-                        <p class="text-muted">Amount: RS {{ number_format($order->total, 2) }}</p>
+                        <div class="payment-status-display text-danger">
+                            <i class="fas fa-times-circle fa-3x mb-3"></i>
+                            <h5>Payment Failed</h5>
+                            <p class="text-muted">₹{{ number_format($order->total, 2) }}</p>
+                        </div>
                     @elseif($order->payment_status === 'processing')
-                        <i class="fas fa-clock fa-3x text-info mb-3"></i>
-                        <h5 class="text-info">Payment Processing</h5>
-                        <p class="text-muted">Amount: RS {{ number_format($order->total, 2) }}</p>
+                        <div class="payment-status-display text-info">
+                            <i class="fas fa-clock fa-3x mb-3"></i>
+                            <h5>Payment Processing</h5>
+                            <p class="text-muted">₹{{ number_format($order->total, 2) }}</p>
+                        </div>
                     @else
-                        <i class="fas fa-exclamation-circle fa-3x text-warning mb-3"></i>
-                        <h5 class="text-warning">Payment Pending</h5>
-                        <p class="text-muted">Amount: RS {{ number_format($order->total, 2) }}</p>
+                        <div class="payment-status-display text-warning">
+                            <i class="fas fa-exclamation-circle fa-3x mb-3"></i>
+                            <h5>Payment Pending</h5>
+                            <p class="text-muted">₹{{ number_format($order->total, 2) }}</p>
+                        </div>
                     @endif
                 </div>
             </div>
 
             <!-- Order Timeline -->
-            <div class="card mt-3">
+            <div class="card mt-3 shadow-sm">
                 <div class="card-header">
-                    <h6 class="mb-0">Order Timeline</h6>
+                    <h6 class="mb-0">
+                        <i class="fas fa-history"></i> Order Timeline
+                    </h6>
                 </div>
                 <div class="card-body">
                     <div class="timeline">
@@ -531,452 +730,694 @@
 
             <!-- Customer Info -->
             @if ($order->customer)
-                <div class="card mt-3">
+                <div class="card mt-3 shadow-sm">
                     <div class="card-header">
-                        <h6 class="mb-0">Customer Summary</h6>
+                        <h6 class="mb-0">
+                            <i class="fas fa-user-circle"></i> Customer Summary
+                        </h6>
                     </div>
                     <div class="card-body">
-                        <p class="mb-2"><strong>Total Orders:</strong> {{ $order->customer->total_orders }}</p>
-                        <p class="mb-2"><strong>Total Spent:</strong> RS
-                            {{ number_format($order->customer->total_spent, 2) }}</p>
-                        <p class="mb-0"><strong>Customer Since:</strong>
-                            {{ $order->customer->created_at->format('M Y') }}</p>
-
-                        <hr>
+                        <div class="customer-stats">
+                            <p class="mb-2">
+                                <strong><i class="fas fa-shopping-bag"></i> Total Orders:</strong> 
+                                <span class="badge bg-info">{{ $order->customer->total_orders ?? 0 }}</span>
+                            </p>
+                            <p class="mb-2">
+                                <strong><i class="fas fa-rupee-sign"></i> Total Spent:</strong> 
+                                <span class="text-success fw-bold">₹{{ number_format($order->customer->total_spent ?? 0, 2) }}</span>
+                            </p>
+                            <p class="mb-3">
+                                <strong><i class="fas fa-calendar-alt"></i> Customer Since:</strong>
+                                {{ $order->customer->created_at->format('M Y') }}
+                            </p>
+                        </div>
 
                         <a href="{{ route('admin.customers.show', $order->customer) }}"
                             class="btn btn-outline-primary btn-sm w-100">
-                            <i class="fas fa-user"></i> View Customer Details
+                            <i class="fas fa-eye"></i> View Customer Details
                         </a>
                     </div>
                 </div>
             @endif
         </div>
     </div>
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script>
-        // Debug: Check if jQuery is loaded
-        console.log('Order Page - jQuery loaded:', typeof $ !== 'undefined');
-        console.log('Order Page - Document ready starting');
 
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(function() {
-                showToast('Transaction ID copied to clipboard', 'success');
-            });
-        }
-
-        // WhatsApp Status Check
-        let whatsappStatus = {
-            configured: false,
-            enabled: false
-        };
-
-        // Check WhatsApp status on page load
-        $(document).ready(function() {
-            console.log('Order Page - Document ready, calling checkWhatsAppStatus');
-            checkWhatsAppStatus();
-        });
-
-        function checkWhatsAppStatus() {
-            console.log('checkWhatsAppStatus() called');
-            console.log('Making request to:', '{{ route('admin.orders.whatsapp-status') }}');
-
-            $.get('{{ route('admin.orders.whatsapp-status') }}')
-                .done(function(response) {
-                    console.log('WhatsApp status response:', response);
-                    whatsappStatus = response;
-                    updateWhatsAppButton();
-                })
-                .fail(function(xhr, status, error) {
-                    console.log('WhatsApp status check failed:', xhr, status, error);
-                    console.log('Response text:', xhr.responseText);
-                    $('#whatsapp-bill-btn').prop('disabled', true)
-                        .attr('title', 'WhatsApp status check failed: ' + error)
-                        .html('<i class="fab fa-whatsapp"></i> WhatsApp Check Failed');
-                });
-        }
-
-        function updateWhatsAppButton() {
-            console.log('updateWhatsAppButton() called with status:', whatsappStatus);
-            const btn = $('#whatsapp-bill-btn');
-
-            if (btn.length === 0) {
-                console.log('WhatsApp button not found in DOM');
-                return;
-            }
-
-            console.log('Button found, updating state...');
-
-            if (!whatsappStatus.configured) {
-                console.log('WhatsApp not configured');
-                btn.prop('disabled', true)
-                    .attr('title', 'WhatsApp is not configured for this company')
-                    .html('<i class="fab fa-whatsapp"></i> WhatsApp Not Configured');
-            } else if (!whatsappStatus.enabled) {
-                console.log('WhatsApp disabled');
-                btn.prop('disabled', true)
-                    .attr('title', 'WhatsApp is disabled for this company')
-                    .html('<i class="fab fa-whatsapp"></i> WhatsApp Disabled');
-            } else {
-                console.log('WhatsApp enabled and configured');
-                btn.prop('disabled', false)
-                    .attr('title', 'Send invoice via WhatsApp to ' + btn.data('customer-phone'))
-                    .html('<i class="fab fa-whatsapp"></i> Send Invoice via WhatsApp');
-            }
-        }
-
-        // WhatsApp Bill Send Function
-        $('#whatsapp-bill-btn').on('click', function() {
-            console.log('WhatsApp bill button clicked');
-
-            if (!whatsappStatus.configured || !whatsappStatus.enabled) {
-                console.log('WhatsApp not properly configured or enabled');
-                showToast('WhatsApp is not properly configured or enabled', 'error');
-                return;
-            }
-
-            const orderId = $(this).data('order-id');
-            const customerPhone = $(this).data('customer-phone');
-
-            console.log('Order ID:', orderId);
-            console.log('Customer Phone:', customerPhone);
-
-            // Show custom message modal
-            showWhatsAppMessageModal(orderId, customerPhone);
-        });
-
-        function showWhatsAppMessageModal(orderId, customerPhone) {
-            console.log('showWhatsAppMessageModal called');
-            const modal = `
-        <div class="modal fade" id="whatsappMessageModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="fab fa-whatsapp text-success"></i> Send Invoice via WhatsApp
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Sending to:</label>
-                            <div class="alert alert-info">
-                                <i class="fas fa-phone"></i> ${customerPhone}
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="whatsapp-message" class="form-label">Custom Message (Optional)</label>
-                            <textarea class="form-control" id="whatsapp-message" rows="4" 
-                                      placeholder="Leave empty to use default message template..."></textarea>
-                            <small class="text-muted">The invoice PDF will be automatically attached to the message.</small>
+    <!-- WhatsApp Modal -->
+    <div class="modal fade" id="whatsappMessageModal" tabindex="-1" aria-labelledby="whatsappModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="whatsappModalLabel">
+                        <i class="fab fa-whatsapp"></i> Send Invoice via WhatsApp
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Sending to:</label>
+                        <div class="alert alert-info">
+                            <i class="fas fa-phone"></i> 
+                            <span id="recipient-phone">{{ $order->customer_mobile }}</span>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-whatsapp" onclick="sendWhatsAppBill(${orderId})">
-                            <i class="fab fa-whatsapp"></i> Send Invoice
-                        </button>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Format:</label>
+                        <div class="alert alert-secondary">
+                            <i class="fas {{ $formatIcon }}"></i> 
+                            <span id="document-format">{{ $formatLabel }}</span>
+                        </div>
                     </div>
+                    <div class="mb-3">
+                        <label for="whatsapp-message" class="form-label fw-bold">Custom Message (Optional)</label>
+                        <textarea class="form-control" id="whatsapp-message" rows="4" 
+                                  placeholder="Leave empty to use default message template..."></textarea>
+                        <small class="text-muted">The invoice will be automatically attached to the message.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-success" id="send-whatsapp-btn">
+                        <i class="fab fa-whatsapp"></i> Send Invoice
+                    </button>
                 </div>
             </div>
         </div>
-    `;
+    </div>
 
-            // Remove existing modal if present
-            $('#whatsappMessageModal').remove();
+@endsection
 
-            // Add modal to body and show
-            $('body').append(modal);
-            $('#whatsappMessageModal').modal('show');
-            console.log('Modal should now be visible');
+@push('styles')
+<style>
+    /* Enhanced styling for order view - COMPACT VERSION */
+    .invoice-actions-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin-bottom: 1rem;
+    }
+    
+    .invoice-actions-group .btn {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 500;
+        font-size: 0.7rem;
+        line-height: 1.1;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .invoice-actions-group .btn i {
+        font-size: 0.65rem;
+        margin: 0;
+    }
+
+    .invoice-actions-group .btn-secondary {
+        background: #6c757d;
+        border-color: #6c757d;
+        color: white;
+    }
+
+    .invoice-actions-group .btn-success {
+        background: #198754;
+        border-color: #198754;
+        color: white;
+    }
+
+    .invoice-actions-group .btn-info {
+        background: #0dcaf0;
+        border-color: #0dcaf0;
+        color: #000;
+    }
+
+    .invoice-actions-group .btn-outline-secondary {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.7rem;
+        border: 1px solid #6c757d;
+        color: #6c757d;
+    }
+
+    .invoice-actions-group .btn-outline-secondary:hover {
+        background: #6c757d;
+        color: white;
+    }
+
+    /* Compact WhatsApp button */
+    .btn-whatsapp {
+        background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+        color: white;
+        border: none;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.7rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 1px 3px rgba(37, 211, 102, 0.3);
+    }
+
+    .btn-whatsapp:hover {
+        background: linear-gradient(135deg, #128c7e 0%, #075e54 100%);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 5px rgba(37, 211, 102, 0.4);
+    }
+
+    .btn-whatsapp:disabled {
+        background: #6c757d;
+        color: #fff;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .btn-whatsapp i {
+        font-size: 0.65rem;
+    }
+
+    .format-info-badge {
+        margin-top: 0.5rem;
+    }
+
+    .format-info-badge small {
+        font-size: 0.7rem;
+    }
+
+    .format-info-badge .badge {
+        font-size: 0.65rem;
+        padding: 0.2em 0.5em;
+    }
+
+    .format-info-badge a {
+        font-size: 0.7rem;
+    }
+
+    .format-info-badge i {
+        font-size: 0.6rem;
+    }
+
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 0.25rem;
+    }
+
+    .customer-info p, .order-info p {
+        margin-bottom: 0.5rem;
+    }
+
+    .status-badge {
+        font-size: 0.85em;
+        padding: 0.4em 0.6em;
+    }
+
+    .payment-status-badge {
+        font-size: 1rem;
+        padding: 0.5em 0.8em;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+
+    .delivery-address {
+        background: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 1rem;
+        border-radius: 4px;
+    }
+
+    .payment-details code {
+        color: #e83e8c;
+        background-color: #f8f9fa;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+        font-size: 0.875em;
+    }
+
+    /* Timeline styles */
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, #007bff, #28a745);
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -25px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px #dee2e6;
+    }
+
+    .timeline-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .timeline-description {
+        font-size: 12px;
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+
+    /* Card hover effects */
+    .card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    /* Table styling */
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+
+    /* Payment status display */
+    .payment-status-display i {
+        opacity: 0.8;
+    }
+
+    .payment-status-display h5 {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Customer stats */
+    .customer-stats .badge {
+        font-size: 0.8em;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .invoice-actions-group {
+            gap: 0.2rem;
         }
 
-        function sendWhatsAppBill(orderId) {
-            console.log('sendWhatsAppBill called for order:', orderId);
-            const message = $('#whatsapp-message').val();
-            const btn = $('#whatsappMessageModal .btn-whatsapp');
-
-            console.log('Custom message:', message);
-
-            // Show loading state
-            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Sending...');
-
-            const url = `{{ route('admin.orders.send-whatsapp-bill', ':id') }}`.replace(':id', orderId);
-            console.log('Sending AJAX request to:', url);
-
-            // Send request
-            $.ajax({
-                url: url,
-                method: 'POST',
-                data: {
-                    message: message,
-                    _token: '{{ csrf_token() }}'
-                },
-                beforeSend: function() {
-                    console.log('AJAX request started');
-                },
-                success: function(response) {
-                    console.log('AJAX success response:', response);
-                    if (response.success) {
-                        showToast('Invoice sent successfully via WhatsApp!', 'success');
-                        $('#whatsappMessageModal').modal('hide');
-
-                        // Show success details
-                        setTimeout(function() {
-                            showToast(`Message sent to ${response.sent_to}`, 'info');
-                        }, 1000);
-                    } else {
-                        showToast(response.message || 'Failed to send WhatsApp message', 'error');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.log('AJAX error:', xhr, status, error);
-                    console.log('Response text:', xhr.responseText);
-                    let errorMessage = 'Failed to send WhatsApp message';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    } else if (xhr.responseText) {
-                        try {
-                            const errorData = JSON.parse(xhr.responseText);
-                            errorMessage = errorData.message || errorMessage;
-                        } catch (e) {
-                            console.log('Could not parse error response');
-                        }
-                    }
-                    showToast(errorMessage, 'error');
-                },
-                complete: function() {
-                    console.log('AJAX request completed');
-                    btn.prop('disabled', false).html('<i class="fab fa-whatsapp"></i> Send Invoice');
-                }
-            });
+        .invoice-actions-group .btn {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.65rem;
+            flex: 1;
+            min-width: 80px;
         }
 
-        // Toast notification function
-        function showToast(message, type = 'info') {
-            console.log('showToast called:', message, type);
-            const toastClass = {
-                'success': 'bg-success',
-                'error': 'bg-danger',
-                'warning': 'bg-warning',
-                'info': 'bg-info'
-            } [type] || 'bg-info';
+        .invoice-actions-group .btn i {
+            font-size: 0.6rem;
+        }
+    }
 
-            const toast = `
-        <div class="toast align-items-center text-white ${toastClass} border-0" role="alert" 
-             style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+    /* Loading states */
+    .btn.loading {
+        pointer-events: none;
+        opacity: 0.7;
+    }
+
+    .btn.loading i {
+        animation: fa-spin 1s infinite linear;
+    }
+
+    /* Success/error messages */
+    .alert {
+        border-radius: 8px;
+        border: none;
+    }
+
+    .alert-success {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        color: #155724;
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        color: #721c24;
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    console.log('Enhanced Order Page - Document ready');
+    
+    // Initialize WhatsApp functionality
+    initializeWhatsApp();
+    
+    // Initialize copy functionality
+    initializeCopyButtons();
+    
+    // Initialize form validations
+    initializeFormValidations();
+});
+
+/**
+ * Open print window with proper dimensions and auto-print
+ */
+function openPrintWindow(url) {
+    console.log('Opening print window:', url);
+    
+    // Determine window size based on format
+    const isA4 = url.includes('format=a4_sheet') || (!url.includes('format=thermal'));
+    
+    let windowFeatures;
+    if (isA4) {
+        // A4 format - larger window
+        windowFeatures = 'width=900,height=1100,scrollbars=yes,resizable=yes,menubar=no,toolbar=no,location=no,status=no';
+    } else {
+        // Thermal format - smaller window
+        windowFeatures = 'width=400,height=800,scrollbars=yes,resizable=yes,menubar=no,toolbar=no,location=no,status=no';
+    }
+    
+    // Center the window
+    const left = (screen.width - (isA4 ? 900 : 400)) / 2;
+    const top = (screen.height - (isA4 ? 1100 : 800)) / 2;
+    windowFeatures += `,left=${left},top=${top}`;
+    
+    // Open the print window
+    const printWindow = window.open(url, 'printWindow', windowFeatures);
+    
+    if (printWindow) {
+        // Focus the print window
+        printWindow.focus();
+        
+        // Show success message
+        showToast('Print window opened successfully', 'success');
+    } else {
+        // Popup blocked
+        showToast('Print window was blocked. Please allow popups and try again.', 'error');
+        
+        // Fallback: open in new tab
+        window.open(url, '_blank');
+    }
+}
+
+/**
+ * Initialize WhatsApp functionality
+ */
+function initializeWhatsApp() {
+    console.log('Initializing WhatsApp functionality');
+    
+    // Check WhatsApp status on page load
+    checkWhatsAppStatus();
+    
+    // WhatsApp button click handler
+    $('#whatsapp-bill-btn').on('click', function(e) {
+        e.preventDefault();
+        console.log('WhatsApp button clicked');
+        
+        const orderId = $(this).data('order-id');
+        const customerPhone = $(this).data('customer-phone');
+        const format = $(this).data('format');
+        
+        if (!orderId || !customerPhone) {
+            showToast('Missing order or customer information', 'error');
+            return;
+        }
+        
+        showWhatsAppModal(orderId, customerPhone, format);
+    });
+    
+    // Modal send button
+    $(document).on('click', '#send-whatsapp-btn', function() {
+        const orderId = $('#whatsapp-bill-btn').data('order-id');
+        const message = $('#whatsapp-message').val();
+        sendWhatsAppInvoice(orderId, message);
+    });
+}
+
+/**
+ * Check WhatsApp configuration status
+ */
+function checkWhatsAppStatus() {
+    console.log('Checking WhatsApp status');
+    
+    $.get('{{ route("admin.orders.whatsapp-status") }}')
+        .done(function(response) {
+            console.log('WhatsApp status response:', response);
+            updateWhatsAppButton(response);
+        })
+        .fail(function(xhr) {
+            console.error('WhatsApp status check failed:', xhr);
+            $('#whatsapp-bill-btn').prop('disabled', true)
+                .attr('title', 'WhatsApp status check failed')
+                .addClass('btn-secondary')
+                .removeClass('btn-whatsapp');
+        });
+}
+
+/**
+ * Update WhatsApp button based on status
+ */
+function updateWhatsAppButton(status) {
+    const btn = $('#whatsapp-bill-btn');
+    
+    if (!status.configured || !status.enabled) {
+        btn.prop('disabled', true)
+           .attr('title', status.message || 'WhatsApp not available')
+           .addClass('btn-secondary')
+           .removeClass('btn-whatsapp');
+    } else {
+        btn.prop('disabled', false)
+           .attr('title', 'Send invoice via WhatsApp')
+           .addClass('btn-whatsapp')
+           .removeClass('btn-secondary');
+    }
+}
+
+/**
+ * Show WhatsApp modal
+ */
+function showWhatsAppModal(orderId, customerPhone, format) {
+    console.log('Showing WhatsApp modal', {orderId, customerPhone, format});
+    
+    // Update modal content
+    $('#recipient-phone').text(customerPhone);
+    $('#document-format').text(format === 'thermal' ? 'Receipt (Thermal)' : 'Invoice (A4)');
+    $('#whatsapp-message').val('');
+    
+    // Show modal
+    $('#whatsappMessageModal').modal('show');
+}
+
+/**
+ * Send WhatsApp invoice
+ */
+function sendWhatsAppInvoice(orderId, message) {
+    console.log('Sending WhatsApp invoice', {orderId, message});
+    
+    const btn = $('#send-whatsapp-btn');
+    const originalText = btn.html();
+    
+    // Show loading state
+    btn.prop('disabled', true)
+       .addClass('loading')
+       .html('<i class="fas fa-spinner fa-spin"></i> Sending...');
+    
+    const url = `{{ route("admin.orders.send-whatsapp-bill", ":id") }}`.replace(':id', orderId);
+    const format = $('#whatsapp-bill-btn').data('format');
+    
+    $.ajax({
+        url: url,
+        method: 'POST',
+        data: {
+            message: message,
+            format: format,
+            _token: '{{ csrf_token() }}'
+        },
+        success: function(response) {
+            console.log('WhatsApp send success:', response);
+            
+            if (response.success) {
+                showToast('Invoice sent successfully via WhatsApp!', 'success');
+                $('#whatsappMessageModal').modal('hide');
+                
+                // Show additional success info
+                setTimeout(() => {
+                    showToast(`Message sent to ${response.sent_to}`, 'info');
+                }, 1000);
+            } else {
+                showToast(response.message || 'Failed to send WhatsApp message', 'error');
+            }
+        },
+        error: function(xhr) {
+            console.error('WhatsApp send error:', xhr);
+            
+            let errorMessage = 'Failed to send WhatsApp message';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            }
+            
+            showToast(errorMessage, 'error');
+        },
+        complete: function() {
+            // Reset button
+            btn.prop('disabled', false)
+               .removeClass('loading')
+               .html(originalText);
+        }
+    });
+}
+
+/**
+ * Initialize copy to clipboard functionality
+ */
+function initializeCopyButtons() {
+    // Copy transaction ID
+    window.copyToClipboard = function(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            showToast('Transaction ID copied to clipboard', 'success');
+        }).catch(function() {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showToast('Transaction ID copied to clipboard', 'success');
+        });
+    };
+}
+
+/**
+ * Initialize form validations
+ */
+function initializeFormValidations() {
+    // Status update form
+    $('form[action*="update-status"]').on('submit', function(e) {
+        const status = $('#status').val();
+        const orderNumber = '{{ $order->order_number }}';
+        
+        if (!confirm(`Are you sure you want to change the order status to "${status.toUpperCase()}" for order ${orderNumber}?`)) {
+            e.preventDefault();
+            return false;
+        }
+    });
+    
+    // Payment status update form
+    $('form[action*="payment-status"]').on('submit', function(e) {
+        const paymentStatus = $('#payment_status').val();
+        const orderNumber = '{{ $order->order_number }}';
+        
+        if (!confirm(`Are you sure you want to change the payment status to "${paymentStatus.toUpperCase()}" for order ${orderNumber}?`)) {
+            e.preventDefault();
+            return false;
+        }
+    });
+}
+
+/**
+ * Show toast notification
+ */
+function showToast(message, type = 'info') {
+    console.log('Showing toast:', {message, type});
+    
+    const toastClass = {
+        'success': 'bg-success',
+        'error': 'bg-danger',
+        'warning': 'bg-warning',
+        'info': 'bg-info'
+    }[type] || 'bg-info';
+    
+    const iconClass = {
+        'success': 'fa-check-circle',
+        'error': 'fa-times-circle',
+        'warning': 'fa-exclamation-triangle',
+        'info': 'fa-info-circle'
+    }[type] || 'fa-info-circle';
+    
+    const toast = $(`
+        <div class="toast align-items-center text-white ${toastClass} border-0 position-fixed" 
+             style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" role="alert">
             <div class="d-flex">
                 <div class="toast-body">
+                    <i class="fas ${iconClass} me-2"></i>
                     ${message}
                 </div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" 
-                        data-bs-dismiss="toast"></button>
+                        onclick="$(this).closest('.toast').remove()"></button>
             </div>
         </div>
-    `;
-
-            $('body').append(toast);
-            const toastElement = $('.toast').last();
-
-            // Auto-remove after 5 seconds
-            setTimeout(function() {
-                toastElement.remove();
-            }, 5000);
-
-            // Also show browser alert as fallback for errors
-            if (type === 'error') {
-                alert('Error: ' + message);
-            }
-        }
-
-        // Test WhatsApp button click with simple alert
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM Content Loaded - vanilla JS');
-
-            const whatsappBtn = document.getElementById('whatsapp-bill-btn');
-            if (whatsappBtn) {
-                console.log('WhatsApp button found via vanilla JS');
-                whatsappBtn.addEventListener('click', function() {
-                    console.log('WhatsApp button clicked via vanilla JS');
-                    // Uncomment the line below to test basic button functionality
-                    // alert('WhatsApp button works!');
-                });
-            } else {
-                console.log('WhatsApp button NOT found via vanilla JS');
-            }
+    `);
+    
+    $('body').append(toast);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        toast.fadeOut(300, function() {
+            $(this).remove();
         });
-    </script>
+    }, 5000);
+    
+    // Also show browser alert for errors (as fallback)
+    if (type === 'error') {
+        setTimeout(() => {
+            alert('Error: ' + message);
+        }, 100);
+    }
+}
 
-    <style>
-        .timeline {
-            position: relative;
-            padding-left: 30px;
-        }
+/**
+ * Enhanced loading states for buttons
+ */
+$(document).on('click', '.btn[type="submit"]', function() {
+    const btn = $(this);
+    const form = btn.closest('form');
+    
+    // Add loading state
+    setTimeout(() => {
+        if (!form[0].checkValidity()) return;
+        
+        btn.prop('disabled', true)
+           .addClass('loading')
+           .html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+    }, 100);
+});
 
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 10px;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background-color: #dee2e6;
+/**
+ * Auto-refresh order status (optional)
+ */
+function enableAutoRefresh() {
+    setInterval(() => {
+        // Check if order is in a pending state that might change
+        const currentStatus = '{{ $order->status }}';
+        const currentPaymentStatus = '{{ $order->payment_status }}';
+        
+        if (['pending', 'processing'].includes(currentStatus) || 
+            ['pending', 'processing'].includes(currentPaymentStatus)) {
+            
+            console.log('Auto-refreshing order status...');
+            // You could implement an AJAX call to refresh just the status section
         }
+    }, 30000); // Check every 30 seconds
+}
 
-        .timeline-item {
-            position: relative;
-            margin-bottom: 20px;
-        }
-
-        .timeline-marker {
-            position: absolute;
-            left: -25px;
-            top: 5px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            border: 2px solid white;
-        }
-
-        .timeline-title {
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
-
-        .timeline-description {
-            font-size: 12px;
-            color: #6c757d;
-            margin-bottom: 0;
-        }
-
-        .payment-details code {
-            color: #0d6efd;
-            background-color: #f8f9fa;
-            padding: 2px 4px;
-            border-radius: 3px;
-        }
-
-        /* Payment Status Update Form Styling */
-        .card:has(form[action*="payment-status"]) {
-            border-left: 4px solid #ffc107;
-            background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
-        }
-
-        .card:has(form[action*="payment-status"]) .card-header {
-            background: linear-gradient(135deg, #ffc107 0%, #ffb700 100%);
-            color: white;
-            border-bottom: 1px solid #ffb700;
-        }
-
-        .card:has(form[action*="payment-status"]) .btn-warning {
-            background: linear-gradient(135deg, #ffc107 0%, #ffb700 100%);
-            border: none;
-            box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        .card:has(form[action*="payment-status"]) .btn-warning:hover {
-            background: linear-gradient(135deg, #ffb700 0%, #ffa000 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(255, 193, 7, 0.4);
-        }
-
-        /* Payment status badge styling */
-        .badge.bg-success {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
-        }
-
-        .badge.bg-warning {
-            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%) !important;
-        }
-
-        .badge.bg-danger {
-            background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%) !important;
-        }
-
-        .badge.bg-info {
-            background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%) !important;
-        }
-
-        /* WhatsApp Button Styling */
-        .btn-whatsapp {
-            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
-            color: white;
-            border: none;
-            box-shadow: 0 2px 4px rgba(37, 211, 102, 0.3);
-            transition: all 0.3s ease;
-        }
-
-        .btn-whatsapp:hover {
-            background: linear-gradient(135deg, #128c7e 0%, #075e54 100%);
-            color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(37, 211, 102, 0.4);
-        }
-
-        .btn-whatsapp:disabled {
-            background: #6c757d;
-            color: #fff;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .btn-whatsapp:disabled:hover {
-            background: #6c757d;
-            color: #fff;
-            transform: none;
-            box-shadow: none;
-        }
-
-        /* Modal styling for WhatsApp */
-        #whatsappMessageModal .modal-header {
-            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
-            color: white;
-            border-bottom: none;
-        }
-
-        #whatsappMessageModal .btn-close {
-            filter: brightness(0) invert(1);
-        }
-
-        /* Toast styling */
-        .toast {
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .btn-whatsapp {
-            background-color: #25D366;
-            border-color: #25D366;
-            color: white;
-        }
-
-        .btn-whatsapp:hover {
-            background-color: #1DA851;
-            border-color: #1DA851;
-            color: white;
-        }
-
-        .notification-item {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .notification-item:last-child {
-            border-bottom: none;
-        }
-
-        .notification-item:hover {
-            background-color: #f8f9fa;
-        }
-
-        .header-actions .btn {
-            margin-right: 0.5rem;
-        }
-
-        .header-actions .btn:last-child {
-            margin-right: 0;
-        }
-    </style>
-@endsection
+// Uncomment to enable auto-refresh
+// enableAutoRefresh();
+</script>
+@endpush

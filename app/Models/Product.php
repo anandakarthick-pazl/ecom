@@ -46,6 +46,16 @@ class Product extends Model
         return $this->belongsTo(Branch::class);
     }
 
+    public function offers()
+    {
+        return $this->hasMany(Offer::class);
+    }
+
+    public function categoryOffers()
+    {
+        return $this->hasMany(Offer::class, 'category_id', 'category_id')->where('type', 'category');
+    }
+
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
@@ -56,9 +66,125 @@ class Product extends Model
         return $this->hasMany(Cart::class);
     }
 
-    public function offers()
+    /**
+     * Get applicable offers for this product
+     */
+    public function getApplicableOffers()
     {
-        return $this->hasMany(Offer::class);
+        return Offer::where(function($query) {
+            // Product-specific offers
+            $query->where('type', 'product')
+                  ->where('product_id', $this->id);
+        })->orWhere(function($query) {
+            // Category-specific offers
+            $query->where('type', 'category')
+                  ->where('category_id', $this->category_id);
+        })->orWhere(function($query) {
+            // General offers (percentage/fixed)
+            $query->whereIn('type', ['percentage', 'fixed'])
+                  ->whereNull('category_id')
+                  ->whereNull('product_id');
+        })->active()
+          ->current()
+          ->orderBy('value', 'desc') // Higher discount first
+          ->get();
+    }
+
+    /**
+     * Get the best applicable offer for this product
+     */
+    public function getBestOffer()
+    {
+        $offers = $this->getApplicableOffers();
+        
+        if ($offers->isEmpty()) {
+            return null;
+        }
+
+        $bestOffer = null;
+        $bestDiscount = 0;
+
+        foreach ($offers as $offer) {
+            $discount = $offer->calculateDiscount($this->price, $this, $this->category);
+            if ($discount > $bestDiscount) {
+                $bestDiscount = $discount;
+                $bestOffer = $offer;
+            }
+        }
+
+        return $bestOffer;
+    }
+
+    /**
+     * Get the dynamic discount price based on offers
+     */
+    public function getDynamicDiscountPrice()
+    {
+        // First check if manual discount_price is set
+        if ($this->discount_price && $this->discount_price > 0) {
+            return $this->discount_price;
+        }
+
+        // Check for applicable offers
+        $bestOffer = $this->getBestOffer();
+        if ($bestOffer) {
+            $discount = $bestOffer->calculateDiscount($this->price, $this, $this->category);
+            return max(0, $this->price - $discount);
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the effective final price (manual discount or offer-based)
+     */
+    public function getEffectiveFinalPrice()
+    {
+        $dynamicPrice = $this->getDynamicDiscountPrice();
+        return $dynamicPrice ?: $this->price;
+    }
+
+    /**
+     * Get the effective discount percentage
+     */
+    public function getEffectiveDiscountPercentage()
+    {
+        $finalPrice = $this->getEffectiveFinalPrice();
+        if ($finalPrice < $this->price) {
+            return round((($this->price - $finalPrice) / $this->price) * 100);
+        }
+        return 0;
+    }
+
+    /**
+     * Check if product has any active offers
+     */
+    public function hasActiveOffers()
+    {
+        return $this->getApplicableOffers()->count() > 0;
+    }
+
+    /**
+     * Get offer details for display
+     */
+    public function getOfferDetails()
+    {
+        $bestOffer = $this->getBestOffer();
+        if (!$bestOffer) {
+            return null;
+        }
+
+        $discount = $bestOffer->calculateDiscount($this->price, $this, $this->category);
+        $discountedPrice = max(0, $this->price - $discount);
+
+        return [
+            'offer' => $bestOffer,
+            'original_price' => $this->price,
+            'discounted_price' => $discountedPrice,
+            'discount_amount' => $discount,
+            'discount_percentage' => round(($discount / $this->price) * 100),
+            'savings' => $discount
+        ];
     }
 
     public function posSaleItems()

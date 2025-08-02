@@ -8,9 +8,11 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\PaymentMethod;
+use App\Models\Commission;
 use App\Services\PaymentMethodService;
 use App\Services\DeliveryService;
 use App\Events\OrderPlaced;
+use App\Services\OrderItemPricingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -72,7 +74,12 @@ class CheckoutController extends Controller
             'pincode' => 'required|string|size:6',
             'notes' => 'nullable|string|max:500',
             'payment_method' => 'required|exists:payment_methods,id',
-            'formatted_mobile' => 'nullable|string' // Optional formatted mobile with +91
+            'formatted_mobile' => 'nullable|string', // Optional formatted mobile with +91
+            // Commission fields
+            'commission_enabled' => 'nullable|boolean',
+            'reference_name' => 'nullable|string|max:255',
+            'commission_percentage' => 'nullable|numeric|min:0|max:100',
+            'commission_notes' => 'nullable|string|max:500'
         ]);
 
         // WHATSAPP MOBILE NUMBER FORMATTING
@@ -197,29 +204,48 @@ class CheckoutController extends Controller
                 'notes' => $request->notes,
                 'status' => 'pending',
                 'payment_method' => $paymentMethod->type,
-                'payment_status' => $paymentMethod->type === 'cod' ? 'pending' : 'pending'
+                'payment_status' => $paymentMethod->type === 'cod' ? 'pending' : 'pending',
+                // Commission fields
+                'commission_enabled' => $request->boolean('commission_enabled'),
+                'reference_name' => $request->reference_name,
+                'commission_percentage' => $request->commission_percentage,
+                'commission_notes' => $request->commission_notes
             ]);
 
             \Log::info('Order created', ['order_id' => $order->id, 'order_number' => $order->order_number]);
 
-            // Create order items and update stock
+            // Create order items with pricing details and update stock
             foreach ($cartItems as $item) {
-                $itemTaxAmount = $item->product->getTaxAmount($item->price) * $item->quantity;
-                
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $item->product_id,
-                    'product_name' => $item->product->name,
-                    'product_slug' => $item->product->slug,
-                    'price' => $item->price,
-                    'quantity' => $item->quantity,
-                    'tax_percentage' => $item->product->tax_percentage,
-                    'tax_amount' => $itemTaxAmount,
-                    'total' => $item->total + $itemTaxAmount
-                ]);
+                // Use the new pricing service to create order item with MRP and offer details
+                OrderItemPricingService::createOrderItemWithPricing(
+                    ['order_id' => $order->id],
+                    $item
+                );
 
                 // Update product stock
                 $item->product->decrement('stock', $item->quantity);
+            }
+
+            // Create commission record if enabled
+            if ($order->commission_enabled && !empty($order->reference_name) && !empty($order->commission_percentage)) {
+                try {
+                    $commission = $order->createCommissionRecord();
+                    if ($commission) {
+                        \Log::info('Commission created for order', [
+                            'order_id' => $order->id,
+                            'commission_id' => $commission->id,
+                            'reference_name' => $order->reference_name,
+                            'commission_percentage' => $order->commission_percentage,
+                            'commission_amount' => $commission->commission_amount
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Failed to create commission for order', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage()
+                    ]);
+                    // Don't fail the order if commission creation fails
+                }
             }
 
             // Update customer statistics

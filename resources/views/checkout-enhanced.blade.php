@@ -272,7 +272,14 @@
                                             <div class="payment-method-content">
                                                 <div class="payment-method-header">
                                                     <div class="payment-icon">
-                                                        <i class="{{ $method->getIcon() }} text-{{ $method->getColor() }}"></i>
+                                                        @if($method->hasImage())
+                                                            <img src="{{ $method->getImageUrl() }}" 
+                                                                 alt="{{ $method->display_name }}" 
+                                                                 class="payment-method-icon-image"
+                                                                 style="width: 40px; height: 40px; object-fit: contain; border-radius: 8px;">
+                                                        @else
+                                                            <i class="{{ $method->getIcon() }} text-{{ $method->getColor() }}"></i>
+                                                        @endif
                                                     </div>
                                                     <div class="payment-info">
                                                         <h6 class="payment-name">{{ $method->display_name }}</h6>
@@ -343,7 +350,7 @@
                                                         @if($method->upi_qr_code)
                                                             <div class="qr-code-section">
                                                                 <div class="qr-code-container">
-                                                                    <img src="{{ Storage::url($method->upi_qr_code) }}" 
+                                                                    <img src="{{ $method->getQrCodeUrl() }}" 
                                                                          alt="{{ $method->type === 'gpay' ? 'Google Pay' : 'UPI' }} QR Code" 
                                                                          class="qr-code-image">
                                                                     <div class="qr-code-overlay">
@@ -950,6 +957,22 @@
         font-size: 1.5rem;
         margin-right: 15px;
         flex-shrink: 0;
+        border: 1px solid #e9ecef;
+        overflow: hidden;
+    }
+    
+    .payment-method-icon-image {
+        transition: transform 0.2s ease;
+        border: none !important;
+    }
+    
+    .payment-method-icon-image:hover {
+        transform: scale(1.05);
+    }
+    
+    .payment-method-input:checked + .payment-method-label .payment-method-icon-image {
+        transform: scale(1.1);
+        filter: brightness(1.1);
     }
     
     .payment-info {

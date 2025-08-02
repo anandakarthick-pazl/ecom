@@ -228,22 +228,33 @@
             border: none;
             box-shadow: var(--shadow-lg);
             border-radius: var(--radius-lg);
-            padding: 0.5rem;
-            margin-top: 0.5rem;
+            padding: 0.25rem; /* Reduced from 0.5rem */
+            margin-top: 0.25rem; /* Reduced from 0.5rem */
+            max-height: 300px; /* Added max height */
+            overflow-y: auto; /* Added scroll for many categories */
+            min-width: 180px; /* Reduced minimum width */
+            max-width: 250px; /* Added maximum width */
         }
 
         .dropdown-item-modern {
-            padding: 0.75rem 1rem;
+            padding: 0.5rem 0.75rem; /* Reduced from 0.75rem 1rem */
             border-radius: var(--radius);
             transition: all 0.3s ease;
             color: var(--text-primary);
             font-weight: 500;
+            font-size: 0.875rem; /* Reduced font size */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .dropdown-item-modern:hover {
             background: rgba(37, 99, 235, 0.05);
             color: var(--primary-color);
-            transform: translateX(4px);
+            transform: translateX(2px); /* Reduced from 4px */
         }
 
         /* Mobile Navbar */
@@ -408,6 +419,18 @@
                 width: 100%;
                 justify-content: center;
             }
+            
+            /* Mobile dropdown optimizations */
+            .dropdown-menu-modern {
+                max-height: 250px; /* Reduced for mobile */
+                min-width: 160px;
+                max-width: 200px;
+            }
+            
+            .dropdown-item-modern {
+                padding: 0.4rem 0.6rem; /* Further reduced for mobile */
+                font-size: 0.8rem;
+            }
         }
 
         @media (max-width: 576px) {
@@ -533,83 +556,8 @@
     @endif
 </head>
 <body class="{{ $animationClasses ?? '' }}">
-    <!-- Modern Navigation -->
-    <nav class="navbar navbar-expand-lg fixed-top navbar-modern">
-        <div class="container">
-            <a class="navbar-brand-modern" href="{{ route('shop') }}">
-                @if($globalCompany->company_logo)
-                    <img src="{{ asset('storage/' . $globalCompany->company_logo) }}" 
-                         alt="{{ $globalCompany->company_name }}">
-                @else
-                    <i class="fas fa-store"></i>
-                @endif
-                <span>{{ $globalCompany->company_name ?? 'Your Store' }}</span>
-            </a>
-            
-            <button class="navbar-toggler navbar-toggler-modern" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav navbar-nav-modern me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('shop') ? 'active' : '' }}" href="{{ route('shop') }}">
-                            <i class="fas fa-home me-1"></i>Home
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {{ request()->routeIs('category') ? 'active' : '' }}" 
-                           href="#" id="categoriesDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-th-large me-1"></i>Categories
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-modern">
-                            @php
-                                $categories = \App\Models\Category::active()->parent()->orderBy('sort_order')->get();
-                            @endphp
-                            @foreach($categories as $category)
-                                <li>
-                                    <a class="dropdown-item dropdown-item-modern" href="{{ route('category', $category->slug) }}">
-                                        {{ $category->name }}
-                                    </a>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('products') ? 'active' : '' }}" href="{{ route('products') }}">
-                            <i class="fas fa-box me-1"></i>Products
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('offer.products') ? 'active' : '' }}" href="{{ route('offer.products') }}">
-                            <i class="fas fa-fire me-1"></i>Offers
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('track.order') ? 'active' : '' }}" href="{{ route('track.order') }}">
-                            <i class="fas fa-search me-1"></i>Track Order
-                        </a>
-                    </li>
-                </ul>
-                
-                <!-- Search Form -->
-                <form class="search-form me-3" action="{{ route('search') }}" method="GET">
-                    <input class="form-control search-input" type="search" name="q" 
-                           placeholder="Search products..." value="{{ request('q') }}">
-                    <button class="search-btn" type="submit">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </form>
-                
-                <!-- Cart Button -->
-                <a href="{{ route('cart.index') }}" class="btn cart-btn position-relative">
-                    <i class="fas fa-shopping-cart me-2"></i>
-                    <span class="d-none d-md-inline">Cart</span>
-                    <span class="cart-count" id="cart-count">0</span>
-                </a>
-            </div>
-        </div>
-    </nav>
+    <!-- Adaptive Modern Navigation -->
+    <x-adaptive-navbar :company="$globalCompany" />
 
     <!-- Alert Messages -->
     @if(session('success'))
@@ -655,10 +603,7 @@
                         Your trusted online shopping destination. Quality products delivered with care to your doorstep.
                     </p>
                     <div class="d-flex gap-3 mt-3">
-                        <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="social-link"><i class="fab fa-whatsapp"></i></a>
+                        @include('partials.social-media-links')
                     </div>
                 </div>
                 
@@ -675,9 +620,14 @@
                 <div class="col-lg-2 col-md-6">
                     <h5>Categories</h5>
                     <ul class="list-unstyled">
-                        @foreach($categories->take(4) as $category)
-                            <li><a href="{{ route('category', $category->slug) }}" class="footer-link">{{ $category->name }}</a></li>
-                        @endforeach
+                        @if(isset($categories) && $categories->count() > 0)
+                            @foreach($categories->take(4) as $category)
+                                <li><a href="{{ route('category', $category->slug) }}" class="footer-link">{{ $category->name }}</a></li>
+                            @endforeach
+                        @else
+                            <li><a href="{{ route('products') }}" class="footer-link">All Products</a></li>
+                            <li><a href="{{ route('offer.products') }}" class="footer-link">Special Offers</a></li>
+                        @endif
                     </ul>
                 </div>
                 
@@ -916,5 +866,8 @@
     @endif
     
     @stack('scripts')
+    
+    <!-- Flash Offer Popup -->
+    @include('components.flash-offer-popup', ['flashOffer' => $activeFlashOffer ?? null])
 </body>
 </html>

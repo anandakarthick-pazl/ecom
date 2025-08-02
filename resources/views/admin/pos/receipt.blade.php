@@ -114,31 +114,71 @@
         
         <div class="dashed-line"></div>
         
-        <!-- Items -->
+        <!-- Enhanced Items with Product-wise Details -->
         <div>
-            @foreach($sale->items as $item)
-                <div class="item-row">
-                    <div class="item-details">
-                        <div class="bold">{{ $item->product->name ?? $item->product_name }}</div>
-                        <div>{{ $item->quantity }} x ₹{{ number_format($item->unit_price, 2) }}</div>
-                        @if(($item->discount_amount ?? 0) > 0)
-                            <div style="font-size: 10px; color: #dc3545;">Item Discount: -₹{{ number_format($item->discount_amount, 2) }} ({{ number_format($item->discount_percentage ?? 0, 1) }}%)</div>
+            @foreach($sale->items as $index => $item)
+                @php
+                    $unitPrice = $item->unit_price ?? 0;
+                    $originalPrice = $item->original_price ?? $item->product->price ?? $unitPrice;
+                    $quantity = $item->quantity ?? 1;
+                    $lineTotal = $unitPrice * $quantity;
+                    $itemDiscount = $item->discount_amount ?? 0;
+                    $afterDiscount = $lineTotal - $itemDiscount;
+                    $taxAmount = $item->tax_amount ?? 0;
+                    $finalAmount = $afterDiscount + $taxAmount;
+                    $hasOfferPrice = $originalPrice > $unitPrice && $originalPrice != $unitPrice;
+                    $offerSavings = ($originalPrice - $unitPrice) * $quantity;
+                @endphp
+                
+                <div style="margin-bottom: 8px; border-bottom: 1px dashed #666; padding-bottom: 6px;">
+                    <!-- Product Name -->
+                    <div class="bold" style="font-size: 11px; margin-bottom: 2px;">{{ $index + 1 }}. {{ $item->product->name ?? $item->product_name }}</div>
+                    
+                    @if($item->product && $item->product->sku)
+                        <div style="font-size: 8px; color: #666; margin-bottom: 3px;">SKU: {{ $item->product->sku }}</div>
+                    @endif
+                    
+                    <!-- Quantity and Pricing -->
+                    @if($hasOfferPrice)
+                        <!-- When there's an offer price -->
+                        <div class="item-row">
+                            <span>{{ $quantity }} × ₹{{ number_format($unitPrice, 2) }}(Offer) - MRP {{ number_format($originalPrice, 2) }}</span>
+                            <span class="bold">₹{{ number_format($lineTotal, 2) }}</span>
+                        </div>
+                        @if($item->offer_applied)
+                            <div style="font-size: 8px; color: #000;">{{ $item->offer_applied }}</div>
                         @endif
-                        @if(($item->tax_percentage ?? 0) > 0)
-                            <div style="font-size: 10px; color: #666;">Tax: {{ $item->tax_percentage }}% = ₹{{ number_format($item->tax_amount ?? 0, 2) }}</div>
-                        @endif
-                    </div>
-                    <div class="item-price">
-                        @php
-                            $itemGross = $item->quantity * $item->unit_price;
-                            $itemDiscount = $item->discount_amount ?? 0;
-                            $itemNet = $itemGross - $itemDiscount;
-                            $itemTotal = $itemNet + ($item->tax_amount ?? 0);
-                        @endphp
-                        @if($itemDiscount > 0)
-                            <div style="font-size: 10px; text-decoration: line-through; color: #999;">₹{{ number_format($itemGross, 2) }}</div>
-                        @endif
-                        ₹{{ number_format($itemTotal, 2) }}
+                    @else
+                        <!-- When selling price equals MRP -->
+                        <div class="item-row">
+                            <span>{{ $quantity }} × ₹{{ number_format($unitPrice, 2) }}(MRP)</span>
+                            <span class="bold">₹{{ number_format($lineTotal, 2) }}</span>
+                        </div>
+                    @endif
+                    
+                    <!-- Item Discount -->
+                    @if($itemDiscount > 0)
+                        <div class="item-row" style="color: #000; font-size: 9px;">
+                            <span>Item Discount ({{ number_format($item->discount_percentage ?? 0, 1) }}%)</span>
+                            <span>-₹{{ number_format($itemDiscount, 2) }}</span>
+                        </div>
+                        <div class="item-row">
+                            <span>After Discount</span>
+                            <span>₹{{ number_format($afterDiscount, 2) }}</span>
+                        </div>
+                    @endif
+                    
+                    <!-- Tax -->
+                    @if($taxAmount > 0)
+                        <div class="item-row" style="color: #666; font-size: 9px;">
+                            <span>Tax ({{ $item->tax_percentage ?? 0 }}%)</span>
+                            <span>+₹{{ number_format($taxAmount, 2) }}</span>
+                        </div>
+                    @endif
+                    
+                    <!-- Item Total -->
+                    <div style="font-weight: bold; font-size: 11px; text-align: right; margin-top: 3px; border-top: 1px solid #000; padding-top: 2px;">
+                        Item Total: ₹{{ number_format($finalAmount, 2) }}
                     </div>
                 </div>
             @endforeach
@@ -146,6 +186,41 @@
         
         <!-- Totals -->
         <div class="totals">
+            @php
+                $itemsGrossTotal = $sale->items->sum(function($item) {
+                    $originalPrice = $item->original_price ?? $item->product->price ?? $item->unit_price;
+                    return $originalPrice * $item->quantity;
+                });
+                $itemsSellingTotal = $sale->items->sum(function($item) {
+                    return $item->unit_price * $item->quantity;
+                });
+                $totalOfferSavings = $itemsGrossTotal - $itemsSellingTotal;
+                $totalItemDiscounts = $sale->items->sum('discount_amount');
+            @endphp
+            
+            @if($totalOfferSavings > 0)
+                <div class="total-row">
+                    <span>Items MRP Total:</span>
+                    <span>₹{{ number_format($itemsGrossTotal, 2) }}</span>
+                </div>
+                <div class="total-row" style="color: #000;">
+                    <span>Offer Savings:</span>
+                    <span>-₹{{ number_format($totalOfferSavings, 2) }}</span>
+                </div>
+            @endif
+            
+            <div class="total-row">
+                <span>Items Selling Total:</span>
+                <span>₹{{ number_format($itemsSellingTotal, 2) }}</span>
+            </div>
+            
+            @if($totalItemDiscounts > 0)
+                <div class="total-row">
+                    <span>Item Discounts:</span>
+                    <span>-₹{{ number_format($totalItemDiscounts, 2) }}</span>
+                </div>
+            @endif
+            
             <div class="total-row">
                 <span>Subtotal:</span>
                 <span>₹{{ number_format($sale->subtotal, 2) }}</span>
@@ -164,7 +239,7 @@
             
             @if($sale->discount_amount > 0)
                 <div class="total-row">
-                    <span>Discount:</span>
+                    <span>Bill Discount:</span>
                     <span>-₹{{ number_format($sale->discount_amount, 2) }}</span>
                 </div>
             @endif
@@ -185,6 +260,17 @@
                 <div class="total-row">
                     <span>Change:</span>
                     <span>₹{{ number_format($sale->change_amount, 2) }}</span>
+                </div>
+            @endif
+            
+            @php
+                $totalSavings = $totalOfferSavings + $totalItemDiscounts + $sale->discount_amount;
+            @endphp
+            @if($totalSavings > 0)
+                <div class="dashed-line"></div>
+                <div class="total-row highlight" style="color: #000;">
+                    <span>🎉 YOU SAVED:</span>
+                    <span>₹{{ number_format($totalSavings, 2) }}</span>
                 </div>
             @endif
         </div>

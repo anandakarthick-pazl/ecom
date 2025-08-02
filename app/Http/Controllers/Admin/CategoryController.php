@@ -29,8 +29,14 @@ class CategoryController extends BaseAdminController
         // Apply tenant scope
         $query = $this->applyTenantScope($query);
         
-        // Get paginated results using dynamic pagination settings
-        $categories = $this->applyAdminPagination($query, $request, '20');
+        // Get results and ensure we always have a paginator
+        try {
+            $result = $this->applyAdminPagination($query, $request, '20');
+            $categories = $this->ensurePaginator($result, $request, 20);
+        } catch (\Exception $e) {
+            // Fallback to simple pagination
+            $categories = $query->paginate(20);
+        }
         
         // Get pagination controls data for the view
         $paginationControls = $this->getPaginationControlsData($request, 'admin');

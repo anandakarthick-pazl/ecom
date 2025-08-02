@@ -36,7 +36,7 @@
     <div class="card-body">
         <form method="GET" action="{{ route('admin.pos.sales') }}">
             <div class="row">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <select class="form-select" name="status">
                         <option value="">All Status</option>
                         <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
@@ -44,7 +44,7 @@
                         <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <select class="form-select" name="payment_method">
                         <option value="">All Payment Methods</option>
                         <option value="cash" {{ request('payment_method') == 'cash' ? 'selected' : '' }}>Cash</option>
@@ -53,6 +53,15 @@
                         <option value="gpay" {{ request('payment_method') == 'gpay' ? 'selected' : '' }}>GPay</option>
                         <option value="paytm" {{ request('payment_method') == 'paytm' ? 'selected' : '' }}>Paytm</option>
                         <option value="phonepe" {{ request('payment_method') == 'phonepe' ? 'selected' : '' }}>PhonePe</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="commission_status">
+                        <option value="">All Commission</option>
+                        <option value="with_commission" {{ request('commission_status') == 'with_commission' ? 'selected' : '' }}>With Commission</option>
+                        <option value="without_commission" {{ request('commission_status') == 'without_commission' ? 'selected' : '' }}>Without Commission</option>
+                        <option value="pending" {{ request('commission_status') == 'pending' ? 'selected' : '' }}>Pending Commission</option>
+                        <option value="paid" {{ request('commission_status') == 'paid' ? 'selected' : '' }}>Paid Commission</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -135,7 +144,8 @@
                         <th>Items</th>
                         <th>Amount</th>
                         <th>Payment</th>
-                        <th>Cashier</th>
+                        <th>Commission</th>
+                        {{-- <th>Cashier</th> --}}
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -199,23 +209,18 @@
                                 <a href="{{ route('admin.pos.show', $sale) }}" class="btn btn-outline-info" title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="{{ route('admin.pos.receipt', $sale) }}" class="btn btn-outline-secondary" title="View Receipt" target="_blank">
-                                    <i class="fas fa-receipt"></i>
-                                </a>
                                 
-                                <!-- Enhanced PDF Download Dropdown -->
-                                <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" title="Download Invoice">
-                                        <i class="fas fa-download"></i>
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        
-                                        <li><a class="dropdown-item" href="{{ route('admin.pos.preview-enhanced-invoice', $sale) }}" target="_blank">
-                                            <i class="fas fa-eye text-info"></i> Preview A4 Invoice
-                                        </a></li>
-                                        
-                                    </ul>
-                                </div>
+                                @if($defaultBillFormat === 'thermal')
+                                    <!-- Show only thermal receipt option -->
+                                    <a href="{{ route('admin.pos.receipt', $sale) }}" class="btn btn-outline-secondary" title="View Receipt (Thermal)" target="_blank">
+                                        <i class="fas fa-receipt"></i>
+                                    </a>
+                                @else
+                                    <!-- Show only A4 invoice option -->
+                                    <a href="{{ route('admin.pos.preview-enhanced-invoice', $sale) }}" class="btn btn-outline-primary" title="Preview A4 Invoice" target="_blank">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                @endif
                                 
                                 @if($sale->status === 'completed')
                                     <button type="button" class="btn btn-outline-warning" title="Process Refund" 
@@ -330,10 +335,11 @@
                 <div class="mt-3">
                     <label class="form-label">Download Format</label>
                     <select class="form-select" id="dateRangeFormat">
-                        <option value="enhanced">Enhanced A4 Invoice</option>
-                        <option value="thermal">Thermal Receipt (80mm)</option>
-                        <option value="compact">Compact Multi-page PDF</option>
-                        <option value="simple">Simple Receipt</option>
+                        @if($defaultBillFormat === 'thermal')
+                            <option value="thermal">Thermal Receipt (80mm)</option>
+                        @else
+                            <option value="enhanced">A4 Sheet Invoice</option>
+                        @endif
                     </select>
                 </div>
                 

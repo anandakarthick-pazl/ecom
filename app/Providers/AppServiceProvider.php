@@ -43,9 +43,12 @@ class AppServiceProvider extends ServiceProvider
         // Share categories with all views for navigation
         View::composer('*', function ($view) {
             try {
-                $view->with('globalCategories', Category::active()->parent()->orderBy('sort_order')->get());
+                $categories = Category::active()->parent()->orderBy('sort_order')->get();
+                $view->with('globalCategories', $categories);
+                $view->with('categories', $categories);  // Also share as 'categories' for backwards compatibility
             } catch (\Exception $e) {
                 $view->with('globalCategories', collect());
+                $view->with('categories', collect());
             }
         });
         

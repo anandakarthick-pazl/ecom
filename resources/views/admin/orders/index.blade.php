@@ -168,10 +168,10 @@
                                 <a href="{{ route('admin.orders.show', $order) }}" class="btn btn-outline-info" title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="{{ route('admin.orders.invoice', $order) }}" class="btn btn-outline-secondary" title="Print Invoice">
+                                {{-- <a href="{{ route('admin.orders.invoice', $order) }}" class="btn btn-outline-secondary" title="Print Invoice">
                                     <i class="fas fa-print"></i>
-                                </a>
-                                @if($order->customer_email)
+                                </a> --}}
+                                {{-- @if($order->customer_email)
                                     <form action="{{ route('admin.orders.send-invoice', $order) }}" method="POST" class="d-inline">
                                         @csrf
                                         <button type="submit" class="btn btn-outline-success" title="Send Invoice Email"
@@ -179,7 +179,7 @@
                                             <i class="fas fa-paper-plane"></i>
                                         </button>
                                     </form>
-                                @endif
+                                @endif --}}
                             </div>
                         </td>
                     </tr>

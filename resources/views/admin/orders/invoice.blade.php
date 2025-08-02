@@ -81,7 +81,9 @@
         <thead>
             <tr>
                 <th>Product</th>
-                <th>Price</th>
+                <th>MRP</th>
+                <th>Offer Price</th>
+                <th>Discount</th>
                 <th>Quantity</th>
                 <th>Tax %</th>
                 <th>Tax Amount</th>
@@ -96,8 +98,38 @@
                     @if($item->product)
                         <br><small style="color: #666;">{{ $item->product->category->name ?? '' }}</small>
                     @endif
+                    @if($item->offer_name)
+                        <br><small style="color: #e74c3c; font-weight: bold;">🏷️ {{ $item->offer_name }}</small>
+                    @endif
                 </td>
-                <td>₹{{ number_format($item->price, 2) }}</td>
+                <td>
+                    @if($item->mrp_price > 0)
+                        ₹{{ number_format($item->mrp_price, 2) }}
+                    @else
+                        ₹{{ number_format($item->price, 2) }}
+                    @endif
+                </td>
+                <td>
+                    @if($item->mrp_price > 0 && $item->mrp_price > $item->price)
+                        <span style="color: #27ae60; font-weight: bold;">₹{{ number_format($item->price, 2) }}</span>
+                    @else
+                        ₹{{ number_format($item->price, 2) }}
+                    @endif
+                </td>
+                <td>
+                    @if($item->hasDiscount())
+                        <span style="color: #e74c3c; font-weight: bold;">
+                            @if($item->effective_discount_percentage > 0)
+                                {{ number_format($item->effective_discount_percentage, 1) }}% OFF
+                            @endif
+                            @if($item->savings > 0)
+                                <br><small>Save ₹{{ number_format($item->savings, 2) }}</small>
+                            @endif
+                        </span>
+                    @else
+                        -
+                    @endif
+                </td>
                 <td>{{ $item->quantity }}</td>
                 <td>{{ $item->tax_percentage }}%</td>
                 <td>₹{{ number_format($item->tax_amount, 2) }}</td>
@@ -113,9 +145,23 @@
                 <td><strong>Subtotal:</strong></td>
                 <td style="text-align: right;"><strong>₹{{ number_format($order->subtotal, 2) }}</strong></td>
             </tr>
+            @php
+                $totalMrp = $order->items->sum('mrp_total');
+                $totalSavings = $order->items->sum('savings');
+            @endphp
+            @if($totalSavings > 0)
+            <tr>
+                <td><strong>Total MRP:</strong></td>
+                <td style="text-align: right;"><strong>₹{{ number_format($totalMrp, 2) }}</strong></td>
+            </tr>
+            <tr>
+                <td><strong>You Saved:</strong></td>
+                <td style="text-align: right; color: #e74c3c;"><strong>-₹{{ number_format($totalSavings, 2) }}</strong></td>
+            </tr>
+            @endif
             @if($order->discount > 0)
             <tr>
-                <td><strong>Discount:</strong></td>
+                <td><strong>Additional Discount:</strong></td>
                 <td style="text-align: right; color: green;"><strong>-₹{{ number_format($order->discount, 2) }}</strong></td>
             </tr>
             @endif

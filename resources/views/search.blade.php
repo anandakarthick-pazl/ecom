@@ -2,6 +2,193 @@
 
 @section('title', 'Search Results - Herbal Bliss')
 
+@push('styles')
+<style>
+/* Import compact grid styles for search page */
+.products-grid-compact {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
+    gap: 0.5rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.products-grid-compact .product-card {
+    font-size: 0.7rem !important;
+    border-radius: 8px !important;
+}
+
+.products-grid-compact .product-image-container {
+    height: 80px !important;
+}
+
+.products-grid-compact .product-content {
+    padding: 0.4rem !important;
+}
+
+.products-grid-compact .product-title {
+    font-size: 0.7rem !important;
+    line-height: 1.1 !important;
+    margin-bottom: 0.2rem !important;
+    height: 2.2rem !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+}
+
+.products-grid-compact .product-category {
+    font-size: 0.6rem !important;
+    margin-bottom: 0.2rem !important;
+}
+
+.products-grid-compact .product-description {
+    display: none !important;
+}
+
+.products-grid-compact .current-price {
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+}
+
+.products-grid-compact .original-price {
+    font-size: 0.65rem !important;
+}
+
+.products-grid-compact .btn-add-cart {
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0.65rem !important;
+    border-radius: 4px !important;
+    white-space: nowrap !important; /* Prevent text wrapping */
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.products-grid-compact .quantity-selector {
+    margin-bottom: 0.2rem !important;
+    gap: 0.25rem !important;
+}
+
+.products-grid-compact .qty-btn {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 0.6rem !important;
+    border-radius: 4px !important;
+}
+
+.products-grid-compact .qty-input {
+    width: 30px !important;
+    height: 20px !important;
+    font-size: 0.65rem !important;
+    border-radius: 4px !important;
+}
+
+.products-grid-compact .badge-discount {
+    font-size: 0.6rem !important;
+    padding: 0.15rem 0.3rem !important;
+    border-radius: 4px !important;
+}
+
+.products-grid-compact .offer-info {
+    display: none !important; /* Completely hide offer info in compact grid */
+}
+
+.products-grid-compact .product-footer {
+    margin-top: 0.3rem !important;
+}
+
+.products-grid-compact .price-section {
+    margin-bottom: 0.5rem !important;
+}
+
+@media (max-width: 768px) {
+    .products-grid-compact {
+        grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)) !important;
+        gap: 0.4rem !important;
+    }
+    
+    .products-grid-compact .product-image-container {
+        height: 70px !important;
+    }
+    
+    .products-grid-compact .product-title {
+        font-size: 0.65rem !important;
+        height: 2rem !important;
+    }
+    
+    .products-grid-compact .current-price {
+        font-size: 0.75rem !important;
+    }
+    
+    .products-grid-compact .btn-add-cart {
+        padding: 0.25rem 0.4rem !important;
+        font-size: 0.6rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .products-grid-compact {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 0.3rem !important;
+    }
+    
+    .products-grid-compact .product-image-container {
+        height: 60px !important;
+    }
+    
+    .products-grid-compact .product-title {
+        font-size: 0.6rem !important;
+        height: 1.8rem !important;
+    }
+    
+    .products-grid-compact .current-price {
+        font-size: 0.7rem !important;
+    }
+    
+    .products-grid-compact .btn-add-cart {
+        padding: 0.2rem 0.3rem !important;
+        font-size: 0.55rem !important;
+    }
+    
+    .products-grid-compact .qty-btn {
+        width: 18px !important;
+        height: 18px !important;
+        font-size: 0.55rem !important;
+    }
+    
+    .products-grid-compact .qty-input {
+        width: 25px !important;
+        height: 18px !important;
+        font-size: 0.6rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .products-grid-compact {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 0.25rem !important;
+    }
+    
+    .products-grid-compact .product-image-container {
+        height: 55px !important;
+    }
+    
+    .products-grid-compact .product-title {
+        font-size: 0.55rem !important;
+        height: 1.6rem !important;
+    }
+    
+    .products-grid-compact .current-price {
+        font-size: 0.65rem !important;
+    }
+    
+    .products-grid-compact .btn-add-cart {
+        padding: 0.15rem 0.25rem !important;
+        font-size: 0.5rem !important;
+    }
+}
+</style>
+@endpush
+
 @section('content')
 <div class="container my-5">
     <div class="row">
@@ -12,72 +199,9 @@
     </div>
 
     @if($products->count() > 0)
-    <div class="row">
+    <div class="products-grid-compact">
         @foreach($products as $product)
-        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-            <div class="card h-100 border-0 shadow-sm product-card">
-                @if($product->featured_image)
-                    <img src="{{ Storage::url($product->featured_image) }}" class="card-img-top" alt="{{ $product->name }}" style="height: 250px; object-fit: cover;">
-                @else
-                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
-                        <i class="fas fa-image fa-2x text-muted"></i>
-                    </div>
-                @endif
-                
-                @if($product->discount_percentage > 0)
-                    <div class="position-absolute top-0 start-0 m-2">
-                        <span class="badge bg-danger">{{ $product->discount_percentage }}% OFF</span>
-                    </div>
-                @endif
-                
-                <div class="card-body d-flex flex-column">
-                    <div class="mb-2">
-                        <small class="text-muted">{{ $product->category->name }}</small>
-                    </div>
-                    <h6 class="card-title">{{ $product->name }}</h6>
-                    <p class="card-text text-muted small">{{ Str::limit($product->short_description, 80) }}</p>
-                    
-                    <div class="mt-auto">
-                        <div class="price-section mb-2">
-                            @if($product->discount_price)
-                                <span class="h6 text-primary">₹{{ number_format($product->discount_price, 2) }}</span>
-                                <small class="text-muted text-decoration-line-through ms-1">₹{{ number_format($product->price, 2) }}</small>
-                            @else
-                                <span class="h6 text-primary">₹{{ number_format($product->price, 2) }}</span>
-                            @endif
-                        </div>
-                        
-                        <div class="product-actions">
-                            @if($product->isInStock())
-                                <div class="d-flex align-items-center gap-2 mb-2">
-                                    <div class="input-group input-group-sm quantity-selector">
-                                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="decrementQuantity({{ $product->id }})">
-                                            <i class="fas fa-minus"></i>
-                                        </button>
-                                        <input type="number" class="form-control text-center" id="quantity-{{ $product->id }}" value="1" min="1" max="{{ $product->stock }}" style="max-width: 60px;">
-                                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="incrementQuantity({{ $product->id }})">
-                                            <i class="fas fa-plus"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            @endif
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('product', $product->slug) }}" class="btn btn-outline-primary btn-sm flex-grow-1">View</a>
-                                @if($product->isInStock())
-                                    <button onclick="addToCartWithQuantity({{ $product->id }})" class="btn btn-primary btn-sm flex-grow-1">
-                                        <i class="fas fa-cart-plus"></i> Add
-                                    </button>
-                                @else
-                                    <button class="btn btn-secondary btn-sm" disabled>
-                                        <i class="fas fa-times"></i> Out of Stock
-                                    </button>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+            @include('partials.product-card-modern', ['product' => $product])
         @endforeach
     </div>
 

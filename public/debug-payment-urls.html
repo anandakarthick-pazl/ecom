@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Method URL Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { 
+            border: 1px solid #ccc; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .url-test { 
+            font-family: monospace; 
+            background: white; 
+            padding: 10px; 
+            border: 1px solid #ddd;
+            margin: 5px 0;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        img { max-width: 50px; max-height: 50px; margin: 5px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Payment Method URL Debug Tool</h1>
+    
+    <div class="debug-section">
+        <h2>Expected URL Format</h2>
+        <div class="url-test">
+            Target: http://greenvalleyherbs.local:8000/storage/payment-methods/BYIwFX34UkvptVE1fjqE5S9AGeduC19jjmDjM1hO.jpg
+        </div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>URL Generation Test</h2>
+        <p>Testing different image field values:</p>
+        
+        <h3>Test 1: Full path with subdirectory</h3>
+        <div class="url-test">
+            Database field: payment-methods/upi/Cjx4djNpBipxsitOzUOGkgmpm9bmSB8nM211DqyX.png<br>
+            Generated URL: http://greenvalleyherbs.local:8000/storage/payment-methods/upi/Cjx4djNpBipxsitOzUOGkgmpm9bmSB8nM211DqyX.png<br>
+            <img src="http://greenvalleyherbs.local:8000/storage/payment-methods/upi/Cjx4djNpBipxsitOzUOGkgmpm9bmSB8nM211DqyX.png" 
+                 onload="this.nextSibling.innerHTML='✓ Loaded'; this.nextSibling.className='success'" 
+                 onerror="this.nextSibling.innerHTML='✗ Failed'; this.nextSibling.className='error'">
+            <span>Testing...</span>
+        </div>
+        
+        <h3>Test 2: Direct payment-methods path</h3>
+        <div class="url-test">
+            Database field: payment-methods/BYIwFX34UkvptVE1fjqE5S9AGeduC19jjmDjM1hO.jpg<br>
+            Generated URL: http://greenvalleyherbs.local:8000/storage/payment-methods/BYIwFX34UkvptVE1fjqE5S9AGeduC19jjmDjM1hO.jpg<br>
+            <img src="http://greenvalleyherbs.local:8000/storage/payment-methods/BYIwFX34UkvptVE1fjqE5S9AGeduC19jjmDjM1hO.jpg" 
+                 onload="this.nextSibling.innerHTML='✓ Loaded'; this.nextSibling.className='success'" 
+                 onerror="this.nextSibling.innerHTML='✗ Failed'; this.nextSibling.className='error'">
+            <span>Testing...</span>
+        </div>
+        
+        <h3>Test 3: Just filename</h3>
+        <div class="url-test">
+            Database field: BYIwFX34UkvptVE1fjqE5S9AGeduC19jjmDjM1hO.jpg<br>
+            Old method URL: http://greenvalleyherbs.local:8000/storage/payment-methods/BYIwFX34UkvptVE1fjqE5S9AGeduC19jjmDjM1hO.jpg<br>
+            New method URL: http://greenvalleyherbs.local:8000/storage/BYIwFX34UkvptVE1fjqE5S9AGeduC19jjmDjM1hO.jpg<br>
+            <img src="http://greenvalleyherbs.local:8000/storage/BYIwFX34UkvptVE1fjqE5S9AGeduC19jjmDjM1hO.jpg" 
+                 onload="this.nextSibling.innerHTML='✓ New method works'; this.nextSibling.className='success'" 
+                 onerror="this.nextSibling.innerHTML='✗ New method failed'; this.nextSibling.className='error'">
+            <span>Testing new method...</span>
+        </div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>Instructions</h2>
+        <ol>
+            <li><strong>Run debug script:</strong> <code>debug_payment_images.bat</code></li>
+            <li><strong>Check what's in your database:</strong> Look at the image field values</li>
+            <li><strong>If URLs don't work:</strong> Run <code>php fix_payment_method_urls.php</code></li>
+            <li><strong>Test your actual checkout page:</strong> <a href="/checkout" target="_blank">Go to Checkout</a></li>
+        </ol>
+        
+        <h3>Quick Database Check</h3>
+        <p>Run this SQL to see current payment method images:</p>
+        <div class="url-test">
+            SELECT id, type, display_name, image FROM payment_methods WHERE image IS NOT NULL;
+        </div>
+        
+        <h3>Manual Fix Examples</h3>
+        <p>If the image field contains just filenames, update them like this:</p>
+        <div class="url-test">
+            -- If current image field is: "BYIwFX34UkvptVE1fjqE5S9AGeduC19jjmDjM1hO.jpg"<br>
+            UPDATE payment_methods SET image = 'payment-methods/BYIwFX34UkvptVE1fjqE5S9AGeduC19jjmDjM1hO.jpg' WHERE type = 'gpay';<br><br>
+            
+            -- If current image field is: "upi/Cjx4djNpBipxsitOzUOGkgmpm9bmSB8nM211DqyX.png"<br>
+            UPDATE payment_methods SET image = 'payment-methods/upi/Cjx4djNpBipxsitOzUOGkgmpm9bmSB8nM211DqyX.png' WHERE type = 'upi';
+        </div>
+    </div>
+</body>
+</html>
