@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\SocialMediaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -71,6 +72,14 @@ Route::get('/', function() {
 
 // Include super admin routes
 require __DIR__.'/super_admin.php';
+
+// Include social media routes
+require __DIR__.'/social_media_direct.php';
+
+// API route for social media links (fallback if not loaded from social_media_direct.php)
+Route::middleware(['web', 'tenant'])
+    ->get('/api/social-media-links', [\App\Http\Controllers\Admin\SocialMediaController::class, 'getActiveLinks'])
+    ->name('api.social-media-links');
 
 // SaaS Landing Page Routes (only on main domain)
 Route::middleware(['main.domain'])->group(function () {

@@ -140,7 +140,17 @@ function loadSocialMediaLinks() {
     const container = document.getElementById('social-icons');
     
     // Fetch social media links from API
-    fetch('{{ route("api.social-media-links") }}')
+    @php
+        try {
+            $apiUrl = route('api.social-media-links');
+        } catch (Exception $e) {
+            $apiUrl = '/api/social-media-links';
+        }
+    @endphp
+    
+    const apiUrl = '{{ $apiUrl }}';
+    
+    fetch(apiUrl)
         .then(response => response.json())
         .then(data => {
             if (data.success && data.data && data.data.length > 0) {

@@ -188,9 +188,30 @@ class SocialMediaController extends Controller
     public function getActiveLinks()
     {
         try {
-            $links = SocialMediaLink::currentTenant()
-                ->active()
-                ->ordered()
+            // Get current tenant from multiple sources
+            $tenant = app('current_tenant') ?? null;
+            $companyId = session('selected_company_id') ?? ($tenant ? $tenant->id : null);
+            
+            // If no company context, try to get from domain
+            if (!$companyId) {
+                $host = request()->getHost();
+                $company = \App\Models\SuperAdmin\Company::where('domain', $host)->first();
+                $companyId = $company ? $company->id : null;
+            }
+            
+            // If still no company, return empty result
+            if (!$companyId) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                    'message' => 'No company context found'
+                ]);
+            }
+            
+            $links = SocialMediaLink::where('company_id', $companyId)
+                ->where('is_active', true)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('name', 'asc')
                 ->get(['name', 'icon_class', 'url', 'color']);
 
             return response()->json([
@@ -199,20 +220,23 @@ class SocialMediaController extends Controller
                     return [
                         'name' => $link->name,
                         'icon_class' => $link->icon_class,
-                        'url' => $link->formatted_url,
-                        'color' => $link->brand_color
+                        'url' => $link->formatted_url ?? $link->url,
+                        'color' => $link->brand_color ?? $link->color ?? '#333'
                     ];
                 })
             ]);
         } catch (\Exception $e) {
             Log::error('Social Media API Error', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'host' => request()->getHost(),
+                'company_id' => session('selected_company_id')
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error fetching social media links'
+                'message' => 'Error fetching social media links',
+                'data' => []
             ], 500);
         }
     }

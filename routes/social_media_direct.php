@@ -54,6 +54,12 @@ Route::middleware(['web', 'auth', 'company.context'])
     });
 
 // API route for frontend (social media links display)
-Route::middleware(['web', 'tenant'])
+// Using multiple middleware options for better compatibility
+Route::middleware(['web'])
     ->get('/api/social-media-links', [SocialMediaController::class, 'getActiveLinks'])
     ->name('api.social-media-links');
+
+// Alternative route with tenant middleware for tenant-specific contexts
+Route::middleware(['web', 'tenant'])
+    ->get('/api/tenant/social-media-links', [SocialMediaController::class, 'getActiveLinks'])
+    ->name('api.tenant.social-media-links');
