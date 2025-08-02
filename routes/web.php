@@ -230,6 +230,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
     // Marketing
     Route::resource('banners', BannerController::class);
     Route::patch('banners/{banner}/toggle-status', [BannerController::class, 'toggleStatus'])->name('banners.toggle-status');
+    Route::get('banners/upload-logs', [BannerController::class, 'uploadLogs'])->name('banners.upload-logs');
+    Route::post('banners/use-existing-upload', [BannerController::class, 'useExistingUpload'])->name('banners.use-existing-upload');
+    Route::delete('banners/upload-logs/{log}', [BannerController::class, 'deleteUploadLog'])->name('banners.delete-upload-log');
     
     Route::resource('offers', OfferController::class);
     Route::patch('offers/{offer}/toggle-status', [OfferController::class, 'toggleStatus'])->name('offers.toggle-status');
