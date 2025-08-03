@@ -185,7 +185,7 @@
     <!-- Compact Features Section -->
     <section class="features-section-compact">
         <div class="features-grid-compact">
-            <div class="feature-item-compact">
+            {{-- <div class="feature-item-compact">
                 <div class="feature-icon-compact">
                     <i class="fas fa-leaf"></i>
                 </div>
@@ -193,7 +193,7 @@
                     <h3>100% Natural</h3>
                     <p>Premium quality ingredients</p>
                 </div>
-            </div>
+            </div> --}}
             <div class="feature-item-compact">
                 <div class="feature-icon-compact">
                     <i class="fas fa-shipping-fast"></i>
