@@ -585,4 +585,55 @@ if (config('app.debug')) {
     Route::get('/super-admin/storage-test', [\App\Http\Controllers\SuperAdmin\StorageTestController::class, 'index'])
         ->middleware(['auth', 'super.admin'])
         ->name('super-admin.storage.test');
+        
+    // Banner debug routes
+    Route::get('/debug/banners', function() {
+        $banners = \App\Models\Banner::all();
+        
+        $debug = [
+            'total_banners' => $banners->count(),
+            'storage_paths' => [
+                'storage/app/public exists' => is_dir(storage_path('app/public')),
+                'public/storage exists' => is_dir(public_path('storage')),
+                'banner files location' => public_path('storage/public/banner/banners/'),
+                'banner files exist' => is_dir(public_path('storage/public/banner/banners/')),
+            ],
+            'banners' => $banners->map(function($banner) {
+                $filename = basename($banner->image ?? '');
+                return [
+                    'id' => $banner->id,
+                    'title' => $banner->title,
+                    'image_stored' => $banner->image,
+                    'filename' => $filename,
+                    'is_active' => $banner->is_active,
+                    'position' => $banner->position,
+                    'start_date' => $banner->start_date,
+                    'end_date' => $banner->end_date,
+                    'generated_url' => $banner->image_url,
+                    'file_exists_public' => $filename ? file_exists(public_path('storage/public/banner/banners/' . $filename)) : false,
+                    'file_exists_storage' => $filename ? file_exists(storage_path('app/public/public/banner/banners/' . $filename)) : false,
+                ];
+            })->toArray()
+        ];
+        
+        return response()->json($debug, 200, [], JSON_PRETTY_PRINT);
+    });
+    
+    Route::get('/debug/storage-test', function() {
+        $testPath = public_path('storage/public/banner/banners/');
+        $files = [];
+        
+        if (is_dir($testPath)) {
+            $files = array_diff(scandir($testPath), ['.', '..']);
+        }
+        
+        return response()->json([
+            'test_path' => $testPath,
+            'path_exists' => is_dir($testPath),
+            'files_found' => array_values($files),
+            'file_urls' => array_map(function($file) {
+                return asset('storage/public/banner/banners/' . $file);
+            }, $files)
+        ], 200, [], JSON_PRETTY_PRINT);
+    });
 }

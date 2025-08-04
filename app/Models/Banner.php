@@ -72,7 +72,7 @@ class Banner extends Model
     }
 
     /**
-     * Get image URL with specific format - CUSTOM VERSION
+     * Get image URL with specific format - FIXED VERSION
      * Format: http://domain/storage/public/banner/banners/filename.jpeg
      */
     public function getImageUrlAttribute()
@@ -84,11 +84,29 @@ class Banner extends Model
         // Extract just the filename from the stored path
         $filename = basename($this->image);
         
-        // Build the URL in the exact format requested:
-        // http://greenvalleyherbs.local:8000/storage/public/banner/banners/filename.jpeg
-        $url = asset('storage/public/banner/banners/' . $filename);
+        // Check if file exists in the expected location
+        $publicPath = public_path('storage/public/banner/banners/' . $filename);
         
-        return $url;
+        if (file_exists($publicPath)) {
+            // File exists in public/storage/public/banner/banners/
+            return asset('storage/public/banner/banners/' . $filename);
+        }
+        
+        // Fallback: try other possible locations
+        $alternatePaths = [
+            'storage/banners/' . $filename,
+            'storage/public/banners/' . $filename,
+            'storage/banner/' . $filename
+        ];
+        
+        foreach ($alternatePaths as $path) {
+            if (file_exists(public_path($path))) {
+                return asset($path);
+            }
+        }
+        
+        // If file doesn't exist anywhere, return the original path for debugging
+        return asset('storage/public/banner/banners/' . $filename);
     }
     
     /**

@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use App\Traits\DynamicStorage;
 use App\Traits\HasPagination;
 
@@ -372,7 +373,7 @@ class ProductController extends BaseAdminController
             return redirect()->back()->with('success', $message);
             
         } catch (\Exception $e) {
-            \Log::error('Failed to toggle product status', [
+            Log::error('Failed to toggle product status', [
                 'product_id' => $product->id,
                 'error' => $e->getMessage()
             ]);
@@ -414,7 +415,7 @@ class ProductController extends BaseAdminController
             return redirect()->back()->with('success', $message);
             
         } catch (\Exception $e) {
-            \Log::error('Failed to toggle product featured status', [
+            Log::error('Failed to toggle product featured status', [
                 'product_id' => $product->id,
                 'error' => $e->getMessage()
             ]);
@@ -480,7 +481,7 @@ class ProductController extends BaseAdminController
             return redirect()->back()->with('error', 'Image not found!');
             
         } catch (\Exception $e) {
-            \Log::error('Failed to remove product image', [
+            Log::error('Failed to remove product image', [
                 'product_id' => $product->id,
                 'error' => $e->getMessage(),
                 'image_index' => $request->input('image_index')

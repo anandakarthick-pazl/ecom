@@ -12,6 +12,7 @@
 <!-- Compact Hero Section -->
 @if($banners->count() > 0)
 <section class="hero-section-compact">
+    <!-- Debug: Found {{ $banners->count() }} banner(s) -->
     <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="6000">
         <div class="carousel-indicators">
             @foreach($banners as $banner)
@@ -24,7 +25,10 @@
             <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
                 <div class="hero-container-compact">
                     @if($banner->image)
-                        <img src="{{ $banner->image_url }}" class="hero-image" alt="{{ $banner->alt_text ?: $banner->title }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <img src="{{ $banner->image_url }}" 
+                             class="hero-image" 
+                             alt="{{ $banner->alt_text ?: $banner->title }}" 
+                             onerror="console.error('Banner image failed to load:', this.src); this.style.display='none'; this.nextElementSibling.style.display='block';">
                     @else
                         <div class="hero-placeholder">
                             <div class="hero-gradient"></div>
@@ -81,18 +85,6 @@
             @foreach($categories->take(6) as $category)
             <div class="category-card-compact">
                 <a href="{{ route('category', $category->slug) }}" class="category-link">
-                    <div class="category-image-compact">
-                        @if($category->image)
-                            <img src="{{ $category->image_url }}" alt="{{ $category->name }}">
-                        @else
-                            <div class="category-placeholder-compact">
-                                <i class="fas fa-leaf"></i>
-                            </div>
-                        @endif
-                        <div class="category-overlay-compact">
-                            <i class="fas fa-arrow-right"></i>
-                        </div>
-                    </div>
                     <div class="category-info-compact">
                         <h3 class="category-name-compact">{{ $category->name }}</h3>
                         <span class="category-count-compact">{{ $category->products_count ?? 0 }} items</span>
@@ -114,15 +106,15 @@
         <!-- Product Tabs -->
         <div class="product-tabs-compact">
             <nav class="tabs-nav-compact">
-                <a href="{{ route('shop', ['menu' => 'featured']) }}" 
-                   class="tab-link-compact {{ $activeMenu === 'featured' ? 'active' : '' }}">
-                    <i class="fas fa-star"></i>
-                    <span>Featured</span>
-                </a>
                 <a href="{{ route('shop', ['menu' => 'all']) }}" 
                    class="tab-link-compact {{ $activeMenu === 'all' ? 'active' : '' }}">
                     <i class="fas fa-th-large"></i>
                     <span>All Products</span>
+                </a>
+                <a href="{{ route('shop', ['menu' => 'featured']) }}" 
+                   class="tab-link-compact {{ $activeMenu === 'featured' ? 'active' : '' }}">
+                    <i class="fas fa-star"></i>
+                    <span>Featured</span>
                 </a>
                 <a href="{{ route('shop', ['menu' => 'offers']) }}" 
                    class="tab-link-compact {{ $activeMenu === 'offers' ? 'active' : '' }}">
@@ -134,18 +126,6 @@
         
         <!-- Products Grid -->
         <div class="products-container">
-            @if($activeMenu === 'featured')
-                @if($featuredProducts->count() > 0)
-                    <div class="products-grid-compact">
-                        @foreach($featuredProducts as $product)
-                            @include('partials.product-card-modern', ['product' => $product, 'featured' => true])
-                        @endforeach
-                    </div>
-                @else
-                    @include('partials.empty-state', ['icon' => 'star', 'title' => 'No Featured Products', 'message' => 'Check back later for featured items'])
-                @endif
-            @endif
-            
             @if($activeMenu === 'all')
                 @if($products->count() > 0)
                     <div class="products-grid-compact">
@@ -160,6 +140,18 @@
                     @endif
                 @else
                     @include('partials.empty-state', ['icon' => 'box', 'title' => 'No Products Available', 'message' => 'New products coming soon'])
+                @endif
+            @endif
+            
+            @if($activeMenu === 'featured')
+                @if($featuredProducts->count() > 0)
+                    <div class="products-grid-compact">
+                        @foreach($featuredProducts as $product)
+                            @include('partials.product-card-modern', ['product' => $product, 'featured' => true])
+                        @endforeach
+                    </div>
+                @else
+                    @include('partials.empty-state', ['icon' => 'star', 'title' => 'No Featured Products', 'message' => 'Check back later for featured items'])
                 @endif
             @endif
             
@@ -435,8 +427,8 @@
 
 .categories-grid-compact {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Reduced from 200px */
-    gap: 1rem; /* Reduced from 1.5rem */
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
 }
 
 .category-card-compact {
@@ -445,10 +437,11 @@
     overflow: hidden;
     box-shadow: var(--shadow-md);
     transition: all 0.3s ease;
+    padding: 1rem;
 }
 
 .category-card-compact:hover {
-    transform: translateY(-3px); /* Reduced from -4px */
+    transform: translateY(-3px);
     box-shadow: var(--shadow-lg);
 }
 
@@ -458,71 +451,19 @@
     display: block;
 }
 
-.category-image-compact {
-    position: relative;
-    height: 80px; /* Reduced from 120px */
-    overflow: hidden;
-}
-
-.category-image-compact img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-}
-
-.category-placeholder-compact {
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.5rem; /* Reduced from 2rem */
-}
-
-.category-overlay-compact {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.category-card-compact:hover .category-overlay-compact {
-    opacity: 1;
-}
-
-.category-card-compact:hover .category-image-compact img {
-    transform: scale(1.05);
-}
-
-.category-overlay-compact i {
-    color: white;
-    font-size: 1.2rem;
-}
-
 .category-info-compact {
-    padding: 0.75rem; /* Reduced from 1rem */
-    text-align: center;
+    text-align: left;
 }
 
 .category-name-compact {
-    font-size: 0.875rem; /* Reduced from 1rem */
+    font-size: 1rem;
     font-weight: 600;
     margin-bottom: 0.25rem;
     color: var(--text-primary);
 }
 
 .category-count-compact {
-    font-size: 0.75rem; /* Reduced from 0.875rem */
+    font-size: 0.875rem;
     color: var(--text-secondary);
 }
 
@@ -857,7 +798,7 @@
     }
     
     .categories-grid-compact {
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
         gap: 0.5rem;
     }
     
@@ -920,7 +861,7 @@
     }
     
     .categories-grid-compact {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
     }
     
     /* Ultra small cards for mobile */
