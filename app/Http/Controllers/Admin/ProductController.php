@@ -88,7 +88,9 @@ class ProductController extends BaseAdminController
             'description' => 'required|string',
             'short_description' => 'nullable|string|max:500',
             'price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0|lt:price',
+            'discount_type' => 'nullable|string|in:percentage,fixed',
+            'discount_percentage' => 'nullable|numeric|min:0|max:100|required_if:discount_type,percentage',
+            'discount_price' => 'nullable|numeric|min:0|lt:price|required_if:discount_type,fixed',
             'tax_percentage' => 'required|numeric|min:0|max:100',
             'stock' => 'required|integer|min:0',
             'sku' => [
@@ -117,6 +119,9 @@ class ProductController extends BaseAdminController
         // Handle checkbox values
         $data['is_active'] = $request->input('is_active', 0) == '1';
         $data['is_featured'] = $request->input('is_featured', 0) == '1';
+        
+        // Handle discount calculation based on type
+        $this->processDiscountData($data, $request);
 
         // FIXED FEATURED IMAGE UPLOAD
         if ($request->hasFile('featured_image')) {
@@ -204,7 +209,9 @@ class ProductController extends BaseAdminController
             'description' => 'required|string',
             'short_description' => 'nullable|string|max:500',
             'price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0|lt:price',
+            'discount_type' => 'nullable|string|in:percentage,fixed',
+            'discount_percentage' => 'nullable|numeric|min:0|max:100|required_if:discount_type,percentage',
+            'discount_price' => 'nullable|numeric|min:0|lt:price|required_if:discount_type,fixed',
             'tax_percentage' => 'required|numeric|min:0|max:100',
             'stock' => 'required|integer|min:0',
             'sku' => [
@@ -633,5 +640,33 @@ class ProductController extends BaseAdminController
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Process discount data based on discount type
+     */
+    private function processDiscountData(&$data, Request $request)
+    {
+        $discountType = $request->input('discount_type');
+        $price = (float) $request->input('price', 0);
+        
+        // Reset discount_price initially
+        $data['discount_price'] = null;
+        
+        if ($discountType === 'percentage') {
+            $discountPercentage = (float) $request->input('discount_percentage', 0);
+            if ($discountPercentage > 0 && $price > 0) {
+                $discountAmount = ($price * $discountPercentage) / 100;
+                $data['discount_price'] = max(0, $price - $discountAmount);
+            }
+        } elseif ($discountType === 'fixed') {
+            $discountPrice = (float) $request->input('discount_price', 0);
+            if ($discountPrice > 0 && $discountPrice < $price) {
+                $data['discount_price'] = $discountPrice;
+            }
+        }
+        
+        // Remove temporary fields that shouldn't be saved to database
+        unset($data['discount_type'], $data['discount_percentage']);
     }
 }

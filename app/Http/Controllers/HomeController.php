@@ -63,17 +63,31 @@ class HomeController extends Controller
             ->limit(50)
             ->get();
 
-        // Fix category products count - use direct query instead of withCount
+        // Fix category products count - use relationship method for proper scoping
         $categories = Category::active()
             ->parent()
             ->orderBy('sort_order')
             ->limit(6)
             ->get()
             ->map(function ($category) {
-                // Count active products for this category
-                $category->products_count = Product::where('category_id', $category->id)
-                    ->active()
-                    ->count();
+                // Use the relationship method which will apply proper scopes
+                $productCount = $category->activeProducts()->count();
+                    
+                $category->products_count = $productCount;
+                
+                // Debug logging
+                if (config('app.debug')) {
+                    \Log::info('Category Product Count Debug', [
+                        'category_id' => $category->id,
+                        'category_name' => $category->name,
+                        'category_company_id' => $category->company_id,
+                        'products_count' => $productCount,
+                        'all_products_in_category' => $category->products()->count(),
+                        'active_products_via_relationship' => $category->activeProducts()->count(),
+                        'current_company_id' => \App\Models\Category::getCurrentCompanyId() ?? 'not_set'
+                    ]);
+                }
+                
                 return $category;
             });
 

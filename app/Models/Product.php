@@ -20,6 +20,9 @@ class Product extends Model
         'cost_price', 'barcode', 'code', 'low_stock_threshold', 'company_id', 'branch_id', 'tax_percentage'
     ];
 
+    // Add virtual attribute for discount percentage calculation
+    protected $appends = ['calculated_discount_percentage'];
+
     protected $casts = [
         'images' => 'array',
         'is_active' => 'boolean',
@@ -67,7 +70,8 @@ class Product extends Model
     }
 
     /**
-     * Get applicable offers for this product
+     * Get applicable offers for this product with priority system
+     * Priority: 1. Offers page offers, 2. Product onboarding discount
      */
     public function getApplicableOffers()
     {
@@ -81,7 +85,7 @@ class Product extends Model
                   ->where('category_id', $this->category_id);
         })->orWhere(function($query) {
             // General offers (percentage/fixed)
-            $query->whereIn('type', ['percentage', 'fixed'])
+            $query->whereIn('type', ['percentage', 'fixed', 'flash'])
                   ->whereNull('category_id')
                   ->whereNull('product_id');
         })->active()
@@ -91,47 +95,77 @@ class Product extends Model
     }
 
     /**
-     * Get the best applicable offer for this product
+     * Get the best applicable offer for this product with priority system
+     * Priority: 1. Offers page offers (highest discount), 2. Product onboarding discount
      */
     public function getBestOffer()
     {
-        $offers = $this->getApplicableOffers();
+        // Get all applicable offers from the offers page/menu
+        $offersPageOffers = $this->getApplicableOffers();
         
-        if ($offers->isEmpty()) {
-            return null;
-        }
-
         $bestOffer = null;
         $bestDiscount = 0;
+        $bestOfferSource = null;
 
-        foreach ($offers as $offer) {
+        // First priority: Check offers from the offers page/menu
+        foreach ($offersPageOffers as $offer) {
             $discount = $offer->calculateDiscount($this->price, $this, $this->category);
             if ($discount > $bestDiscount) {
                 $bestDiscount = $discount;
                 $bestOffer = $offer;
+                $bestOfferSource = 'offers_page';
             }
         }
 
-        return $bestOffer;
+        // Second priority: If no offers page offer found, check product onboarding discount
+        if (!$bestOffer && $this->discount_price && $this->discount_price < $this->price) {
+            $productDiscount = $this->price - $this->discount_price;
+            if ($productDiscount > 0) {
+                // Create a virtual offer object for product onboarding discount
+                $bestOffer = (object) [
+                    'id' => 'product_onboarding_' . $this->id,
+                    'name' => 'Product Discount',
+                    'type' => 'product_onboarding',
+                    'discount_type' => 'fixed', // Add this property
+                    'value' => $productDiscount,
+                    'source' => 'product_onboarding',
+                    'discount_amount' => $productDiscount,
+                    'discounted_price' => $this->discount_price,
+                    'is_virtual' => true,
+                    'start_date' => null,
+                    'end_date' => null,
+                    'is_active' => true,
+                    'minimum_amount' => 0
+                ];
+                $bestDiscount = $productDiscount;
+                $bestOfferSource = 'product_onboarding';
+            }
+        }
+
+        return $bestOffer ? (object) array_merge(
+            (array) $bestOffer,
+            [
+                'calculated_discount' => $bestDiscount,
+                'source' => $bestOfferSource,
+                'final_price' => $this->price - $bestDiscount
+            ]
+        ) : null;
     }
 
     /**
-     * Get the dynamic discount price based on offers
+     * Get the dynamic discount price based on priority system
+     * Priority: 1. Offers page offers, 2. Product onboarding discount
      */
     public function getDynamicDiscountPrice()
     {
-        // First check if manual discount_price is set
-        if ($this->discount_price && $this->discount_price > 0) {
-            return $this->discount_price;
-        }
-
-        // Check for applicable offers
+        // Get the best offer using our priority system
         $bestOffer = $this->getBestOffer();
+        
         if ($bestOffer) {
-            $discount = $bestOffer->calculateDiscount($this->price, $this, $this->category);
-            return max(0, $this->price - $discount);
+            return $bestOffer->final_price;
         }
 
+        // No discounts available
         return null;
     }
 
@@ -157,15 +191,58 @@ class Product extends Model
     }
 
     /**
-     * Check if product has any active offers
+     * Check if product has any active offers (either from offers page or product onboarding)
      */
     public function hasActiveOffers()
+    {
+        return $this->getBestOffer() !== null;
+    }
+
+    /**
+     * Check if product has active offers from the offers page/menu
+     */
+    public function hasActiveOffersPageOffers()
     {
         return $this->getApplicableOffers()->count() > 0;
     }
 
     /**
-     * Get offer details for display
+     * Check if product has onboarding discount
+     */
+    public function hasProductOnboardingDiscount()
+    {
+        return $this->discount_price && $this->discount_price < $this->price;
+    }
+
+    /**
+     * Get a safe offer property value with fallback
+     */
+    public function getOfferProperty($offer, $property, $default = null)
+    {
+        if (is_object($offer) && property_exists($offer, $property)) {
+            return $offer->$property;
+        }
+        
+        if (is_array($offer) && isset($offer[$property])) {
+            return $offer[$property];
+        }
+        
+        return $default;
+    }
+
+    /**
+     * Get the current active offer source
+     * Returns: 'offers_page', 'product_onboarding', or null
+     */
+    public function getActiveOfferSource()
+    {
+        $bestOffer = $this->getBestOffer();
+        return $bestOffer ? ($bestOffer->source ?? null) : null;
+    }
+
+    /**
+     * Get offer details for display with priority system
+     * Priority: 1. Offers page offers, 2. Product onboarding discount
      */
     public function getOfferDetails()
     {
@@ -174,16 +251,22 @@ class Product extends Model
             return null;
         }
 
-        $discount = $bestOffer->calculateDiscount($this->price, $this, $this->category);
-        $discountedPrice = max(0, $this->price - $discount);
+        $discountAmount = $bestOffer->calculated_discount;
+        $discountedPrice = $bestOffer->final_price;
+        $discountPercentage = round(($discountAmount / $this->price) * 100, 1);
 
         return [
             'offer' => $bestOffer,
+            'source' => $bestOffer->source ?? 'unknown',
             'original_price' => $this->price,
             'discounted_price' => $discountedPrice,
-            'discount_amount' => $discount,
-            'discount_percentage' => round(($discount / $this->price) * 100),
-            'savings' => $discount
+            'discount_amount' => $discountAmount,
+            'discount_percentage' => $discountPercentage,
+            'savings' => $discountAmount,
+            'is_offers_page' => ($bestOffer->source ?? '') === 'offers_page',
+            'is_product_onboarding' => ($bestOffer->source ?? '') === 'product_onboarding',
+            'offer_name' => $bestOffer->name ?? 'Discount',
+            'offer_type' => $bestOffer->type ?? 'unknown'
         ];
     }
 
@@ -231,6 +314,14 @@ class Product extends Model
     {
         if ($this->discount_price && $this->discount_price < $this->price) {
             return round((($this->price - $this->discount_price) / $this->price) * 100);
+        }
+        return 0;
+    }
+
+    public function getCalculatedDiscountPercentageAttribute()
+    {
+        if ($this->discount_price && $this->discount_price < $this->price) {
+            return round((($this->price - $this->discount_price) / $this->price) * 100, 2);
         }
         return 0;
     }

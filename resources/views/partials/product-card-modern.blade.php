@@ -1,10 +1,11 @@
 <!-- Modern Product Card -->
 @php
-    // Use dynamic offer data if available
-    $hasOffer = isset($product->has_offer) ? $product->has_offer : ($product->discount_price && $product->discount_price > 0);
-    $effectivePrice = isset($product->effective_price) ? $product->effective_price : ($product->discount_price ?: $product->price);
-    $discountPercentage = isset($product->discount_percentage) ? $product->discount_percentage : $product->discount_percentage ?? 0;
-    $offerDetails = isset($product->offer_details) ? $product->offer_details : null;
+    // Get offer details using the new priority system
+    $offerDetails = $product->getOfferDetails();
+    $hasOffer = $offerDetails !== null;
+    $effectivePrice = $hasOffer ? $offerDetails['discounted_price'] : $product->price;
+    $discountPercentage = $hasOffer ? $offerDetails['discount_percentage'] : 0;
+    $offerSource = $hasOffer ? $offerDetails['source'] : null;
 @endphp
 
 <div class="product-card {{ isset($offer) && $offer ? 'offer-card' : '' }} {{ !$product->isInStock() ? 'out-of-stock-card' : '' }}">
@@ -21,19 +22,24 @@
             <div class="product-badge stock-badge">
                 <span class="badge-out-of-stock">Out of Stock</span>
             </div>
-        @elseif($discountPercentage > 0)
+        @elseif($hasOffer && $discountPercentage > 0)
             <div class="product-badge">
-                <span class="badge-discount">{{ $discountPercentage }}% OFF</span>
+                <span class="badge-discount">{{ round($discountPercentage) }}% OFF</span>
             </div>
-        @endif
-        
-        {{-- Show special offer badge if it's from category/product offer --}}
-        @if($offerDetails && ($offerDetails['is_category_offer'] || $offerDetails['is_product_offer']))
-            <div class="product-badge-special">
-                <span class="badge-special-offer">
-                    <i class="fas fa-fire"></i> {{ $offerDetails['offer']->name }}
-                </span>
-            </div>
+            {{-- Show offer source indicator --}}
+            @if($offerSource === 'offers_page')
+                <div class="product-badge-special">
+                    <span class="badge-special-offer">
+                        <i class="fas fa-fire"></i> {{ $offerDetails['offer_name'] }}
+                    </span>
+                </div>
+            @elseif($offerSource === 'product_onboarding')
+                <div class="product-badge-product">
+                    <span class="badge-product-discount">
+                        <i class="fas fa-tag"></i> Product Discount
+                    </span>
+                </div>
+            @endif
         @endif
         
         @if(isset($featured) && $featured)
@@ -72,18 +78,24 @@
         </h3>
         <p class="product-description">{{ Str::limit($product->short_description ?? '', 60) }}</p>
         
-        {{-- Show offer details --}}
-        @if($offerDetails && $offerDetails['is_category_offer'])
+        {{-- Show offer details with priority information --}}
+        @if($hasOffer && $offerDetails)
             <div class="offer-info">
-                <i class="fas fa-fire text-danger"></i> 
-                <small class="text-success fw-bold">{{ $offerDetails['offer']->name }}</small>
-                <span class="badge bg-success ms-1">
-                    @if($offerDetails['offer']->discount_type === 'percentage')
-                        {{ $offerDetails['offer']->value }}% OFF
-                    @else
-                        ₹{{ number_format($offerDetails['offer']->value, 2) }} OFF
-                    @endif
-                </span>
+                @if($offerSource === 'offers_page')
+                    <i class="fas fa-fire text-danger"></i> 
+                    <small class="text-success fw-bold">{{ $offerDetails['offer_name'] }}</small>
+                    <span class="badge bg-success ms-1">
+                        {{ round($offerDetails['discount_percentage']) }}% OFF
+                    </span>
+                    <br><small class="text-muted">🎯 Special Offer</small>
+                @elseif($offerSource === 'product_onboarding')
+                    <i class="fas fa-tag text-info"></i> 
+                    <small class="text-info fw-bold">Product Discount</small>
+                    <span class="badge bg-info ms-1">
+                        {{ round($offerDetails['discount_percentage']) }}% OFF
+                    </span>
+                    <br><small class="text-muted">💰 Regular Discount</small>
+                @endif
             </div>
         @endif
         
@@ -92,13 +104,16 @@
                 @if($hasOffer)
                     <span class="current-price">₹{{ number_format($effectivePrice, 2) }}</span>
                     <span class="original-price">₹{{ number_format($product->price, 2) }}</span>
-                    @if($offerDetails)
-                        <div class="savings-info">
-                            <small class="text-success">
-                                <i class="fas fa-tags"></i> You save ₹{{ number_format($offerDetails['savings'], 2) }}
-                            </small>
-                        </div>
-                    @endif
+                    <div class="savings-info">
+                        <small class="text-success">
+                            <i class="fas fa-tags"></i> You save ₹{{ number_format($offerDetails['savings'], 2) }}
+                            @if($offerSource === 'offers_page')
+                                <span class="badge badge-sm bg-success ms-1">Special Offer</span>
+                            @elseif($offerSource === 'product_onboarding')
+                                <span class="badge badge-sm bg-info ms-1">Product Discount</span>
+                            @endif
+                        </small>
+                    </div>
                 @else
                     <span class="current-price">₹{{ number_format($product->price, 2) }}</span>
                 @endif

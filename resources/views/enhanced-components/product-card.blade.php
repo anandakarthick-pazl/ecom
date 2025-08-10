@@ -7,6 +7,15 @@
     'animationDelay' => 0
 ])
 
+@php
+    // Get offer details using the new priority system
+    $offerDetails = $product->getOfferDetails();
+    $hasOffer = $offerDetails !== null;
+    $effectivePrice = $hasOffer ? $offerDetails['discounted_price'] : $product->price;
+    $discountPercentage = $hasOffer ? $offerDetails['discount_percentage'] : 0;
+    $offerSource = $hasOffer ? $offerDetails['source'] : null;
+@endphp
+
 <div class="product-card-enhanced {{ $cardClass }} animate-fade-in animate-stagger-{{ min($animationDelay, 12) }}" 
      data-product-id="{{ $product->id }}">
      
@@ -23,8 +32,17 @@
         
         <div class="product-badges-enhanced">
             <div>
-                @if($product->discount_percentage > 0)
-                    <span class="badge badge-enhanced bg-danger">{{ $product->discount_percentage }}% OFF</span>
+                @if($hasOffer && $discountPercentage > 0)
+                    <span class="badge badge-enhanced bg-danger">{{ round($discountPercentage) }}% OFF</span>
+                    @if($offerSource === 'offers_page')
+                        <span class="badge badge-enhanced bg-success ms-1">
+                            <i class="fas fa-fire"></i> Special
+                        </span>
+                    @elseif($offerSource === 'product_onboarding')
+                        <span class="badge badge-enhanced bg-info ms-1">
+                            <i class="fas fa-tag"></i> Product
+                        </span>
+                    @endif
                 @endif
                 @if($product->is_featured)
                     <span class="badge badge-enhanced bg-warning text-dark ms-1">
@@ -64,11 +82,16 @@
         @endif
         
         <div class="price-section-enhanced">
-            @if($product->discount_price)
-                <span class="price-current-enhanced">₹{{ number_format($product->discount_price, 2) }}</span>
+            @if($hasOffer)
+                <span class="price-current-enhanced">₹{{ number_format($effectivePrice, 2) }}</span>
                 <span class="price-original-enhanced">₹{{ number_format($product->price, 2) }}</span>
                 <div class="savings-enhanced">
-                    <i class="fas fa-tag"></i> You Save: ₹{{ number_format($product->price - $product->discount_price, 2) }}
+                    <i class="fas fa-tag"></i> You Save: ₹{{ number_format($offerDetails['savings'], 2) }}
+                    @if($offerSource === 'offers_page')
+                        <small class="text-success">(Special Offer)</small>
+                    @elseif($offerSource === 'product_onboarding')
+                        <small class="text-info">(Product Discount)</small>
+                    @endif
                 </div>
             @else
                 <span class="price-current-enhanced">₹{{ number_format($product->price, 2) }}</span>

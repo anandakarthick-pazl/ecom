@@ -43,6 +43,27 @@ class Category extends Model
         return $this->hasMany(Product::class);
     }
 
+    public function activeProducts()
+    {
+        return $this->hasMany(Product::class)->where('is_active', true);
+    }
+
+    public function getActiveProductsCountAttribute()
+    {
+        return $this->activeProducts()->count();
+    }
+
+    public function getProductsCountAttribute()
+    {
+        // If products_count is already set (from controller), use it
+        if (isset($this->attributes['products_count'])) {
+            return $this->attributes['products_count'];
+        }
+        
+        // Otherwise calculate it
+        return $this->activeProducts()->count();
+    }
+
     public function offers()
     {
         return $this->hasMany(Offer::class);

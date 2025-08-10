@@ -1,0 +1,137 @@
+/* Offer Priority System CSS */
+
+/* Product Badge Styles for Different Offer Sources */
+.product-badge-special {
+    position: absolute;
+    top: 45px;
+    right: 8px;
+    z-index: 4;
+}
+
+.product-badge-product {
+    position: absolute;
+    top: 45px;
+    right: 8px;
+    z-index: 4;
+}
+
+.badge-special-offer {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    animation: pulse-glow 2s infinite;
+}
+
+.badge-product-discount {
+    background: linear-gradient(45deg, #17a2b8, #6f42c1);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Small badge styles for savings info */
+.badge-sm {
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    border-radius: 8px;
+}
+
+/* Pulse animation for special offers */
+@keyframes pulse-glow {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+}
+
+/* Offer info section styling */
+.offer-info {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-left: 4px solid #28a745;
+    padding: 8px 12px;
+    margin: 8px 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.9rem;
+}
+
+.offer-info.product-discount {
+    border-left-color: #17a2b8;
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+}
+
+/* Enhanced product card specific styles */
+.product-card-enhanced .badge-enhanced {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+    border-radius: 10px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.savings-enhanced small {
+    display: block;
+    margin-top: 2px;
+    font-weight: 500;
+}
+
+/* Priority indicator styles */
+.priority-indicator {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    z-index: 5;
+}
+
+.priority-indicator.offers-page {
+    background: #28a745;
+    box-shadow: 0 0 6px rgba(40, 167, 69, 0.6);
+}
+
+.priority-indicator.product-onboarding {
+    background: #17a2b8;
+    box-shadow: 0 0 6px rgba(23, 162, 184, 0.6);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .badge-special-offer,
+    .badge-product-discount {
+        font-size: 0.6rem;
+        padding: 3px 6px;
+    }
+    
+    .offer-info {
+        padding: 6px 8px;
+        font-size: 0.8rem;
+    }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+    .offer-info {
+        background: linear-gradient(135deg, #2d3748, #4a5568);
+        color: #e2e8f0;
+    }
+    
+    .offer-info.product-discount {
+        background: linear-gradient(135deg, #1a365d, #2c5282);
+    }
+}
