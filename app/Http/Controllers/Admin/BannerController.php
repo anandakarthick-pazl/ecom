@@ -13,6 +13,7 @@ use App\Models\User;
 class BannerController extends Controller
 {
     use DynamicStorageWithLogging;
+    
     public function index()
     {
         $banners = Banner::orderBy('position')
@@ -54,7 +55,7 @@ class BannerController extends Controller
         
         // Handle checkbox value
         $data['is_active'] = $request->input('is_active', 0) == '1';
-        // Store file in custom location for specific URL format
+        // Store file using Laravel Storage - FIXED
         $data['image'] = $this->storeBannerFile($request->file('image'));
 
         $banner = Banner::create($data);
@@ -64,34 +65,30 @@ class BannerController extends Controller
     }
     
     /**
-     * Store banner file in custom location
-     * Path: public/storage/public/banner/banners/
+     * Store banner file using Laravel Storage - FIXED VERSION
+     * Path: storage/app/public/banner/banners/
      */
     private function storeBannerFile($file)
     {
         $filename = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
-        $destinationPath = public_path('storage/public/banner/banners/');
         
-        // Create directory if it doesn't exist
-        if (!file_exists($destinationPath)) {
-            mkdir($destinationPath, 0755, true);
-        }
+        // Store using Laravel's Storage facade in public disk
+        // This will store in storage/app/public/banner/banners/
+        $path = $file->storeAs('banner/banners', $filename, 'public');
         
-        // Move the file to the destination
-        $file->move($destinationPath, $filename);
-        
+        // Return just the filename for database storage
         return $filename;
     }
     
     /**
-     * Delete banner file from custom location
+     * Delete banner file using Laravel Storage - FIXED VERSION
      */
     private function deleteBannerFile($filename)
     {
         if ($filename) {
-            $filePath = public_path('storage/public/banner/banners/' . $filename);
-            if (file_exists($filePath)) {
-                unlink($filePath);
+            $filePath = 'banner/banners/' . $filename;
+            if (Storage::disk('public')->exists($filePath)) {
+                Storage::disk('public')->delete($filePath);
             }
         }
     }
@@ -269,15 +266,17 @@ class BannerController extends Controller
     }
     
     /**
-     * Delete file from storage
+     * Delete file from storage - UPDATED VERSION
      */
     private function deleteFileFromStorage($filePath)
     {
         // Handle different storage types
-        if (Storage::disk('public')->exists($filePath)) {
-            Storage::disk('public')->delete($filePath);
+        $cleanPath = 'banner/banners/' . basename($filePath);
+        
+        if (Storage::disk('public')->exists($cleanPath)) {
+            Storage::disk('public')->delete($cleanPath);
         } else {
-            // Handle custom banner storage location
+            // Handle legacy custom banner storage location
             $fullPath = public_path('storage/public/banner/banners/' . basename($filePath));
             if (file_exists($fullPath)) {
                 unlink($fullPath);

@@ -35,7 +35,7 @@
                     <tr>
                         <td>
                             <div class="d-flex align-items-center">
-                                <img src="{{ Storage::url($banner->image) }}" class="me-2 rounded" style="width: 60px; height: 40px; object-fit: cover;" alt="{{ $banner->title }}">
+                                <img src="{{ $banner->image_url }}" class="me-2 rounded" style="width: 60px; height: 40px; object-fit: cover;" alt="{{ $banner->title }}">
                                 <div>
                                     <strong>{{ $banner->title }}</strong>
                                     @if($banner->link_url)

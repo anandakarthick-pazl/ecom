@@ -32,7 +32,7 @@
                     <div class="mb-3">
                         <label class="form-label">Current Banner Image</label>
                         <div class="border rounded p-2">
-                            <img src="{{ asset('storage/' . $banner->image) }}" 
+                            <img src="{{ $banner->image_url }}" 
                                  class="img-fluid rounded" 
                                  style="max-height: 200px;">
                             <div class="mt-2">

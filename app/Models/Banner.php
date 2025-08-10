@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Traits\BelongsToTenantEnhanced;
 use App\Traits\DynamicStorageUrl;
+use Illuminate\Support\Facades\Storage;
 
 class Banner extends Model
 {
@@ -72,45 +73,68 @@ class Banner extends Model
     }
 
     /**
-     * Get image URL with specific format - FIXED VERSION
-     * Format: http://domain/storage/public/banner/banners/filename.jpeg
+     * Get image URL using Laravel Storage - FIXED VERSION
+     * This method handles both new (correct) and legacy (incorrect) file locations
      */
     public function getImageUrlAttribute()
     {
         if (!$this->image) {
-            return $this->getFallbackImageUrl('banners');
+            return $this->getFallbackImageUrl();
         }
         
-        // Extract just the filename from the stored path
         $filename = basename($this->image);
+        $storagePath = 'banner/banners/' . $filename;
         
-        // Check if file exists in the expected location
-        $publicPath = public_path('storage/public/banner/banners/' . $filename);
+        // First, check if file exists in the correct Laravel storage location
+        if (Storage::disk('public')->exists($storagePath)) {
+            return Storage::disk('public')->url($storagePath);
+        }
         
-        if (file_exists($publicPath)) {
-            // File exists in public/storage/public/banner/banners/
+        // Fallback: check legacy location (for existing files)
+        $legacyPath = public_path('storage/public/banner/banners/' . $filename);
+        if (file_exists($legacyPath)) {
             return asset('storage/public/banner/banners/' . $filename);
         }
         
-        // Fallback: try other possible locations
-        $alternatePaths = [
+        // Additional fallback locations
+        $fallbackPaths = [
             'storage/banners/' . $filename,
             'storage/public/banners/' . $filename,
             'storage/banner/' . $filename
         ];
         
-        foreach ($alternatePaths as $path) {
+        foreach ($fallbackPaths as $path) {
             if (file_exists(public_path($path))) {
                 return asset($path);
             }
         }
         
-        // If file doesn't exist anywhere, return the original path for debugging
-        return asset('storage/public/banner/banners/' . $filename);
+        // If no file found, return placeholder
+        return $this->getFallbackImageUrl();
     }
     
     /**
-     * Clean the image path to remove redundant folders
+     * Get fallback image URL for missing banners
+     */
+    private function getFallbackImageUrl()
+    {
+        // Check if placeholder exists
+        $placeholderPath = 'images/fallback/banner-placeholder.png';
+        if (file_exists(public_path($placeholderPath))) {
+            return asset($placeholderPath);
+        }
+        
+        // Return a simple placeholder if no image exists
+        return 'data:image/svg+xml;base64,' . base64_encode(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200">
+                <rect width="300" height="200" fill="#f8f9fa"/>
+                <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="14" fill="#6c757d" text-anchor="middle" dy=".3em">Banner Image</text>
+            </svg>'
+        );
+    }
+    
+    /**
+     * Clean the image path to remove redundant folders - ENHANCED
      */
     public function cleanImagePath($imagePath)
     {
@@ -118,43 +142,81 @@ class Banner extends Model
             return null;
         }
         
-        // Remove multiple path variations that might be wrong
         $cleanPath = $imagePath;
         
-        // Remove 'public/' prefix if present
-        $cleanPath = str_replace('public/', '', $cleanPath);
-        
-        // Remove duplicate 'banners/' if present (like 'banners/banners/')
-        $cleanPath = preg_replace('/banners\/banners\//', 'banners/', $cleanPath);
-        
-        // Remove 'banner/' prefix if it exists (should be 'banners/')
-        $cleanPath = str_replace('banner/banners/', 'banners/', $cleanPath);
-        
-        // Ensure it starts with 'banners/' if it doesn't already
-        if (strpos($cleanPath, 'banners/') !== 0) {
-            $filename = basename($cleanPath);
-            $cleanPath = 'banners/' . $filename;
+        // Extract just the filename if full path is provided
+        if (strpos($cleanPath, '/') !== false || strpos($cleanPath, '\\') !== false) {
+            $cleanPath = basename($cleanPath);
         }
         
         return $cleanPath;
     }
     
     /**
-     * Check if file exists in storage
+     * Check if file exists in any storage location
      */
-    private function fileExistsInStorage($cleanPath)
+    public function fileExists()
     {
-        if (!$cleanPath) {
+        if (!$this->image) {
             return false;
         }
         
-        try {
-            // Check if file exists in the public storage disk
-            return \Storage::disk('public')->exists($cleanPath);
-        } catch (\Exception $e) {
-            // If storage check fails, check physical file
-            $fullPath = storage_path('app/public/' . $cleanPath);
-            return file_exists($fullPath);
+        $filename = basename($this->image);
+        $storagePath = 'banner/banners/' . $filename;
+        
+        // Check Laravel storage
+        if (Storage::disk('public')->exists($storagePath)) {
+            return true;
         }
+        
+        // Check legacy locations
+        $legacyPaths = [
+            public_path('storage/public/banner/banners/' . $filename),
+            public_path('storage/banners/' . $filename),
+            public_path('storage/public/banners/' . $filename),
+        ];
+        
+        foreach ($legacyPaths as $path) {
+            if (file_exists($path)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Get file size in human readable format
+     */
+    public function getFileSizeAttribute()
+    {
+        if (!$this->fileExists()) {
+            return 'File not found';
+        }
+        
+        $filename = basename($this->image);
+        $storagePath = 'banner/banners/' . $filename;
+        
+        if (Storage::disk('public')->exists($storagePath)) {
+            $bytes = Storage::disk('public')->size($storagePath);
+        } else {
+            // Check legacy locations
+            $legacyPath = public_path('storage/public/banner/banners/' . $filename);
+            if (file_exists($legacyPath)) {
+                $bytes = filesize($legacyPath);
+            } else {
+                return 'Unknown';
+            }
+        }
+        
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $unitIndex = 0;
+        
+        while ($bytes >= 1024 && $unitIndex < count($units) - 1) {
+            $bytes /= 1024;
+            $unitIndex++;
+        }
+        
+        return round($bytes, 2) . ' ' . $units[$unitIndex];
     }
 }

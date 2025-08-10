@@ -22,7 +22,7 @@
                 <h4>{{ $banner->title }}</h4>
                 
                 <div class="mb-4">
-                    <img src="{{ Storage::url($banner->image) }}" class="img-fluid rounded" alt="{{ $banner->title }}" style="max-height: 300px;">
+                    <img src="{{ $banner->image_url }}" class="img-fluid rounded" alt="{{ $banner->title }}" style="max-height: 300px;">
                 </div>
                 
                 <div class="row mb-3">
