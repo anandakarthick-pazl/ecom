@@ -868,6 +868,6 @@
     @stack('scripts')
     
     <!-- Flash Offer Popup -->
-    @include('components.flash-offer-popup', ['flashOffer' => $activeFlashOffer ?? null])
+    @include('components.flash-offer-popup', ['flashOffer' => $flashOffer ?? null])
 </body>
 </html>

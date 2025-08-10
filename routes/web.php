@@ -112,6 +112,7 @@ Route::middleware(['tenant'])->group(function () {
     Route::get('/shop', [HomeController::class, 'index'])->name('shop');
     Route::get('/products', [HomeController::class, 'products'])->name('products');
     Route::get('/offer-products', [HomeController::class, 'offerProducts'])->name('offer.products');
+    Route::get('/flash-offers', [HomeController::class, 'flashOffers'])->name('flash.offers');
     Route::get('/category/{category:slug}', [HomeController::class, 'category'])->name('category');
     Route::get('/product/{product:slug}', [HomeController::class, 'product'])->name('product');
     Route::get('/search', [HomeController::class, 'search'])->name('search');

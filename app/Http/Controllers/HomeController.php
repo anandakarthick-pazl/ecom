@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Banner;
 use App\Models\Order;
 use App\Models\AppSetting;
+use App\Models\Offer;
 use Illuminate\Http\Request;
 use App\Traits\HasPagination;
 use App\Services\OfferService;
@@ -104,6 +105,12 @@ class HomeController extends Controller
             $products = $this->applyFrontendPagination($query, $request, '50');
         }
 
+        // Get active flash offers for popup display
+        $flashOffer = Offer::activeFlashOffers()
+            ->where('show_popup', true)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
         return view('home-enhanced', compact(
             'banners',
             'featuredProducts',
@@ -111,7 +118,8 @@ class HomeController extends Controller
             'products',
             'activeMenu',
             'frontendPaginationSettings',
-            'frontendPaginationControls'
+            'frontendPaginationControls',
+            'flashOffer'
         ));
     }
 
@@ -470,10 +478,108 @@ class HomeController extends Controller
     }
     
     /**
-     * Minimum order test page
+     * Flash offers page
      */
-    public function minimumOrderTest()
+    public function flashOffers(Request $request)
     {
-        return view('minimum-order-test');
+        // Get all active flash offers
+        $flashOffers = Offer::activeFlashOffers()
+            ->with(['category', 'product'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Get products from flash offer categories and specific products
+        $query = Product::active()
+            ->with('category')
+            ->where(function($q) use ($flashOffers) {
+                // Products that have flash offers directly
+                $flashOfferProductIds = $flashOffers->where('type', 'product')
+                    ->pluck('product_id')
+                    ->filter()
+                    ->toArray();
+                
+                if (!empty($flashOfferProductIds)) {
+                    $q->whereIn('id', $flashOfferProductIds);
+                }
+                
+                // Products from categories with flash offers
+                $flashOfferCategoryIds = $flashOffers->where('type', 'category')
+                    ->pluck('category_id')
+                    ->filter()
+                    ->toArray();
+                
+                if (!empty($flashOfferCategoryIds)) {
+                    $q->orWhereIn('category_id', $flashOfferCategoryIds);
+                }
+            });
+
+        // Order by stock status (in-stock first) then by sort order
+        $query->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END')
+              ->orderBy('sort_order');
+
+        // Apply frontend pagination using the trait
+        $products = $this->applyFrontendPagination($query, $request, '50');
+        
+        // Apply offers to products using the OfferService
+        if (method_exists($products, 'getCollection')) {
+            // For paginated results
+            $productsCollection = $products->getCollection();
+            $productsWithOffers = $this->offerService->applyOffersToProducts($productsCollection);
+            $products->setCollection($productsWithOffers);
+        } else {
+            // For regular collection
+            $products = $this->offerService->applyOffersToProducts($products);
+        }
+
+        // Get frontend pagination settings and controls
+        $frontendPaginationSettings = $this->getFrontendPaginationSettings($request, '50');
+        $frontendPaginationControls = $this->getPaginationControlsData($request, 'frontend');
+
+        if ($request->ajax()) {
+            $paginationHtml = '';
+            if ($frontendPaginationSettings['enabled'] && method_exists($products, 'appends')) {
+                $paginationHtml = $products->appends($request->query())->links()->render();
+            }
+
+            $productsHtml = '';
+            $productsCount = method_exists($products, 'count') ? $products->count() : count($products);
+
+            if ($productsCount > 0) {
+                $productsHtml = '<div class="products-grid-compact flash-offers">';
+                foreach ($products as $product) {
+                    $productsHtml .= view('partials.product-card-modern', ['product' => $product, 'flash' => true])->render();
+                }
+                $productsHtml .= '</div>';
+
+                if ($frontendPaginationSettings['enabled'] && method_exists($products, 'appends')) {
+                    $productsHtml .= '<div class="pagination-container" id="pagination-container">' . $paginationHtml . '</div>';
+                }
+            } else {
+                $productsHtml = view('partials.empty-state', [
+                    'icon' => 'bolt',
+                    'title' => 'No Flash Offers Available',
+                    'message' => 'Stay tuned for lightning-fast deals and limited-time offers.',
+                    'action' => 'Browse All Products',
+                    'actionUrl' => route('products')
+                ])->render();
+            }
+
+            $totalCount = $frontendPaginationSettings['enabled'] && method_exists($products, 'total')
+                ? $products->total()
+                : $productsCount;
+
+            return response()->json([
+                'html' => $productsHtml,
+                'total' => $totalCount,
+                'pagination' => $paginationHtml
+            ]);
+        }
+
+        return view('flash-offers', compact(
+            'products',
+            'flashOffers',
+            'frontendPaginationSettings',
+            'frontendPaginationControls'
+        ));
     }
 }

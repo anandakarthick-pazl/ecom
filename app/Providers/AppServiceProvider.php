@@ -40,6 +40,9 @@ class AppServiceProvider extends ServiceProvider
         // Register observers
         Company::observe(CompanyObserver::class);
         
+        // Register Flash Offer view composer for layout
+        View::composer('layouts.app', \App\Http\View\Composers\FlashOfferComposer::class);
+        
         // Share categories with all views for navigation
         View::composer('*', function ($view) {
             try {
