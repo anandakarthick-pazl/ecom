@@ -40,8 +40,24 @@ class AppServiceProvider extends ServiceProvider
         // Register observers
         Company::observe(CompanyObserver::class);
         
-        // Register Flash Offer view composer for layout
-        View::composer('layouts.app', \App\Http\View\Composers\FlashOfferComposer::class);
+        // Register Flash Offer view composer for layout (home page only)
+        View::composer(['home-enhanced', 'layouts.app'], function ($view) {
+            // Only show flash offers on home page
+            if (request()->routeIs('shop') || request()->routeIs('home')) {
+                try {
+                    $flashOffer = \App\Models\Offer::activeFlashOffers()
+                        ->where('show_popup', true)
+                        ->orderBy('created_at', 'desc')
+                        ->first();
+                    
+                    $view->with('flashOffer', $flashOffer);
+                } catch (\Exception $e) {
+                    $view->with('flashOffer', null);
+                }
+            } else {
+                $view->with('flashOffer', null);
+            }
+        });
         
         // Share categories with all views for navigation
         View::composer('*', function ($view) {

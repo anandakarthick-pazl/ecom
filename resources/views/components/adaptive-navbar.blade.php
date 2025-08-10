@@ -107,14 +107,6 @@
                 </li>
                 
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('flash.offers') ? 'active' : '' }}" 
-                       href="{{ route('flash.offers') }}">
-                        <i class="fas fa-bolt me-1"></i>
-                        <span class="nav-text">⚡ Flash Offers</span>
-                    </a>
-                </li>
-                
-                <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('track.order') ? 'active' : '' }}" 
                        href="{{ route('track.order') }}">
                         <i class="fas fa-search me-1"></i>

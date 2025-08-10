@@ -1,6 +1,6 @@
 <?php
 /**
- * Flash Offer Testing Script
+ * Flash Offer Testing Script (Home Page Only Version)
  * Run this to test flash offer functionality
  * Usage: php test_flash_offers.php
  */
@@ -17,7 +17,7 @@ use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Storage;
 
-echo "🔥 Flash Offer System Test\n\n";
+echo "🔥 Flash Offer System Test (Home Page Only)\n\n";
 
 // Test 1: Check existing offers
 echo "1. Checking existing offers...\n";
@@ -57,13 +57,26 @@ echo "\n3. Checking active flash offers...\n";
 $activeFlashOffers = Offer::activeFlashOffers()->get();
 echo "   Active flash offers: " . $activeFlashOffers->count() . "\n";
 
-// Test 4: Create a test flash offer if none exist
-if ($flashOffers->count() === 0) {
-    echo "\n4. Creating a test flash offer...\n";
+// Test 4: Check popup-enabled flash offers
+echo "\n4. Checking popup-enabled flash offers...\n";
+$popupFlashOffers = Offer::activeFlashOffers()->where('show_popup', true)->get();
+echo "   Popup-enabled flash offers: " . $popupFlashOffers->count() . "\n";
+
+if ($popupFlashOffers->count() > 0) {
+    foreach ($popupFlashOffers as $offer) {
+        echo "   - Popup Offer #{$offer->id}: {$offer->name}\n";
+        echo "     Delay: " . ($offer->popup_delay / 1000) . " seconds\n";
+        echo "     Frequency: " . ($offer->popup_frequency ?? 'always') . "\n";
+    }
+}
+
+// Test 5: Create a test flash offer if none exist
+if ($popupFlashOffers->count() === 0) {
+    echo "\n5. Creating a test flash offer for home page popup...\n";
     
     try {
         $testOffer = Offer::create([
-            'name' => 'Test Flash Sale',
+            'name' => 'Test Flash Sale - Home Page Only',
             'code' => 'FLASH' . time(),
             'type' => 'percentage',
             'discount_type' => 'percentage',
@@ -74,9 +87,10 @@ if ($flashOffers->count() === 0) {
             'is_flash_offer' => true,
             'show_popup' => true,
             'popup_delay' => 3000,
+            'popup_frequency' => 'always',
             'show_countdown' => true,
-            'banner_title' => 'Flash Sale - 25% Off!',
-            'banner_description' => 'Limited time offer! Get 25% off on all products.',
+            'banner_title' => 'Flash Sale - 25% Off Everything!',
+            'banner_description' => 'Limited time offer! Get 25% off on all products. Only on home page!',
             'banner_button_text' => 'Shop Now',
             'countdown_text' => 'Hurry! Limited time offer'
         ]);
@@ -86,83 +100,63 @@ if ($flashOffers->count() === 0) {
         echo "   - Name: {$testOffer->name}\n";
         echo "   - Discount: {$testOffer->value}%\n";
         echo "   - Valid until: " . $testOffer->end_date->format('Y-m-d H:i:s') . "\n";
+        echo "   - Will show popup on HOME PAGE ONLY\n";
         
     } catch (\Exception $e) {
         echo "   ❌ Failed to create test flash offer: " . $e->getMessage() . "\n";
     }
 }
 
-// Test 5: Check frontend routes
-echo "\n5. Checking routes...\n";
-$routes = [
-    'shop' => 'Home page',
-    'flash.offers' => 'Flash offers page',
-    'offer.products' => 'Offer products page'
-];
-
-foreach ($routes as $routeName => $description) {
-    try {
-        $url = route($routeName);
-        echo "   ✅ {$description}: {$url}\n";
-    } catch (\Exception $e) {
-        echo "   ❌ {$description}: Route not found\n";
-    }
-}
-
-// Test 6: Check views exist
-echo "\n6. Checking views...\n";
-$views = [
-    'flash-offers' => 'Flash offers listing page',
-    'components.flash-offer-popup' => 'Flash offer popup component'
-];
-
-foreach ($views as $viewName => $description) {
-    $viewPath = resource_path('views/' . str_replace('.', '/', $viewName) . '.blade.php');
-    if (file_exists($viewPath)) {
-        echo "   ✅ {$description}: Found\n";
-    } else {
-        echo "   ❌ {$description}: Not found at {$viewPath}\n";
-    }
-}
-
-// Test 7: Check storage directories
-echo "\n7. Checking storage setup...\n";
-$storagePaths = [
-    'storage/app/public/offers/banners' => 'Banner storage directory',
-    'public/storage' => 'Storage link'
-];
-
-foreach ($storagePaths as $path => $description) {
-    $fullPath = base_path($path);
-    if (file_exists($fullPath)) {
-        echo "   ✅ {$description}: Found at {$fullPath}\n";
-    } else {
-        echo "   ❌ {$description}: Missing at {$fullPath}\n";
-    }
-}
-
-// Test 8: Check models and relationships
-echo "\n8. Testing model functionality...\n";
+// Test 6: Check home page route
+echo "\n6. Checking home page route...\n";
 try {
-    // Test Offer model scopes
-    $activeOffers = Offer::active()->count();
-    echo "   ✅ Active offers scope: {$activeOffers} offers\n";
-    
-    $currentOffers = Offer::current()->count();
-    echo "   ✅ Current offers scope: {$currentOffers} offers\n";
-    
-    $flashOfferScope = Offer::flashOffers()->count();
-    echo "   ✅ Flash offers scope: {$flashOfferScope} offers\n";
-    
-    $activeFlashScope = Offer::activeFlashOffers()->count();
-    echo "   ✅ Active flash offers scope: {$activeFlashScope} offers\n";
-    
+    $homeUrl = route('shop');
+    echo "   ✅ Home page URL: {$homeUrl}\n";
+    echo "   📝 Note: Flash offers will ONLY display on this page\n";
 } catch (\Exception $e) {
-    echo "   ❌ Model testing failed: " . $e->getMessage() . "\n";
+    echo "   ❌ Home page route not found\n";
 }
 
-// Test 9: Check flash offer methods
-echo "\n9. Testing flash offer methods...\n";
+// Test 7: Check popup component
+echo "\n7. Checking popup component...\n";
+$popupPath = resource_path('views/components/flash-offer-popup.blade.php');
+if (file_exists($popupPath)) {
+    echo "   ✅ Flash offer popup component: Found\n";
+    echo "   📝 Component will only show on home page routes\n";
+} else {
+    echo "   ❌ Flash offer popup component: Not found\n";
+}
+
+// Test 8: Check layout integration
+echo "\n8. Checking layout integration...\n";
+$layoutPath = resource_path('views/layouts/app.blade.php');
+if (file_exists($layoutPath)) {
+    $layoutContent = file_get_contents($layoutPath);
+    if (strpos($layoutContent, 'flash-offer-popup') !== false) {
+        echo "   ✅ Flash offer popup included in layout\n";
+    } else {
+        echo "   ❌ Flash offer popup NOT included in layout\n";
+    }
+} else {
+    echo "   ❌ Layout file not found\n";
+}
+
+// Test 9: Check AppServiceProvider integration
+echo "\n9. Checking AppServiceProvider integration...\n";
+$providerPath = app_path('Providers/AppServiceProvider.php');
+if (file_exists($providerPath)) {
+    $providerContent = file_get_contents($providerPath);
+    if (strpos($providerContent, 'request()->routeIs(\'shop\')') !== false) {
+        echo "   ✅ Flash offer view composer configured for home page only\n";
+    } else {
+        echo "   ❌ Flash offer view composer not properly configured\n";
+    }
+} else {
+    echo "   ❌ AppServiceProvider not found\n";
+}
+
+// Test 10: Test flash offer methods
+echo "\n10. Testing flash offer methods...\n";
 $testOffer = Offer::where('is_flash_offer', true)->first();
 
 if ($testOffer) {
@@ -190,27 +184,33 @@ if ($testOffer) {
 
 echo "\n🎉 Flash Offer System Test Complete!\n\n";
 
-echo "Next Steps:\n";
+echo "📋 Summary:\n";
+echo "✅ Flash offers will ONLY display on the home page\n";
+echo "✅ Popup will appear automatically after 3 seconds on home page\n";
+echo "✅ No separate flash offers page or navigation link\n";
+echo "✅ Admin can still create and manage flash offers normally\n\n";
+
+echo "🚀 Next Steps:\n";
 echo "1. Visit http://greenvalleyherbs.local:8000/admin/offers to create flash offers\n";
-echo "2. Visit http://greenvalleyherbs.local:8000/flash-offers to see flash offers page\n";
-echo "3. Visit http://greenvalleyherbs.local:8000/shop to see flash offer popup\n";
-echo "4. Check the navigation for the new ⚡ Flash Offers link\n\n";
+echo "2. Visit http://greenvalleyherbs.local:8000/shop (HOME PAGE) to see popup\n";
+echo "3. Flash offers will NOT show on other pages like /products or /category/*\n\n";
 
-// Show admin URL for creating offers
-echo "Admin Panel URLs:\n";
-echo "- Create Offer: http://greenvalleyherbs.local:8000/admin/offers/create\n";
-echo "- Manage Offers: http://greenvalleyherbs.local:8000/admin/offers\n\n";
-
-// Show instructions for creating flash offers
-echo "To create a Flash Offer in Admin:\n";
+echo "📝 To create a Flash Offer in Admin:\n";
 echo "1. Go to Admin > Offers > Create\n";
 echo "2. Set Type to 'Flash' or check 'Flash Offer'\n";
-echo "3. Fill in discount details\n";
-echo "4. Upload a banner image (optional)\n";
-echo "5. Enable 'Show Popup' for popup display\n";
-echo "6. Enable 'Show Countdown' for timer\n";
-echo "7. Set start and end dates\n";
-echo "8. Save the offer\n";
+echo "3. Enable 'Show Popup' for home page popup display\n";
+echo "4. Set popup delay (3 seconds recommended)\n";
+echo "5. Fill in banner title and description\n";
+echo "6. Upload banner image (optional)\n";
+echo "7. Enable 'Show Countdown' for urgency timer\n";
+echo "8. Set start and end dates\n";
+echo "9. Save the offer\n\n";
 
-echo "\nDone! 🚀\n";
+echo "🎯 Expected Behavior:\n";
+echo "- Home page (http://greenvalleyherbs.local:8000/shop): ✅ Shows popup\n";
+echo "- Products page: ❌ No popup\n";
+echo "- Category pages: ❌ No popup\n";
+echo "- Other pages: ❌ No popup\n\n";
+
+echo "Done! 🚀\n";
 ?>

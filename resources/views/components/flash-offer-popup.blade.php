@@ -1,4 +1,4 @@
-@if($flashOffer && $flashOffer->isFlashOfferActive() && $flashOffer->show_popup)
+@if($flashOffer && $flashOffer->isFlashOfferActive() && $flashOffer->show_popup && (request()->routeIs('shop') || request()->routeIs('home')))
 @php
     $timeRemaining = $flashOffer->getTimeRemaining();
 @endphp
@@ -341,7 +341,15 @@
 <!-- Flash Offer JavaScript -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Flash Offer: DOM loaded, checking for active offer...');
+    // Only initialize flash offer popup on home page
+    const isHomePage = {{ (request()->routeIs('shop') || request()->routeIs('home')) ? 'true' : 'false' }};
+    
+    if (!isHomePage) {
+        console.log('Flash Offer: Not on home page, skipping popup initialization');
+        return;
+    }
+    
+    console.log('Flash Offer: DOM loaded, checking for active offer on home page...');
     
     // Debug: Check if we have a flash offer
     const flashOfferId = '{{ $flashOffer->id }}';
@@ -351,6 +359,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Flash Offer ID:', flashOfferId);
     console.log('Popup Delay:', popupDelay + 'ms');
     console.log('Popup Frequency:', popupFrequency);
+    console.log('Current Route:', '{{ request()->route()->getName() }}');
     
     // Check if we should show the popup based on frequency setting
     let shouldShowPopup = true;
