@@ -131,6 +131,49 @@
                 </button>
             </form>
             
+            {{-- Notification Icon (Admin only) --}}
+            @auth
+                @if(auth()->user()->is_admin)
+                    <div class="notification-wrapper me-3" id="notification-wrapper">
+                        <button class="btn btn-outline-primary position-relative notification-btn" 
+                                id="notification-btn" 
+                                type="button" 
+                                data-bs-toggle="dropdown" 
+                                aria-expanded="false"
+                                title="Notifications">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-count d-none" id="notification-count">0</span>
+                        </button>
+                        
+                        <div class="dropdown-menu dropdown-menu-end notification-dropdown" 
+                             id="notification-dropdown"
+                             style="width: 350px; max-height: 400px; overflow-y: auto;">
+                            <div class="dropdown-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Notifications</h6>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary me-1" 
+                                            id="mark-all-read-btn" 
+                                            title="Mark all as read">
+                                        <i class="fas fa-check-double"></i>
+                                    </button>
+                                    <a href="{{ route('admin.notifications.index') }}" 
+                                       class="btn btn-sm btn-outline-secondary" 
+                                       title="View all">
+                                        <i class="fas fa-list"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <div id="notification-list">
+                                <div class="dropdown-item-text text-center py-3">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            @endauth
+            
             {{-- Cart Button --}}
             <a href="{{ route('cart.index') }}" 
                class="btn cart-btn position-relative" 
@@ -269,6 +312,173 @@ body {
     .navbar-modern.extra-compact .navbar-text {
         max-width: 120px !important;
     }
+    
+    .notification-dropdown {
+        width: 300px !important;
+        margin-left: -250px;
+    }
+    
+    .notification-wrapper {
+        order: -1;
+        margin-right: 0.5rem !important;
+    }
+}
+
+/* Notification Styles */
+.notification-btn {
+    border-radius: var(--radius-lg) !important;
+    border: 2px solid var(--primary-color) !important;
+    color: var(--primary-color) !important;
+    background: transparent !important;
+    transition: all 0.3s ease !important;
+    position: relative;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notification-btn:hover {
+    background: var(--primary-color) !important;
+    color: white !important;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.notification-btn:focus {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2) !important;
+}
+
+.notification-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ef4444 !important;
+    color: white !important;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    animation: pulse 2s infinite;
+}
+
+.notification-count.d-none {
+    display: none !important;
+}
+
+.notification-dropdown {
+    border: none !important;
+    box-shadow: var(--shadow-xl) !important;
+    border-radius: var(--radius-lg) !important;
+    padding: 0 !important;
+    margin-top: 0.5rem !important;
+}
+
+.notification-dropdown .dropdown-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 1rem;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border: none;
+}
+
+.notification-dropdown .dropdown-header h6 {
+    color: white;
+    font-weight: 600;
+}
+
+.notification-dropdown .dropdown-header .btn {
+    color: white;
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.notification-dropdown .dropdown-header .btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+}
+
+.notification-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.notification-item:hover {
+    background: rgba(37, 99, 235, 0.05);
+    color: inherit;
+    text-decoration: none;
+}
+
+.notification-item.unread {
+    background: rgba(37, 99, 235, 0.1);
+    border-left: 4px solid var(--primary-color);
+}
+
+.notification-item-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.notification-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-item-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.notification-item-message {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    line-height: 1.3;
+    margin-bottom: 0.25rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.notification-item-time {
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.notification-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.notification-empty i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
 }
 </style>
 @endpush
@@ -389,6 +599,221 @@ document.addEventListener('DOMContentLoaded', function() {
         recalculate: recalculateSize,
         config: config
     };
+});
+
+// Notification System
+document.addEventListener('DOMContentLoaded', function() {
+    const notificationBtn = document.getElementById('notification-btn');
+    const notificationCount = document.getElementById('notification-count');
+    const notificationList = document.getElementById('notification-list');
+    const markAllReadBtn = document.getElementById('mark-all-read-btn');
+    
+    if (!notificationBtn) return; // Not an admin or not logged in
+    
+    let isDropdownOpen = false;
+    let refreshInterval;
+    
+    // Initialize notification system
+    function initNotifications() {
+        loadNotifications();
+        setupEventListeners();
+        startAutoRefresh();
+    }
+    
+    function setupEventListeners() {
+        // Show dropdown and load notifications
+        notificationBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!isDropdownOpen) {
+                loadNotifications();
+            }
+        });
+        
+        // Handle dropdown show/hide events
+        const dropdown = document.getElementById('notification-dropdown');
+        dropdown.addEventListener('show.bs.dropdown', function() {
+            isDropdownOpen = true;
+            loadNotifications();
+        });
+        
+        dropdown.addEventListener('hide.bs.dropdown', function() {
+            isDropdownOpen = false;
+        });
+        
+        // Mark all as read
+        if (markAllReadBtn) {
+            markAllReadBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                markAllAsRead();
+            });
+        }
+    }
+    
+    function loadNotifications() {
+        fetch('/admin/notifications/unread', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            updateNotificationCount(data.totalCount || 0);
+            renderNotifications(data.notifications || []);
+        })
+        .catch(error => {
+            console.error('Error loading notifications:', error);
+            notificationList.innerHTML = `
+                <div class="dropdown-item-text text-center py-3 text-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Failed to load notifications
+                </div>
+            `;
+        });
+    }
+    
+    function updateNotificationCount(count) {
+        if (count > 0) {
+            notificationCount.textContent = count > 99 ? '99+' : count;
+            notificationCount.classList.remove('d-none');
+        } else {
+            notificationCount.classList.add('d-none');
+        }
+    }
+    
+    function renderNotifications(notifications) {
+        if (notifications.length === 0) {
+            notificationList.innerHTML = `
+                <div class="notification-empty">
+                    <i class="fas fa-bell-slash"></i>
+                    <div class="mt-2">No new notifications</div>
+                </div>
+            `;
+            return;
+        }
+        
+        notificationList.innerHTML = notifications.map(notification => `
+            <a href="#" class="notification-item ${!notification.is_read ? 'unread' : ''}" 
+               data-id="${notification.id}" 
+               onclick="handleNotificationClick(${notification.id}, event)">
+                <div class="d-flex align-items-start">
+                    <div class="notification-item-icon bg-${notification.color} text-white me-3">
+                        <i class="${notification.icon}"></i>
+                    </div>
+                    <div class="notification-item-content">
+                        <div class="notification-item-title">${notification.title}</div>
+                        <div class="notification-item-message">${notification.message}</div>
+                        <div class="notification-item-time">${notification.created_at}</div>
+                    </div>
+                </div>
+            </a>
+        `).join('');
+    }
+    
+    function markAllAsRead() {
+        fetch('/admin/notifications/mark-all-read', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateNotificationCount(0);
+                loadNotifications();
+                showToastMessage('All notifications marked as read', 'success');
+            }
+        })
+        .catch(error => {
+            console.error('Error marking notifications as read:', error);
+            showToastMessage('Failed to mark notifications as read', 'error');
+        });
+    }
+    
+    function markAsRead(notificationId) {
+        fetch(`/admin/notifications/${notificationId}/mark-read`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadNotifications();
+            }
+        })
+        .catch(error => {
+            console.error('Error marking notification as read:', error);
+        });
+    }
+    
+    function startAutoRefresh() {
+        // Refresh notifications every 30 seconds
+        refreshInterval = setInterval(() => {
+            if (!isDropdownOpen) {
+                // Only update count when dropdown is closed
+                fetch('/admin/notifications/count', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    updateNotificationCount(data.count || 0);
+                })
+                .catch(error => {
+                    console.error('Error getting notification count:', error);
+                });
+            }
+        }, 30000);
+    }
+    
+    function showToastMessage(message, type = 'success') {
+        if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+        } else {
+            // Fallback alert
+            alert(message);
+        }
+    }
+    
+    // Global function for handling notification clicks
+    window.handleNotificationClick = function(notificationId, event) {
+        event.preventDefault();
+        
+        // Mark as read
+        markAsRead(notificationId);
+        
+        // Close dropdown
+        const dropdown = bootstrap.Dropdown.getInstance(notificationBtn);
+        if (dropdown) {
+            dropdown.hide();
+        }
+        
+        // Redirect to notifications page
+        setTimeout(() => {
+            window.location.href = '/admin/notifications';
+        }, 300);
+    };
+    
+    // Initialize the notification system
+    initNotifications();
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+        }
+    });
 });
 </script>
 @endpush

@@ -335,10 +335,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/', [NotificationController::class, 'index'])->name('index');
         Route::get('/unread', [NotificationController::class, 'getUnread'])->name('unread');
+        Route::get('/count', [NotificationController::class, 'getUnreadCount'])->name('count');
         Route::get('/check-new', [NotificationController::class, 'checkNew'])->name('check-new');
-        Route::post('/{notification}/mark-read', [NotificationController::class, 'markAsRead'])->name('mark-read');
         Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
-        Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
+        Route::post('/bulk-mark-read', [NotificationController::class, 'bulkMarkAsRead'])->name('bulk-mark-read');
+        Route::post('/{id}/mark-read', [NotificationController::class, 'markAsReadById'])->name('mark-read');
+        Route::delete('/{id}', [NotificationController::class, 'destroyById'])->name('destroy');
     });
 });
 

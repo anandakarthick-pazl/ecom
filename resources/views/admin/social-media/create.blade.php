@@ -136,7 +136,7 @@
             </div>
             <div class="card-body">
                 <div class="row g-3">
-                    @foreach(\App\Helpers\IconClass::getPredefinedPlatforms() as $key => $platform)
+                    @foreach($predefinedPlatforms as $key => $platform)
                     <div class="col-md-4">
                         <div class="d-grid">
                             <button type="button" class="btn btn-outline-secondary platform-btn"
@@ -160,32 +160,46 @@
     </div>
 </div>
 
+<!-- Scroll to Bottom Button -->
+<button type="button" class="scroll-to-bottom" id="scrollToBottom" title="Scroll to Submit Button">
+    <i class="fas fa-arrow-down"></i>
+</button>
+
 <!-- Icon Selection Modal -->
-<div class="modal fade" id="iconModal" tabindex="-1">
+<div class="modal fade" id="iconModal" tabindex="-1" aria-labelledby="iconModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Select Icon</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="iconModalLabel">Select Icon</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
                     <input type="text" class="form-control" id="iconSearch" placeholder="Search icons...">
                 </div>
+                <div class="alert alert-info">
+                    <small><i class="fas fa-info-circle"></i> Click on any icon to select it. The modal will close automatically.</small>
+                </div>
                 <div class="row g-2" id="iconGrid">
                     @php
-                    $allIcons = \App\Helpers\IconClass::getAllIcons();
+                    $socialIcons = \App\Helpers\IconClass::getSocialMediaIcons();
                     @endphp
                     
-                    @foreach($allIcons as $iconClass => $iconName)
-                    <div class="col-md-3">
+                    @foreach($socialIcons as $iconClass => $iconName)
+                    <div class="col-md-4 col-lg-3">
                         <button type="button" class="btn btn-outline-secondary w-100 icon-select-btn" 
-                                data-icon="{{ $iconClass }}">
+                                data-icon="{{ $iconClass }}" 
+                                title="{{ $iconName }}">
                             <i class="{{ $iconClass }} me-2"></i>{{ $iconName }}
                         </button>
                     </div>
                     @endforeach
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
             </div>
         </div>
     </div>
@@ -222,12 +236,120 @@
     padding: 0.5rem;
     border: 1px solid #dee2e6;
     transition: all 0.2s ease;
+    margin-bottom: 0.5rem;
 }
 
 .icon-select-btn:hover {
     background-color: var(--bs-primary);
     border-color: var(--bs-primary);
     color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Modal fixes to prevent greyout issues */
+.modal {
+    z-index: 1050;
+}
+
+.modal-backdrop {
+    z-index: 1040;
+}
+
+/* Ensure modal content is clickable */
+.modal-content {
+    position: relative;
+    z-index: 1060;
+}
+
+/* Fix for modal button focus */
+.icon-select-btn:focus {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+/* Toast positioning */
+.toast {
+    z-index: 9999 !important;
+}
+
+/* Prevent body scroll issues */
+body.modal-open {
+    overflow: hidden;
+}
+
+/* Force scrollable after modal close */
+body:not(.modal-open) {
+    overflow: auto !important;
+    height: auto !important;
+    position: static !important;
+}
+
+html:not(.modal-open) {
+    overflow: auto !important;
+    height: auto !important;
+}
+
+/* Ensure form is always accessible */
+.card {
+    margin-bottom: 100px; /* Extra space at bottom */
+}
+
+/* Submit button visibility */
+.btn[type="submit"] {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 20px;
+}
+
+/* Scroll to bottom button */
+.scroll-to-bottom {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: var(--bs-primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+    display: none;
+}
+
+.scroll-to-bottom:hover {
+    background: var(--bs-primary);
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+
+.scroll-to-bottom.show {
+    display: block;
+}
+
+/* Loading state for buttons */
+.btn.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.btn.loading::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-left: 8px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 </style>
 
@@ -272,13 +394,86 @@ $(document).ready(function() {
         }, 500);
     });
 
-    // Icon selection
-    $('.icon-select-btn').click(function() {
+    // Icon selection with improved modal handling
+    $(document).on('click', '.icon-select-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
         const iconClass = $(this).data('icon');
+        
+        // Update the icon field
         $('#icon_class').val(iconClass);
-        $('#iconModal').modal('hide');
+        
+        // Update preview
         updatePreview();
+        
+        // Force close modal and cleanup everything
+        closeModalCompletely();
+        
+        // Show success message
+        showToast('Icon selected: ' + iconClass, 'success');
+        
+        // Ensure page scrollability is restored
+        restorePageScrolling();
+        
+        // Check scroll and show scroll button if needed
+        checkScrollAfterIconSelection();
     });
+    
+    // Function to completely close modal and cleanup
+    function closeModalCompletely() {
+        // Hide modal using Bootstrap API
+        const modal = bootstrap.Modal.getInstance(document.getElementById('iconModal'));
+        if (modal) {
+            modal.hide();
+        }
+        
+        // Also try jQuery method as fallback
+        $('#iconModal').modal('hide');
+        
+        // Force cleanup after a short delay
+        setTimeout(function() {
+            // Remove all modal backdrops
+            $('.modal-backdrop').remove();
+            
+            // Reset body classes and styles
+            $('body').removeClass('modal-open');
+            $('body').css({
+                'overflow': '',
+                'padding-right': '',
+                'margin-right': ''
+            });
+            
+            // Reset html overflow as well
+            $('html').css('overflow', '');
+            
+            // Hide the modal element
+            $('#iconModal').removeClass('show').attr('aria-hidden', 'true');
+            $('#iconModal').css('display', 'none');
+            
+            // Restore focus to trigger button
+            $('button[data-bs-target="#iconModal"]').focus();
+        }, 100);
+    }
+    
+    // Function to restore page scrolling
+    function restorePageScrolling() {
+        // Force scroll restoration
+        setTimeout(function() {
+            $('body, html').css({
+                'overflow': 'auto',
+                'height': 'auto',
+                'position': 'static'
+            });
+            
+            // Remove any inline styles that might prevent scrolling
+            $('body').removeAttr('style');
+            $('html').removeAttr('style');
+            
+            // Trigger a scroll event to ensure scrollbars appear
+            $(window).trigger('resize');
+        }, 200);
+    }
 
     // Icon search
     $('#iconSearch').on('input', function() {
@@ -294,6 +489,62 @@ $(document).ready(function() {
             }
         });
     });
+    
+    // Modal event handling to prevent greyout issues
+    $('#iconModal').on('hidden.bs.modal', function() {
+        // Comprehensive cleanup
+        cleanupModalCompletely();
+    });
+    
+    $('#iconModal').on('hide.bs.modal', function() {
+        // Start cleanup process
+        cleanupModalCompletely();
+    });
+    
+    $('#iconModal').on('show.bs.modal', function() {
+        // Clear any existing search
+        $('#iconSearch').val('');
+        $('.icon-select-btn').parent().show();
+        
+        // Ensure body can scroll within modal
+        $('body').css('overflow-y', 'auto');
+    });
+    
+    // Comprehensive modal cleanup function
+    function cleanupModalCompletely() {
+        // Remove modal backdrop
+        $('.modal-backdrop').remove();
+        
+        // Reset body classes and styles completely
+        $('body').removeClass('modal-open');
+        $('body').css({
+            'overflow': '',
+            'overflow-y': '',
+            'padding-right': '',
+            'margin-right': '',
+            'height': '',
+            'position': ''
+        });
+        
+        // Reset html styles
+        $('html').css({
+            'overflow': '',
+            'overflow-y': '',
+            'height': '',
+            'position': ''
+        });
+        
+        // Clear search and show all icons
+        $('#iconSearch').val('');
+        $('.icon-select-btn').parent().show();
+        
+        // Force page to be scrollable
+        setTimeout(function() {
+            $('body').removeAttr('style');
+            $('html').removeAttr('style');
+            $(window).trigger('resize');
+        }, 50);
+    }
 
     function updatePreview() {
         const name = $('#name').val() || 'Platform Name';
@@ -306,8 +557,87 @@ $(document).ready(function() {
         $('#preview-icon i').attr('class', iconClass + ' text-white');
     }
     
+    function showToast(message, type = 'info') {
+        // Simple toast notification
+        const toast = $(`
+            <div class="toast position-fixed top-0 end-0 m-3" role="alert" style="z-index: 9999;">
+                <div class="toast-header">
+                    <i class="fas fa-check-circle text-${type === 'success' ? 'success' : 'info'} me-2"></i>
+                    <strong class="me-auto">Notification</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `);
+        
+        $('body').append(toast);
+        const bsToast = new bootstrap.Toast(toast[0]);
+        bsToast.show();
+        
+        // Remove after hiding
+        toast.on('hidden.bs.toast', function() {
+            $(this).remove();
+        });
+    }
+    
     // Initial preview update
     updatePreview();
+    
+    // Scroll to bottom functionality
+    $('#scrollToBottom').on('click', function() {
+        $('html, body').animate({
+            scrollTop: $(document).height()
+        }, 800);
+    });
+    
+    // Show/hide scroll to bottom button
+    $(window).on('scroll', function() {
+        const submitButton = $('button[type="submit"]');
+        if (submitButton.length) {
+            const submitButtonTop = submitButton.offset().top;
+            const windowBottom = $(window).scrollTop() + $(window).height();
+            
+            if (submitButtonTop > windowBottom + 50) {
+                $('#scrollToBottom').addClass('show');
+            } else {
+                $('#scrollToBottom').removeClass('show');
+            }
+        }
+    });
+    
+    // Force scroll check after icon selection
+    function checkScrollAfterIconSelection() {
+        setTimeout(function() {
+            // Ensure page is scrollable
+            $('body, html').css('overflow', 'auto');
+            
+            // Check if submit button is visible
+            const submitButton = $('button[type="submit"]');
+            if (submitButton.length) {
+                const submitButtonTop = submitButton.offset().top;
+                const windowBottom = $(window).scrollTop() + $(window).height();
+                
+                if (submitButtonTop > windowBottom) {
+                    // Show scroll button and toast
+                    $('#scrollToBottom').addClass('show');
+                    showToast('Scroll down to see the submit button', 'info');
+                }
+            }
+            
+            // Trigger scroll event to update scroll button visibility
+            $(window).trigger('scroll');
+        }, 500);
+    }
+    
+    // Prevent any form submission issues
+    $('form').on('submit', function() {
+        // Ensure no modals are open during form submission
+        $('.modal').modal('hide');
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+    });
 });
 </script>
 @endpush
