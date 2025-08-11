@@ -295,7 +295,7 @@
 
                                     <div class="form-check form-switch mb-4">
                                         <input class="form-check-input" type="checkbox" id="delivery_enabled"
-                                            name="delivery_enabled" value="1" checked
+                                            name="delivery_enabled" value="1" {{ ($deliverySettings['delivery_enabled'] ?? true) ? 'checked' : '' }}
                                             onchange="toggleDeliverySettings()">
                                         <label class="form-check-label" for="delivery_enabled">
                                             <strong>Enable Delivery Service</strong>
@@ -304,7 +304,7 @@
                                         </label>
                                     </div>
 
-                                    <div id="delivery-settings-content" style="display: block;">
+                                    <div id="delivery-settings-content" style="display: {{ ($deliverySettings['delivery_enabled'] ?? true) ? 'block' : 'none' }};">
                                         <!-- Delivery Charge -->
                                         <div class="row mb-3">
                                             <div class="col-md-6">
@@ -313,7 +313,7 @@
                                                         <i class="fas fa-rupee-sign"></i> Delivery Charge (₹) *
                                                     </label>
                                                     <input type="number" class="form-control" id="delivery_charge"
-                                                        name="delivery_charge" value="50.00" step="0.01"
+                                                        name="delivery_charge" value="{{ $deliverySettings['delivery_charge'] ?? '50.00' }}" step="0.01"
                                                         min="0" max="9999.99" required>
                                                     <small class="text-muted">Amount to charge for delivery</small>
                                                 </div>
@@ -326,7 +326,7 @@
                                                     </label>
                                                     <input type="text" class="form-control"
                                                         id="delivery_time_estimate" name="delivery_time_estimate"
-                                                        value="3-5 business days" placeholder="e.g., 2-3 business days">
+                                                        value="{{ $deliverySettings['delivery_time_estimate'] ?? '3-5 business days' }}" placeholder="e.g., 2-3 business days">
                                                     <small class="text-muted">Expected delivery time to show
                                                         customers</small>
                                                 </div>
@@ -339,7 +339,7 @@
                                                 <div class="form-check form-switch mb-3">
                                                     <input class="form-check-input" type="checkbox"
                                                         id="free_delivery_enabled" name="free_delivery_enabled"
-                                                        value="1" checked onchange="toggleFreeDelivery()">
+                                                        value="1" {{ ($deliverySettings['free_delivery_enabled'] ?? true) ? 'checked' : '' }} onchange="toggleFreeDelivery()">
                                                     <label class="form-check-label" for="free_delivery_enabled">
                                                         <strong><i class="fas fa-gift text-success"></i> Enable Free
                                                             Delivery</strong>
@@ -348,7 +348,7 @@
                                                     </label>
                                                 </div>
 
-                                                <div id="free-delivery-content" style="display: block;">
+                                                <div id="free-delivery-content" style="display: {{ ($deliverySettings['free_delivery_enabled'] ?? true) ? 'block' : 'none' }};">
                                                     <div class="row">
                                                         <div class="col-md-6">
                                                             <div class="form-group">
@@ -358,7 +358,7 @@
                                                                 </label>
                                                                 <input type="number" class="form-control"
                                                                     id="free_delivery_threshold"
-                                                                    name="free_delivery_threshold" value="500.00"
+                                                                    name="free_delivery_threshold" value="{{ $deliverySettings['free_delivery_threshold'] ?? '500.00' }}"
                                                                     step="0.01" min="0.01" max="999999.99">
                                                                 <small class="text-muted">Minimum order amount for free
                                                                     delivery</small>
@@ -373,7 +373,7 @@
                                                                 </label>
                                                                 <input type="number" class="form-control"
                                                                     id="delivery_max_amount" name="delivery_max_amount"
-                                                                    value="" step="0.01" min="0.01"
+                                                                    value="{{ $deliverySettings['delivery_max_amount'] ?? '' }}" step="0.01" min="0.01"
                                                                     max="999999.99"
                                                                     placeholder="Leave empty for no limit">
                                                                 <small class="text-muted">Orders above this amount get free
@@ -391,7 +391,7 @@
                                                 <i class="fas fa-info-circle"></i> Delivery Description
                                             </label>
                                             <textarea class="form-control" id="delivery_description" name="delivery_description" rows="3" maxlength="500"
-                                                placeholder="Additional delivery information for customers..."></textarea>
+                                                placeholder="Additional delivery information for customers...">{{ $deliverySettings['delivery_description'] ?? '' }}</textarea>
                                             <small class="text-muted">Optional message to display to customers about your
                                                 delivery service</small>
                                         </div>
@@ -470,53 +470,74 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-6">
-                                        <h6><i class="fas fa-calculator"></i> Example Calculations:</h6>
-                                        <div class="bg-light p-3 rounded">
-                                            <div class="mb-2">
-                                                <strong>Order ₹300:</strong>
-                                                <span class="text-danger">₹50 delivery charge</span>
-                                            </div>
-                                            <div class="mb-2">
-                                                <strong>Order ₹500:</strong>
-                                                <span class="text-success">FREE delivery</span>
-                                            </div>
-                                            @if (false)
-                                                <div>
-                                                    <strong>Order ₹1000+:</strong>
-                                                    <span class="text-success">FREE delivery</span>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <h6><i class="fas fa-info-circle"></i> Current Settings:</h6>
-                                        <div class="bg-light p-3 rounded">
-                                            <div class="mb-1">
-                                                <strong>Status:</strong>
-                                                <span class="badge bg-success">
-                                                    Enabled
-                                                </span>
-                                            </div>
-                                            <div class="mb-1">
-                                                <strong>Delivery Charge:</strong> ₹50
-                                            </div>
-                                            <div class="mb-1">
-                                                <strong>Free Delivery:</strong>
-                                                Above ₹500
-                                            </div>
-                                            <div class="mb-1">
-                                                <strong>Delivery Time:</strong> 3-5 business days
-                                            </div>
-                                            @if($deliverySettings['min_order_validation_enabled'] ?? false)
-                                                <div class="mb-1">
-                                                    <strong>Min Order:</strong> ₹{{ number_format($deliverySettings['min_order_amount'] ?? 1000, 0) }}
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </div>
+                                <div class="col-md-6">
+                                <h6><i class="fas fa-calculator"></i> Example Calculations:</h6>
+                                <div class="bg-light p-3 rounded">
+                                @php
+                                $deliveryCharge = $deliverySettings['delivery_charge'] ?? 50;
+                                $freeThreshold = $deliverySettings['free_delivery_threshold'] ?? 500;
+                                    $lowOrderAmount = $freeThreshold - 200; // Example lower amount
+                                @endphp
+                                <div class="mb-2">
+                                <strong>Order ₹{{ $lowOrderAmount }}:</strong>
+                                    @if($deliverySettings['delivery_enabled'] ?? true)
+                                        <span class="text-danger">₹{{ $deliveryCharge }} delivery charge</span>
+                                @else
+                                <span class="text-muted">Delivery disabled</span>
+                                @endif
                                 </div>
+                                <div class="mb-2">
+                                        <strong>Order ₹{{ $freeThreshold }}:</strong>
+                                            @if(($deliverySettings['delivery_enabled'] ?? true) && ($deliverySettings['free_delivery_enabled'] ?? true))
+                                                            <span class="text-success">FREE delivery</span>
+                                            @elseif($deliverySettings['delivery_enabled'] ?? true)
+                                            <span class="text-danger">₹{{ $deliveryCharge }} delivery charge</span>
+                                        @else
+                                        <span class="text-muted">Delivery disabled</span>
+                                @endif
+                                </div>
+                                @if($deliverySettings['delivery_max_amount'] ?? false)
+                                <div>
+                                        <strong>Order ₹{{ number_format($deliverySettings['delivery_max_amount'], 0) }}+:</strong>
+                                        <span class="text-success">FREE delivery</span>
+                                </div>
+                                @endif
+                                </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                <h6><i class="fas fa-info-circle"></i> Current Settings:</h6>
+                                <div class="bg-light p-3 rounded">
+                                <div class="mb-1">
+                                    <strong>Status:</strong>
+                                @if($deliverySettings['delivery_enabled'] ?? true)
+                                <span class="badge bg-success">Enabled</span>
+                                @else
+                                        <span class="badge bg-secondary">Disabled</span>
+                                        @endif
+                                        </div>
+                                            <div class="mb-1">
+                                                        <strong>Delivery Charge:</strong> ₹{{ $deliverySettings['delivery_charge'] ?? '50' }}
+                                                    </div>
+                                                    <div class="mb-1">
+                                                        <strong>Free Delivery:</strong>
+                                                        @if($deliverySettings['free_delivery_enabled'] ?? true)
+                                                            Above ₹{{ $deliverySettings['free_delivery_threshold'] ?? '500' }}
+                                                        @else
+                                                            <span class="text-muted">Disabled</span>
+                                                        @endif
+                                                    </div>
+                                                    <div class="mb-1">
+                                                        <strong>Delivery Time:</strong> {{ $deliverySettings['delivery_time_estimate'] ?? '3-5 business days' }}
+                                                    </div>
+                                                    @if($deliverySettings['min_order_validation_enabled'] ?? false)
+                                                        <div class="mb-1">
+                                                            <strong>Min Order:</strong> ₹{{ number_format($deliverySettings['min_order_amount'] ?? 1000, 0) }}
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
                             </div>
                         </div>
                     </div>
@@ -3045,10 +3066,132 @@ Thank you for your payment!
                 }
             }, 500);
             
+            // Delivery Settings Toggle Functions
+            function toggleDeliverySettings() {
+                const deliveryEnabled = document.getElementById('delivery_enabled').checked;
+                const deliveryContent = document.getElementById('delivery-settings-content');
+                
+                if (deliveryContent) {
+                    deliveryContent.style.display = deliveryEnabled ? 'block' : 'none';
+                }
+            }
+            
+            function toggleFreeDelivery() {
+                const freeDeliveryEnabled = document.getElementById('free_delivery_enabled').checked;
+                const freeDeliveryContent = document.getElementById('free-delivery-content');
+                
+                if (freeDeliveryContent) {
+                    freeDeliveryContent.style.display = freeDeliveryEnabled ? 'block' : 'none';
+                }
+            }
+            
+            function toggleMinOrderValidation() {
+                const minOrderEnabled = document.getElementById('min_order_validation_enabled').checked;
+                const minOrderContent = document.getElementById('min-order-validation-content');
+                
+                if (minOrderContent) {
+                    minOrderContent.style.display = minOrderEnabled ? 'block' : 'none';
+                }
+            }
+            
+            // Bill Format Toggle Functions
+            function toggleThermalPrinterSettings() {
+                const thermalEnabled = document.getElementById('thermal_printer_enabled').checked;
+                const thermalSettings = document.getElementById('thermal-printer-settings');
+                
+                if (thermalSettings) {
+                    thermalSettings.style.display = thermalEnabled ? 'block' : 'none';
+                }
+                
+                updateDefaultFormatOptions();
+            }
+            
+            function toggleA4SheetSettings() {
+                const a4Enabled = document.getElementById('a4_sheet_enabled').checked;
+                const a4Settings = document.getElementById('a4-sheet-settings');
+                
+                if (a4Settings) {
+                    a4Settings.style.display = a4Enabled ? 'block' : 'none';
+                }
+                
+                updateDefaultFormatOptions();
+            }
+            
+            function updateDefaultFormatOptions() {
+                const thermalEnabled = document.getElementById('thermal_printer_enabled')?.checked || false;
+                const a4Enabled = document.getElementById('a4_sheet_enabled')?.checked || false;
+                const defaultSelect = document.getElementById('default_bill_format');
+                
+                if (defaultSelect) {
+                    // Store current value
+                    const currentValue = defaultSelect.value;
+                    
+                    // Clear options
+                    defaultSelect.innerHTML = '';
+                    
+                    // Add available options
+                    if (thermalEnabled) {
+                        const option = document.createElement('option');
+                        option.value = 'thermal';
+                        option.textContent = 'Thermal Printer';
+                        defaultSelect.appendChild(option);
+                    }
+                    
+                    if (a4Enabled) {
+                        const option = document.createElement('option');
+                        option.value = 'a4_sheet';
+                        option.textContent = 'A4 Sheet PDF';
+                        defaultSelect.appendChild(option);
+                    }
+                    
+                    // Restore value if still valid
+                    if ((currentValue === 'thermal' && thermalEnabled) || (currentValue === 'a4_sheet' && a4Enabled)) {
+                        defaultSelect.value = currentValue;
+                    } else {
+                        // Set to first available option
+                        if (defaultSelect.options.length > 0) {
+                            defaultSelect.value = defaultSelect.options[0].value;
+                        }
+                    }
+                }
+            }
+            
+            // Initialize toggles on page load
+            document.addEventListener('DOMContentLoaded', function() {
+                // Set up delivery settings toggles
+                toggleDeliverySettings();
+                toggleFreeDelivery();
+                toggleMinOrderValidation();
+                
+                // Set up bill format toggles
+                if (document.getElementById('thermal_printer_enabled')) {
+                    toggleThermalPrinterSettings();
+                }
+                if (document.getElementById('a4_sheet_enabled')) {
+                    toggleA4SheetSettings();
+                }
+                
+                // Add event listeners for bill format changes
+                const thermalEnabledEl = document.getElementById('thermal_printer_enabled');
+                const a4EnabledEl = document.getElementById('a4_sheet_enabled');
+                
+                if (thermalEnabledEl) {
+                    thermalEnabledEl.addEventListener('change', toggleThermalPrinterSettings);
+                }
+                if (a4EnabledEl) {
+                    a4EnabledEl.addEventListener('change', toggleA4SheetSettings);
+                }
+            });
+
             // Make functions global for onclick handlers
             window.updatePreviews = updatePreviews;
             window.fetchServerPreviews = fetchServerPreviews;
             window.resetSequences = resetSequences;
+            window.toggleDeliverySettings = toggleDeliverySettings;
+            window.toggleFreeDelivery = toggleFreeDelivery;
+            window.toggleMinOrderValidation = toggleMinOrderValidation;
+            window.toggleThermalPrinterSettings = toggleThermalPrinterSettings;
+            window.toggleA4SheetSettings = toggleA4SheetSettings;
         </script>
     @endpush
 @endsection

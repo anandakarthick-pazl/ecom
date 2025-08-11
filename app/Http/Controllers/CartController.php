@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Cart;
 use App\Models\Product;
+use App\Services\CouponService;
 use Illuminate\Http\Request;
 
 class CartController extends Controller
@@ -27,6 +28,10 @@ class CartController extends Controller
         $cartItems = Cart::getCartItems($this->getSessionId());
         $subtotal = Cart::getCartTotal($this->getSessionId());
         
+        // Get applied coupon discount
+        $couponDiscount = CouponService::getCurrentDiscount();
+        $appliedCoupon = CouponService::getAppliedCoupon();
+        
         // Get minimum order validation settings
         $minOrderValidationSettings = \App\Services\DeliveryService::getMinOrderValidationSettings();
         $minOrderValidation = \App\Services\DeliveryService::validateMinimumOrderAmount($subtotal);
@@ -48,7 +53,14 @@ class CartController extends Controller
             }
         }
         
-        return view('cart', compact('cartItems', 'subtotal', 'minOrderValidationSettings', 'minOrderValidation'));
+        return view('cart', compact(
+            'cartItems', 
+            'subtotal', 
+            'couponDiscount',
+            'appliedCoupon',
+            'minOrderValidationSettings', 
+            'minOrderValidation'
+        ));
     }
 
     public function add(Request $request)
@@ -98,6 +110,10 @@ class CartController extends Controller
         $subtotal = Cart::getCartTotal($this->getSessionId());
         $cartCount = Cart::getCartCount($this->getSessionId());
         
+        // Revalidate coupon with updated cart
+        $couponResult = CouponService::revalidateExistingCoupon($this->getSessionId());
+        $couponDiscount = $couponResult['success'] ? CouponService::getCurrentDiscount() : 0;
+        
         // Calculate tax amounts with error handling
         $totalTax = 0;
         $cgstAmount = 0;
@@ -120,9 +136,9 @@ class CartController extends Controller
             $sgstAmount = 0;
         }
         
-        // Calculate delivery charge
-        $deliveryCharge = $subtotal >= 500 ? 0 : 50;
-        $grandTotal = $subtotal + $totalTax + $deliveryCharge;
+        // Calculate delivery charge using DeliveryService
+        $deliveryCharge = \App\Services\DeliveryService::calculateDeliveryCharge($subtotal);
+        $grandTotal = $subtotal + $totalTax + $deliveryCharge - $couponDiscount;
         
         // Get minimum order validation
         $minOrderValidationSettings = \App\Services\DeliveryService::getMinOrderValidationSettings();
@@ -137,10 +153,13 @@ class CartController extends Controller
                 'cgst_amount' => $cgstAmount,
                 'sgst_amount' => $sgstAmount,
                 'delivery_charge' => $deliveryCharge,
+                'coupon_discount' => $couponDiscount,
                 'grand_total' => $grandTotal,
                 'cart_count' => $cartCount,
                 'min_order_validation' => $minOrderValidation,
-                'min_order_settings' => $minOrderValidationSettings
+                'min_order_settings' => $minOrderValidationSettings,
+                'coupon_applied' => CouponService::hasCouponApplied(),
+                'coupon_info' => CouponService::getAppliedCoupon()
             ],
             // Keep backward compatibility
             'cart_total' => $subtotal,
@@ -160,6 +179,10 @@ class CartController extends Controller
         $cartItems = Cart::getCartItems($this->getSessionId());
         $subtotal = Cart::getCartTotal($this->getSessionId());
         $cartCount = Cart::getCartCount($this->getSessionId());
+        
+        // Revalidate coupon with updated cart
+        $couponResult = CouponService::revalidateExistingCoupon($this->getSessionId());
+        $couponDiscount = $couponResult['success'] ? CouponService::getCurrentDiscount() : 0;
         
         // Calculate tax amounts with error handling
         $totalTax = 0;
@@ -183,9 +206,9 @@ class CartController extends Controller
             $sgstAmount = 0;
         }
         
-        // Calculate delivery charge
-        $deliveryCharge = $subtotal >= 500 ? 0 : 50;
-        $grandTotal = $subtotal + $totalTax + $deliveryCharge;
+        // Calculate delivery charge using DeliveryService
+        $deliveryCharge = \App\Services\DeliveryService::calculateDeliveryCharge($subtotal);
+        $grandTotal = $subtotal + $totalTax + $deliveryCharge - $couponDiscount;
         
         // Get minimum order validation
         $minOrderValidationSettings = \App\Services\DeliveryService::getMinOrderValidationSettings();
@@ -200,10 +223,13 @@ class CartController extends Controller
                 'cgst_amount' => $cgstAmount,
                 'sgst_amount' => $sgstAmount,
                 'delivery_charge' => $deliveryCharge,
+                'coupon_discount' => $couponDiscount,
                 'grand_total' => $grandTotal,
                 'cart_count' => $cartCount,
                 'min_order_validation' => $minOrderValidation,
-                'min_order_settings' => $minOrderValidationSettings
+                'min_order_settings' => $minOrderValidationSettings,
+                'coupon_applied' => CouponService::hasCouponApplied(),
+                'coupon_info' => CouponService::getAppliedCoupon()
             ],
             // Keep backward compatibility
             'cart_count' => $cartCount,
@@ -214,6 +240,9 @@ class CartController extends Controller
     public function clear()
     {
         Cart::clearCart($this->getSessionId());
+        
+        // Clear applied coupon when cart is cleared
+        CouponService::removeCoupon();
 
         return response()->json([
             'success' => true,
@@ -244,6 +273,9 @@ class CartController extends Controller
         $cartItems = Cart::getCartItems($this->getSessionId());
         $subtotal = Cart::getCartTotal($this->getSessionId());
         $cartCount = Cart::getCartCount($this->getSessionId());
+        
+        // Get coupon discount
+        $couponDiscount = CouponService::getCurrentDiscount();
         
         // Calculate tax amounts with error handling
         $totalTax = 0;
@@ -280,9 +312,9 @@ class CartController extends Controller
             $sgstAmount = 0;
         }
         
-        // Calculate delivery charge
-        $deliveryCharge = $subtotal >= 500 ? 0 : 50;
-        $grandTotal = $subtotal + $totalTax + $deliveryCharge;
+        // Calculate delivery charge using DeliveryService
+        $deliveryCharge = \App\Services\DeliveryService::calculateDeliveryCharge($subtotal);
+        $grandTotal = $subtotal + $totalTax + $deliveryCharge - $couponDiscount;
         
         // Get minimum order validation
         $minOrderValidationSettings = \App\Services\DeliveryService::getMinOrderValidationSettings();
@@ -298,11 +330,14 @@ class CartController extends Controller
                 'cgst_amount' => $cgstAmount,
                 'sgst_amount' => $sgstAmount,
                 'delivery_charge' => $deliveryCharge,
+                'coupon_discount' => $couponDiscount,
                 'payment_charge' => 0, // Default payment charge
                 'grand_total' => $grandTotal,
                 'cart_count' => $cartCount,
                 'min_order_validation' => $minOrderValidation,
-                'min_order_settings' => $minOrderValidationSettings
+                'min_order_settings' => $minOrderValidationSettings,
+                'coupon_applied' => CouponService::hasCouponApplied(),
+                'coupon_info' => CouponService::getAppliedCoupon()
             ]
         ]);
     }

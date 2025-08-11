@@ -11,6 +11,7 @@ use App\Models\PaymentMethod;
 use App\Models\Commission;
 use App\Services\PaymentMethodService;
 use App\Services\DeliveryService;
+use App\Services\CouponService;
 use App\Events\OrderPlaced;
 use App\Services\OrderItemPricingService;
 use Illuminate\Http\Request;
@@ -38,7 +39,11 @@ class CheckoutController extends Controller
         
         $deliveryCharge = DeliveryService::calculateDeliveryCharge($subtotal);
         $deliveryInfo = DeliveryService::getDeliveryInfo($subtotal);
-        $discount = 0; // Calculate discount if any offers apply
+        
+        // Get coupon discount
+        $discount = CouponService::getCurrentDiscount();
+        $appliedCoupon = CouponService::getAppliedCoupon();
+        
         $total = $subtotal + $deliveryCharge - $discount;
         
         // Get active payment methods using the service
@@ -49,7 +54,8 @@ class CheckoutController extends Controller
             'subtotal', 
             'deliveryCharge', 
             'deliveryInfo', 
-            'discount', 
+            'discount',
+            'appliedCoupon',
             'total', 
             'paymentMethods',
             'minOrderValidationSettings'
@@ -171,7 +177,8 @@ class CheckoutController extends Controller
             }
             
             $deliveryCharge = DeliveryService::calculateDeliveryCharge($subtotal);
-            $discount = 0; // Apply discount logic here
+            $discount = CouponService::getCurrentDiscount(); // Get coupon discount
+            $appliedCoupon = CouponService::getAppliedCoupon();
             
             // Get payment method and calculate charges
             $paymentMethod = PaymentMethod::findOrFail($request->payment_method);
@@ -196,6 +203,8 @@ class CheckoutController extends Controller
                 'pincode' => $request->pincode,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
+                'coupon_code' => $appliedCoupon ? $appliedCoupon['code'] : null,
+                'coupon_discount' => $discount,
                 'delivery_charge' => $deliveryCharge,
                 'tax_amount' => $totalTax,
                 'cgst_amount' => $cgstAmount,
@@ -250,10 +259,16 @@ class CheckoutController extends Controller
 
             // Update customer statistics
             $customer->updateOrderStats();
+            
+            // Increment coupon usage count if coupon was applied
+            if ($appliedCoupon) {
+                CouponService::incrementUsageCount($appliedCoupon['code']);
+            }
 
-            // Clear cart
+            // Clear cart and coupon
             Cart::clearCart($this->getSessionId());
-            \Log::info('Cart cleared after order creation');
+            CouponService::removeCoupon();
+            \Log::info('Cart and coupon cleared after order creation');
 
             DB::commit();
             \Log::info('Order transaction committed successfully');
@@ -275,8 +290,9 @@ class CheckoutController extends Controller
                 'payment_method' => $paymentMethod->type
             ]);
             
-            // Clear the cart one more time to be absolutely sure
+            // Clear the cart and coupon one more time to be absolutely sure
             Cart::clearCart($this->getSessionId());
+            CouponService::removeCoupon();
             
             // Handle payment method specific redirects
             if ($paymentMethod->type === 'razorpay') {

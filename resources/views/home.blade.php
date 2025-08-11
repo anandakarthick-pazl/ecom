@@ -121,25 +121,57 @@
     @if($categories->count() > 0)
     <section class="categories-section mb-5">
         <h2 class="text-center mb-4">Shop by Category</h2>
+        <p class="text-center text-muted mb-4">Explore our carefully curated collections</p>
         <div class="row">
             @foreach($categories as $category)
             <div class="col-md-4 col-sm-6 mb-4">
-                <div class="card h-100 border-0 shadow-sm">
+                <div class="card h-100 border-0 shadow-sm category-card">
                     @if($category->image)
-                        <img src="{{ $category->image_url }}" class="card-img-top" alt="{{ $category->name }}" style="height: 150px; object-fit: cover;">
+                        <div class="category-image-wrapper">
+                            <img src="{{ $category->image_url }}" 
+                                 class="card-img-top category-image" 
+                                 alt="{{ $category->name }}" 
+                                 style="height: 150px; object-fit: cover;"
+                                 loading="lazy"
+                                 onerror="this.onerror=null; this.src='{{ asset('images/fallback/category-placeholder.png') }}'; this.parentElement.classList.add('fallback-image');">
+                            @if($category->products_count > 0)
+                                <div class="category-badge">
+                                    <span class="badge bg-primary">{{ $category->products_count }} Products</span>
+                                </div>
+                            @endif
+                        </div>
                     @else
-                        <div class="card-img-top bg-light-green d-flex align-items-center justify-content-center" style="height: 150px;">
+                        <div class="card-img-top bg-light-green d-flex align-items-center justify-content-center category-placeholder" style="height: 150px;">
                             <i class="fas fa-leaf fa-3x text-success"></i>
+                            @if($category->products_count > 0)
+                                <div class="category-badge">
+                                    <span class="badge bg-primary">{{ $category->products_count }} Products</span>
+                                </div>
+                            @endif
                         </div>
                     @endif
                     <div class="card-body text-center">
                         <h5 class="card-title">{{ $category->name }}</h5>
-                        <p class="card-text text-muted">{{ Str::limit($category->description, 80) }}</p>
-                        <a href="{{ route('category', $category->slug) }}" class="btn btn-primary">Browse Products</a>
+                        @if($category->description)
+                            <p class="card-text text-muted">{{ Str::limit($category->description, 80) }}</p>
+                        @else
+                            <p class="card-text text-muted">Discover amazing products in this category</p>
+                        @endif
+                        <a href="{{ route('category', $category->slug) }}" class="btn btn-primary btn-sm mt-2">
+                            <i class="fas fa-eye me-1"></i> Browse Products
+                        </a>
                     </div>
                 </div>
             </div>
             @endforeach
+        </div>
+    </section>
+    @else
+    <section class="categories-section mb-5">
+        <div class="text-center py-5">
+            <i class="fas fa-th-large fa-4x text-muted mb-3"></i>
+            <h3 class="text-muted">Categories Coming Soon</h3>
+            <p class="text-muted">We're organizing our products into categories. Check back soon!</p>
         </div>
     </section>
     @endif
@@ -569,6 +601,125 @@
 
 .product-card:hover {
     transform: translateY(-5px);
+}
+
+/* Enhanced Category Card Styles */
+.category-card {
+    transition: all 0.3s ease;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.category-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+.category-image-wrapper {
+    position: relative;
+    overflow: hidden;
+}
+
+.category-image {
+    transition: transform 0.3s ease;
+    border-radius: 0;
+}
+
+.category-card:hover .category-image {
+    transform: scale(1.05);
+}
+
+.category-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+}
+
+.category-badge .badge {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 20px;
+    background: rgba(13, 110, 253, 0.9) !important;
+    backdrop-filter: blur(10px);
+}
+
+.category-placeholder {
+    position: relative;
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+    border-radius: 0;
+}
+
+.category-placeholder .category-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.fallback-image {
+    background: rgba(248, 249, 250, 0.8);
+}
+
+.fallback-image .category-image {
+    opacity: 0.7;
+    border: 2px dashed #dee2e6;
+}
+
+/* Category section header improvements */
+.categories-section h2 {
+    color: var(--text-primary);
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.categories-section .text-muted {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+}
+
+/* Category card body improvements */
+.category-card .card-body {
+    padding: 1.5rem;
+}
+
+.category-card .card-title {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.category-card .btn {
+    border-radius: 25px;
+    font-weight: 600;
+    padding: 0.5rem 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.category-card .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+}
+
+/* Responsive category adjustments */
+@media (max-width: 768px) {
+    .category-card {
+        margin-bottom: 1.5rem;
+    }
+    
+    .categories-section h2 {
+        font-size: 1.75rem;
+    }
+    
+    .category-badge {
+        top: 5px;
+        right: 5px;
+    }
+    
+    .category-badge .badge {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.5rem;
+    }
 }
 
 .carousel-item img {

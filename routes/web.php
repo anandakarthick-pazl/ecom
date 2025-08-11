@@ -130,6 +130,14 @@ Route::middleware(['tenant'])->group(function () {
         Route::get('/total-quantity', [CartController::class, 'totalQuantity'])->name('total-quantity');
     });
     
+    // Coupon Routes
+    Route::prefix('coupon')->name('coupon.')->group(function () {
+        Route::post('/apply', [\App\Http\Controllers\CouponController::class, 'apply'])->name('apply');
+        Route::delete('/remove', [\App\Http\Controllers\CouponController::class, 'remove'])->name('remove');
+        Route::get('/current', [\App\Http\Controllers\CouponController::class, 'current'])->name('current');
+        Route::get('/available', [\App\Http\Controllers\CouponController::class, 'available'])->name('available');
+    });
+    
     // Checkout Routes
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');

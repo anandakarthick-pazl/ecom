@@ -74,24 +74,61 @@
 @endif
 
 <div class="main-container">
-    <!-- Compact Categories Section -->
+    <!-- Enhanced Categories Section with Images -->
     @if($categories->count() > 0)
-    <section class="categories-section-compact">
-        <div class="section-header-compact">
-            <h2 class="section-title-compact">Shop by Category</h2>
-            <p class="section-subtitle-compact">Explore our carefully curated collections</p>
+    <section class="categories-section-enhanced">
+        <div class="section-header-enhanced">
+            <h2 class="section-title-enhanced">Shop by Category</h2>
+            <p class="section-subtitle-enhanced">Explore our carefully curated collections</p>
         </div>
-        <div class="categories-grid-compact">
+        <div class="categories-grid-enhanced">
             @foreach($categories->take(6) as $category)
-            <div class="category-card-compact">
-                <a href="{{ route('category', $category->slug) }}" class="category-link">
-                    <div class="category-info-compact">
-                        <h3 class="category-name-compact">{{ $category->name }}</h3>
-                        <span class="category-count-compact">{{ $category->products_count ?? 0 }} items</span>
+            <div class="category-card-enhanced">
+                <a href="{{ route('category', $category->slug) }}" class="category-link-enhanced">
+                    <div class="category-image-wrapper-enhanced">
+                        @if($category->image)
+                            <img src="{{ $category->image_url }}" 
+                                 class="category-image-enhanced" 
+                                 alt="{{ $category->name }}"
+                                 loading="lazy"
+                                 onerror="this.onerror=null; this.src='{{ asset('images/fallback/category-placeholder.png') }}'; this.parentElement.classList.add('fallback-image-enhanced');">
+                        @else
+                            <div class="category-placeholder-enhanced">
+                                <i class="fas fa-th-large category-icon-enhanced"></i>
+                            </div>
+                        @endif
+                        @if($category->products_count > 0)
+                            <div class="category-badge-enhanced">
+                                <span class="badge bg-primary">{{ $category->products_count }}</span>
+                            </div>
+                        @endif
+                        <div class="category-overlay-enhanced"></div>
+                    </div>
+                    <div class="category-info-enhanced">
+                        <h3 class="category-name-enhanced">{{ $category->name }}</h3>
+                        <span class="category-count-enhanced">{{ $category->products_count ?? 0 }} products</span>
+                        @if($category->description)
+                            <p class="category-desc-enhanced">{{ Str::limit($category->description, 60) }}</p>
+                        @endif
                     </div>
                 </a>
             </div>
             @endforeach
+        </div>
+        @if($categories->count() > 6)
+            <div class="text-center mt-4">
+                <a href="{{ route('products') }}" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-th-large me-2"></i>View All Categories
+                </a>
+            </div>
+        @endif
+    </section>
+    @else
+    <section class="categories-section-enhanced">
+        <div class="empty-categories-enhanced">
+            <i class="fas fa-th-large fa-4x text-muted mb-3"></i>
+            <h3 class="text-muted">Categories Coming Soon</h3>
+            <p class="text-muted">We're organizing our products into categories. Check back soon!</p>
         </div>
     </section>
     @endif
@@ -955,6 +992,282 @@
         padding: 0.4rem 0.8rem;
         font-size: 0.7rem;
     }
+}
+
+/* Enhanced Categories with Images */
+.categories-section-enhanced {
+    padding: 1.5rem 0; /* Reduced from 2rem */
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.8) 0%, rgba(241, 245, 249, 0.8) 100%);
+    margin: 1.5rem 0; /* Reduced from 2rem */
+    border-radius: 20px;
+}
+
+.section-header-enhanced {
+    text-align: center;
+    margin-bottom: 1.5rem; /* Reduced from 2rem */
+}
+
+.section-title-enhanced {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.section-subtitle-enhanced {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: 0;
+}
+
+.categories-grid-enhanced {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); /* Reduced from 280px */
+    gap: 1rem; /* Reduced from 1.5rem */
+    padding: 0 1rem;
+}
+
+.category-card-enhanced {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.category-card-enhanced:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.category-link-enhanced {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    height: 100%;
+}
+
+.category-image-wrapper-enhanced {
+    position: relative;
+    height: 120px; /* Reduced from 180px */
+    overflow: hidden;
+}
+
+.category-image-enhanced {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.category-card-enhanced:hover .category-image-enhanced {
+    transform: scale(1.1);
+}
+
+.category-placeholder-enhanced {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #e8f4fd 0%, #dbeafe 50%, #bfdbfe 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.category-icon-enhanced {
+    font-size: 3rem;
+    color: #3b82f6;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.category-card-enhanced:hover .category-icon-enhanced {
+    transform: scale(1.2);
+    opacity: 1;
+}
+
+.category-badge-enhanced {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 3;
+}
+
+.category-badge-enhanced .badge {
+    background: rgba(59, 130, 246, 0.9) !important;
+    color: white !important;
+    font-size: 0.7rem; /* Reduced from 0.75rem */
+    padding: 0.3rem 0.6rem; /* Reduced from 0.4rem 0.8rem */
+    border-radius: 15px; /* Reduced from 20px */
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+}
+
+.category-overlay-enhanced {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.3));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.category-card-enhanced:hover .category-overlay-enhanced {
+    opacity: 1;
+}
+
+.category-info-enhanced {
+    padding: 1rem; /* Reduced from 1.5rem */
+    text-align: center;
+}
+
+.category-name-enhanced {
+    font-size: 1.1rem; /* Reduced from 1.25rem */
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.4rem; /* Reduced from 0.5rem */
+    line-height: 1.2;
+}
+
+.category-count-enhanced {
+    display: inline-block;
+    font-size: 0.8rem; /* Reduced from 0.875rem */
+    color: var(--primary);
+    background: rgba(59, 130, 246, 0.1);
+    padding: 0.2rem 0.6rem; /* Reduced from 0.25rem 0.75rem */
+    border-radius: 15px; /* Reduced from 20px */
+    font-weight: 500;
+    margin-bottom: 0.5rem; /* Reduced from 0.75rem */
+}
+
+.category-desc-enhanced {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin: 0;
+}
+
+.empty-categories-enhanced {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.fallback-image-enhanced {
+    background: rgba(248, 249, 250, 0.9);
+}
+
+.fallback-image-enhanced .category-image-enhanced {
+    opacity: 0.6;
+    border: 2px dashed #e5e7eb;
+}
+
+/* Responsive adjustments for enhanced categories */
+@media (max-width: 768px) {
+    .categories-grid-enhanced {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Reduced from 250px */
+        gap: 0.75rem; /* Reduced from 1rem */
+        padding: 0 0.5rem;
+    }
+    
+    .section-title-enhanced {
+        font-size: 1.5rem; /* Reduced from 1.75rem */
+    }
+    
+    .section-subtitle-enhanced {
+        font-size: 0.95rem; /* Reduced from 1rem */
+    }
+    
+    .category-image-wrapper-enhanced {
+        height: 100px; /* Reduced from 150px */
+    }
+    
+    .category-info-enhanced {
+        padding: 0.75rem; /* Reduced from 1rem */
+    }
+    
+    .category-name-enhanced {
+        font-size: 1rem; /* Reduced from 1.1rem */
+    }
+}
+
+@media (max-width: 576px) {
+    .categories-grid-enhanced {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem; /* Reduced from 0.75rem */
+    }
+    
+    .category-image-wrapper-enhanced {
+        height: 90px; /* Reduced from 120px */
+    }
+    
+    .category-badge-enhanced {
+        top: 6px; /* Reduced from 8px */
+        right: 6px; /* Reduced from 8px */
+    }
+    
+    .category-badge-enhanced .badge {
+        font-size: 0.65rem; /* Reduced from 0.7rem */
+        padding: 0.25rem 0.5rem; /* Reduced from 0.3rem 0.6rem */
+    }
+    
+    .category-info-enhanced {
+        padding: 0.6rem; /* Reduced from 0.75rem */
+    }
+    
+    .category-name-enhanced {
+        font-size: 0.9rem; /* Reduced from 1rem */
+    }
+    
+    .category-desc-enhanced {
+        display: none; /* Hide description on mobile to save space */
+    }
+}
+
+/* Compact Categories Grid */
+.categories-grid-compact {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.category-card-compact {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s ease;
+    padding: 1rem;
+}
+
+.category-card-compact:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+.category-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.category-info-compact {
+    text-align: left;
+}
+
+.category-name-compact {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--text-primary);
+}
+
+.category-count-compact {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
 }
 
 /* Animation */

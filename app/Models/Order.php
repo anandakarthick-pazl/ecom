@@ -14,7 +14,7 @@ class Order extends Model
     protected $fillable = [
         'order_number', 'customer_id', 'customer_name', 'customer_mobile', 'customer_email',
         'delivery_address', 'city', 'state', 'pincode',
-        'subtotal', 'discount', 'delivery_charge', 'tax_amount', 'cgst_amount', 'sgst_amount', 'total',
+        'subtotal', 'discount', 'coupon_code', 'coupon_discount', 'delivery_charge', 'tax_amount', 'cgst_amount', 'sgst_amount', 'total',
         'status', 'notes', 'admin_notes', 'shipped_at', 'delivered_at', 'company_id', 'branch_id',
         'payment_method', 'payment_status', 'payment_transaction_id', 'payment_details', 'paid_at',
         // Commission fields
@@ -24,6 +24,7 @@ class Order extends Model
     protected $casts = [
         'subtotal' => 'decimal:2',
         'discount' => 'decimal:2',
+        'coupon_discount' => 'decimal:2',
         'delivery_charge' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'cgst_amount' => 'decimal:2',

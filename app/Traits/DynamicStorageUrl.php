@@ -190,10 +190,10 @@ trait DynamicStorageUrl
     public function getFallbackImageUrl($category = 'general')
     {
         $fallbackImages = [
-            'products' => '/images/fallback/product-placeholder.jpg',
-            'banners' => '/images/fallback/banner-placeholder.jpg',
-            'categories' => '/images/fallback/category-placeholder.jpg',
-            'general' => '/images/fallback/default-placeholder.jpg'
+            'products' => '/images/fallback/product-placeholder.png',
+            'banners' => '/images/fallback/banner-placeholder.png',
+            'categories' => '/images/fallback/category-placeholder.png',
+            'general' => '/images/fallback/default-placeholder.png'
         ];
 
         return asset($fallbackImages[$category] ?? $fallbackImages['general']);

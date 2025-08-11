@@ -1145,21 +1145,21 @@ class OrderController extends Controller
     /**
      * Get company settings for invoices
      */
-    private function getCompanySettings($companyId)
-    {
-        return [
-            'name' => AppSetting::getForTenant('company_name', $companyId) ?? 'Your Company',
-            'address' => AppSetting::getForTenant('company_address', $companyId) ?? '',
-            'phone' => AppSetting::getForTenant('company_phone', $companyId) ?? '',
-            'email' => AppSetting::getForTenant('company_email', $companyId) ?? '',
-            'website' => AppSetting::getForTenant('company_website', $companyId) ?? '',
-            'gst_number' => AppSetting::getForTenant('company_gst_number', $companyId) ?? '',
-            'logo' => AppSetting::getForTenant('company_logo', $companyId) ?? '',
-            'currency' => AppSetting::getForTenant('currency', $companyId) ?? '₹',
-            'tax_name' => AppSetting::getForTenant('tax_name', $companyId) ?? 'GST',
-            'tax_rate' => AppSetting::getForTenant('tax_rate', $companyId) ?? 18,
-        ];
-    }
+    // private function getCompanySettings($companyId)
+    // {
+    //     return [
+    //         'name' => AppSetting::getForTenant('company_name', $companyId) ?? 'Your Company',
+    //         'address' => AppSetting::getForTenant('company_address', $companyId) ?? '',
+    //         'phone' => AppSetting::getForTenant('company_phone', $companyId) ?? '',
+    //         'email' => AppSetting::getForTenant('company_email', $companyId) ?? '',
+    //         'website' => AppSetting::getForTenant('company_website', $companyId) ?? '',
+    //         'gst_number' => AppSetting::getForTenant('company_gst_number', $companyId) ?? '',
+    //         'logo' => AppSetting::getForTenant('company_logo', $companyId) ?? '',
+    //         'currency' => AppSetting::getForTenant('currency', $companyId) ?? '₹',
+    //         'tax_name' => AppSetting::getForTenant('tax_name', $companyId) ?? 'GST',
+    //         'tax_rate' => AppSetting::getForTenant('tax_rate', $companyId) ?? 18,
+    //     ];
+    // }
 
     /**
      * Debug WhatsApp media URL configuration
@@ -1307,6 +1307,65 @@ class OrderController extends Controller
                 'success' => false,
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Get company settings for invoices - fetches from companies table
+     */
+    private function getCompanySettings($companyId)
+    {
+        try {
+            // Get company from companies table
+            $company = \App\Models\SuperAdmin\Company::find($companyId);
+            
+            if ($company) {
+                return [
+                    'name' => $company->name,
+                    'address' => trim($company->address . ' ' . $company->city . ' ' . $company->state . ' ' . $company->postal_code),
+                    'phone' => $company->phone,
+                    'email' => $company->email,
+                    'website' => AppSetting::getForTenant('company_website', $companyId) ?? '',
+                    'gst_number' => $company->gst_number,
+                    'logo' => $company->logo,
+                    'currency' => AppSetting::getForTenant('currency', $companyId) ?? '₹',
+                    'tax_name' => AppSetting::getForTenant('tax_name', $companyId) ?? 'GST',
+                    'tax_rate' => AppSetting::getForTenant('tax_rate', $companyId) ?? 18,
+                ];
+            } else {
+                // Fallback to app settings if company not found
+                return [
+                    'name' => AppSetting::getForTenant('company_name', $companyId) ?? 'Your Company',
+                    'address' => AppSetting::getForTenant('company_address', $companyId) ?? '',
+                    'phone' => AppSetting::getForTenant('company_phone', $companyId) ?? '',
+                    'email' => AppSetting::getForTenant('company_email', $companyId) ?? '',
+                    'website' => AppSetting::getForTenant('company_website', $companyId) ?? '',
+                    'gst_number' => AppSetting::getForTenant('company_gst_number', $companyId) ?? '',
+                    'logo' => AppSetting::getForTenant('company_logo', $companyId) ?? '',
+                    'currency' => AppSetting::getForTenant('currency', $companyId) ?? '₹',
+                    'tax_name' => AppSetting::getForTenant('tax_name', $companyId) ?? 'GST',
+                    'tax_rate' => AppSetting::getForTenant('tax_rate', $companyId) ?? 18,
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to get company settings', [
+                'company_id' => $companyId,
+                'error' => $e->getMessage()
+            ]);
+            
+            // Return safe defaults
+            return [
+                'name' => 'Your Company',
+                'address' => '',
+                'phone' => '',
+                'email' => '',
+                'website' => '',
+                'gst_number' => '',
+                'logo' => '',
+                'currency' => '₹',
+                'tax_name' => 'GST',
+                'tax_rate' => 18,
+            ];
         }
     }
 }

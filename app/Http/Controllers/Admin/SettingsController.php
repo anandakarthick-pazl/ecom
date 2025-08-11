@@ -40,6 +40,39 @@ class SettingsController extends Controller
         $deliverySettings = AppSetting::getGroup('delivery');
         $paginationSettings = AppSetting::getGroup('pagination');
         
+        // Ensure delivery settings have proper default values
+        $deliveryDefaults = [
+            'delivery_enabled' => true,
+            'delivery_charge' => 50.00,
+            'free_delivery_enabled' => true,
+            'free_delivery_threshold' => 500.00,
+            'delivery_max_amount' => null,
+            'delivery_time_estimate' => '3-5 business days',
+            'delivery_description' => '',
+            'min_order_validation_enabled' => false,
+            'min_order_amount' => 1000.00,
+            'min_order_message' => 'Minimum order amount is ₹1000 for online orders.'
+        ];
+        
+        foreach ($deliveryDefaults as $key => $defaultValue) {
+            if (!isset($deliverySettings[$key])) {
+                $deliverySettings[$key] = $defaultValue;
+            } else {
+                // Ensure proper type conversion for boolean settings
+                if (in_array($key, ['delivery_enabled', 'free_delivery_enabled', 'min_order_validation_enabled'])) {
+                    if (is_string($deliverySettings[$key])) {
+                        $deliverySettings[$key] = filter_var($deliverySettings[$key], FILTER_VALIDATE_BOOLEAN);
+                    } else {
+                        $deliverySettings[$key] = (bool) $deliverySettings[$key];
+                    }
+                } elseif (in_array($key, ['delivery_charge', 'free_delivery_threshold', 'delivery_max_amount', 'min_order_amount'])) {
+                    if ($deliverySettings[$key] !== null && $deliverySettings[$key] !== '') {
+                        $deliverySettings[$key] = (float) $deliverySettings[$key];
+                    }
+                }
+            }
+        }
+        
         // Ensure pagination settings have proper default values
         $paginationDefaults = [
             'frontend_pagination_enabled' => true,
@@ -597,6 +630,13 @@ class SettingsController extends Controller
 
     public function updateDelivery(Request $request)
     {
+        // Debug: Log all request data to identify any issues
+        \Log::info('Delivery settings update request data', [
+            'all_data' => $request->all(),
+            'user_id' => auth()->id(),
+            'company_id' => $this->getCurrentTenantId()
+        ]);
+        
         $request->validate([
             'delivery_enabled' => 'boolean',
             'delivery_charge' => 'required|numeric|min:0|max:9999.99',
@@ -610,44 +650,67 @@ class SettingsController extends Controller
             'min_order_message' => 'nullable|string|max:255',
         ]);
 
-        // Handle delivery enabled/disabled
-        AppSetting::set('delivery_enabled', $request->boolean('delivery_enabled'), 'boolean', 'delivery');
-        
-        // Only save delivery settings if delivery is enabled
-        if ($request->boolean('delivery_enabled')) {
+        try {
+            // Always save delivery enabled/disabled status
+            AppSetting::set('delivery_enabled', $request->boolean('delivery_enabled'), 'boolean', 'delivery');
+            
+            // Always save delivery charge (required field)
             AppSetting::set('delivery_charge', $request->delivery_charge, 'float', 'delivery');
+            
+            // Always save free delivery settings
             AppSetting::set('free_delivery_enabled', $request->boolean('free_delivery_enabled'), 'boolean', 'delivery');
             
-            // Only save free delivery threshold if free delivery is enabled
-            if ($request->boolean('free_delivery_enabled')) {
-                AppSetting::set('free_delivery_threshold', $request->free_delivery_threshold, 'float', 'delivery');
-            }
+            // Save free delivery threshold (always save, even if null/empty to allow clearing)
+            AppSetting::set('free_delivery_threshold', $request->free_delivery_threshold ?? null, 'float', 'delivery');
             
-            // Optional settings
-            if ($request->delivery_max_amount) {
-                AppSetting::set('delivery_max_amount', $request->delivery_max_amount, 'float', 'delivery');
-            }
-            
-            if ($request->delivery_time_estimate) {
-                AppSetting::set('delivery_time_estimate', $request->delivery_time_estimate, 'string', 'delivery');
-            }
-            
-            if ($request->delivery_description) {
-                AppSetting::set('delivery_description', $request->delivery_description, 'string', 'delivery');
-            }
-        }
+            // Always save optional settings (to allow clearing/updating them)
+            AppSetting::set('delivery_max_amount', $request->delivery_max_amount ?? null, 'float', 'delivery');
+            AppSetting::set('delivery_time_estimate', $request->delivery_time_estimate ?? '', 'string', 'delivery');
+            AppSetting::set('delivery_description', $request->delivery_description ?? '', 'string', 'delivery');
 
-        // Handle minimum order amount validation settings
-        AppSetting::set('min_order_validation_enabled', $request->boolean('min_order_validation_enabled'), 'boolean', 'delivery');
-        
-        if ($request->boolean('min_order_validation_enabled')) {
+            // Always save minimum order validation settings
+            AppSetting::set('min_order_validation_enabled', $request->boolean('min_order_validation_enabled'), 'boolean', 'delivery');
             AppSetting::set('min_order_amount', $request->min_order_amount ?? 1000.00, 'float', 'delivery');
             AppSetting::set('min_order_message', $request->min_order_message ?? 'Minimum order amount is ₹1000 for online orders.', 'string', 'delivery');
+
+            // Clear cache to ensure changes take effect immediately
+            AppSetting::clearCache();
+            
+            // Additional cache clearing for reliability
+            \Artisan::call('view:clear');
+            \Cache::flush();
+            
+            // Log successful update for debugging
+            \Log::info('Delivery settings updated successfully', [
+                'settings_saved' => [
+                    'delivery_enabled' => $request->boolean('delivery_enabled'),
+                    'delivery_charge' => $request->delivery_charge,
+                    'free_delivery_enabled' => $request->boolean('free_delivery_enabled'),
+                    'free_delivery_threshold' => $request->free_delivery_threshold,
+                    'delivery_max_amount' => $request->delivery_max_amount,
+                    'delivery_time_estimate' => $request->delivery_time_estimate,
+                    'delivery_description' => $request->delivery_description,
+                    'min_order_validation_enabled' => $request->boolean('min_order_validation_enabled'),
+                    'min_order_amount' => $request->min_order_amount,
+                    'min_order_message' => $request->min_order_message,
+                ],
+                'tenant_id' => $this->getCurrentTenantId(),
+                'user_id' => auth()->id()
+            ]);
+
+            return redirect()->back()->with('success', 'Delivery settings updated successfully!');
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to update delivery settings', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all(),
+                'tenant_id' => $this->getCurrentTenantId(),
+                'user_id' => auth()->id()
+            ]);
+            
+            return redirect()->back()->with('error', 'Failed to update delivery settings: ' . $e->getMessage());
         }
-
-        AppSetting::clearCache();
-
-        return redirect()->back()->with('success', 'Delivery settings updated successfully!');
     }
 
     public function updatePagination(Request $request)

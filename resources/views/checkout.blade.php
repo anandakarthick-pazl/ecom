@@ -362,8 +362,8 @@
                     
                     @if($discount > 0)
                     <div class="d-flex justify-content-between mb-2">
-                        <span>Discount:</span>
-                        <span class="text-success">-₹{{ number_format($discount, 2) }}</span>
+                        <span class="text-success"><i class="fas fa-tag"></i> Coupon Discount ({{ $appliedCoupon['code'] ?? 'Coupon' }}):</span>
+                        <span class="text-success fw-bold">-₹{{ number_format($discount, 2) }}</span>
                     </div>
                     @endif
                     

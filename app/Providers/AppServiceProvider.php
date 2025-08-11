@@ -33,6 +33,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register console commands
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \App\Console\Commands\UpdateCompanyInfo::class,
+            ]);
+        }
         // Configure pagination views for Bootstrap 5
         Paginator::defaultView('pagination.bootstrap-5');
         Paginator::defaultSimpleView('pagination.simple-default');
@@ -128,12 +134,12 @@ class AppServiceProvider extends ServiceProvider
                     // Default values if no company found
                     $companySettings = [
                         'id' => null,
-                        'company_name' => 'Herbal Bliss',
-                        'company_email' => 'info@herbalbliss.com',
-                        'company_phone' => '+91 9876543210',
-                        'company_address' => '',
-                        'company_logo' => '',
-                        'gst_number' => null,
+                        'company_name' => AppSetting::get('company_name', 'Your Store'),
+                        'company_email' => AppSetting::get('company_email', 'info@yourstore.com'),
+                        'company_phone' => AppSetting::get('company_phone', '+91 9876543210'),
+                        'company_address' => AppSetting::get('company_address', ''),
+                        'company_logo' => AppSetting::get('company_logo', ''),
+                        'gst_number' => AppSetting::get('company_gst_number', null),
                         'primary_color' => $themeSettings['primary_color'] ?? '#2d5016',
                         'secondary_color' => $themeSettings['secondary_color'] ?? '#4a7c28',
                         'sidebar_color' => $themeSettings['sidebar_color'] ?? '#2d5016',
@@ -146,11 +152,11 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('currentCompany', $company);
                 
             } catch (\Exception $e) {
-                // Fallback with herbal theme defaults
+                // Fallback with default theme
                 $view->with('globalCompany', (object) [
                     'id' => null,
-                    'company_name' => 'Herbal Bliss',
-                    'company_email' => 'info@herbalbliss.com',
+                    'company_name' => 'Your Store',
+                    'company_email' => 'info@yourstore.com',
                     'company_phone' => '+91 9876543210',
                     'company_address' => '',
                     'company_logo' => '',

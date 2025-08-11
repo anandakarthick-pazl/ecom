@@ -195,38 +195,58 @@
     <div class="receipt-container">
         <!-- Header -->
         <div class="header">
-            @if(!empty($companySettings['logo']))
-                @php
-                    $logoPath = null;
+            @php
+                // Get company data - prioritize from companies table
+                $companyName = $companySettings['name'] ?? 'YOUR STORE';
+                $companyAddress = $companySettings['address'] ?? '';
+                $companyPhone = $companySettings['phone'] ?? '';
+                $companyEmail = $companySettings['email'] ?? '';
+                $companyGst = $companySettings['gst_number'] ?? '';
+                $companyLogo = $companySettings['logo'] ?? '';
+                
+                // Handle logo path
+                $logoPath = null;
+                if (!empty($companyLogo)) {
                     $possiblePaths = [
-                        public_path('storage/' . $companySettings['logo']),
-                        storage_path('app/public/' . $companySettings['logo']),
-                        public_path($companySettings['logo'])
+                        public_path('storage/' . $companyLogo),
+                        storage_path('app/public/' . $companyLogo),
+                        public_path($companyLogo)
                     ];
                     foreach ($possiblePaths as $path) {
                         if (file_exists($path)) {
-                            $logoPath = asset('storage/' . $companySettings['logo']);
+                            $logoPath = asset('storage/' . $companyLogo);
                             break;
                         }
                     }
-                @endphp
-                @if($logoPath)
-                    <img src="{{ $logoPath }}" alt="{{ $companySettings['name'] }}" class="company-logo">
-                @endif
+                }
+            @endphp
+            
+            {{-- Company Logo --}}
+            @if($logoPath)
+                <img src="{{ $logoPath }}" alt="{{ $companyName }}" class="company-logo">
             @endif
             
-            <div class="company-name">{{ strtoupper($companySettings['name'] ?? 'YOUR STORE') }}</div>
-            @if(!empty($companySettings['address']))
-                <div class="company-details">{{ $companySettings['address'] }}</div>
+            {{-- Company Name --}}
+            <div class="company-name">{{ strtoupper($companyName) }}</div>
+            
+            {{-- Company Address --}}
+            @if(!empty($companyAddress))
+                <div class="company-details">{{ $companyAddress }}</div>
             @endif
-            @if(!empty($companySettings['phone']))
-                <div class="company-details">Ph: {{ $companySettings['phone'] }}</div>
+            
+            {{-- Company Phone --}}
+            @if(!empty($companyPhone))
+                <div class="company-details">Ph: {{ $companyPhone }}</div>
             @endif
-            @if(!empty($companySettings['email']))
-                <div class="company-details">{{ $companySettings['email'] }}</div>
+            
+            {{-- Company Email --}}
+            @if(!empty($companyEmail))
+                <div class="company-details">{{ $companyEmail }}</div>
             @endif
-            @if(!empty($companySettings['gst_number']))
-                <div class="company-details">GST: {{ $companySettings['gst_number'] }}</div>
+            
+            {{-- GST Number --}}
+            @if(!empty($companyGst))
+                <div class="company-details">GST: {{ $companyGst }}</div>
             @endif
         </div>
         
@@ -391,11 +411,11 @@
             <div class="dashed-line"></div>
             <div class="bold">Thank you for your order!</div>
             <div>Visit us again soon</div>
-            @if(!empty($companySettings['phone']))
-                <br><div>For queries: {{ $companySettings['phone'] }}</div>
+            @if(!empty($companyPhone))
+                <br><div>For queries: {{ $companyPhone }}</div>
             @endif
-            @if(!empty($companySettings['email']))
-                <div>Email: {{ $companySettings['email'] }}</div>
+            @if(!empty($companyEmail))
+                <div>Email: {{ $companyEmail }}</div>
             @endif
             <br>
             <div style="font-size: 8px;">

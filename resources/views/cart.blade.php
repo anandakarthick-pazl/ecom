@@ -126,6 +126,96 @@
         #detailed-product-breakdown::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+        
+        /* Coupon Section Styles */
+        .coupon-section {
+            border: 1px solid #e3f2fd;
+            border-radius: 8px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            margin-bottom: 20px;
+        }
+        
+        .coupon-section .input-group {
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .coupon-section .form-control {
+            border-right: none;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        
+        .coupon-section .form-control:focus {
+            border-color: #007bff;
+            box-shadow: none;
+        }
+        
+        .coupon-section .btn-outline-primary {
+            border-left: none;
+            font-weight: 600;
+        }
+        
+        .coupon-section .btn-outline-primary:hover {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        
+        .coupon-section .alert-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-color: #28a745;
+            border-left: 4px solid #28a745;
+        }
+        
+        .coupon-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .coupon-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .coupon-card .card-body {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .coupon-card .card-body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
+        }
+        
+        .coupon-card:hover .card-body::before {
+            left: 100%;
+        }
+        
+        /* Animate coupon discount when applied */
+        #coupon-discount {
+            animation: couponApplied 0.6s ease-in-out;
+        }
+        
+        @keyframes couponApplied {
+            0% {
+                transform: scale(1);
+                color: #28a745;
+            }
+            50% {
+                transform: scale(1.1);
+                color: #20c997;
+            }
+            100% {
+                transform: scale(1);
+                color: #28a745;
+            }
+        }
     </style>
 @endpush
 
@@ -285,6 +375,45 @@
                                 <span>Total Tax:</span>
                                 <span id="total-tax">₹{{ number_format($totalTax, 2) }}</span>
                             </div>
+
+                            {{-- Coupon Section --}}
+                            <div class="coupon-section mb-3">
+                                @if($appliedCoupon)
+                                    {{-- Applied Coupon Display --}}
+                                    <div class="alert alert-success d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-tag"></i>
+                                            <strong>{{ $appliedCoupon['code'] }}</strong> applied!
+                                            <br><small class="text-muted">{{ $appliedCoupon['offer_name'] ?? 'Coupon discount' }}</small>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeCoupon()">
+                                            <i class="fas fa-times"></i> Remove
+                                        </button>
+                                    </div>
+                                @else
+                                    {{-- Coupon Input Form --}}
+                                    <div class="input-group mb-2">
+                                        <input type="text" class="form-control" id="coupon-code" 
+                                               placeholder="Enter coupon code" maxlength="50"
+                                               style="text-transform: uppercase;">
+                                        <button class="btn btn-outline-primary" type="button" onclick="applyCoupon()">
+                                            <i class="fas fa-percent"></i> Apply
+                                        </button>
+                                    </div>
+                                    <div class="text-center">
+                                        <button type="button" class="btn btn-link btn-sm text-muted" onclick="showAvailableCoupons()">
+                                            <i class="fas fa-gift"></i> View available coupons
+                                        </button>
+                                    </div>
+                                @endif
+                            </div>
+
+                            @if($couponDiscount > 0)
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-success"><i class="fas fa-tag"></i> Coupon Discount:</span>
+                                    <span class="text-success fw-bold" id="coupon-discount">-₹{{ number_format($couponDiscount, 2) }}</span>
+                                </div>
+                            @endif
 
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Delivery Charge:</span>
@@ -1417,6 +1546,192 @@
                     }
                 };
             }
+
+            // Coupon Functions
+            window.applyCoupon = function() {
+                const couponCode = $('#coupon-code').val().trim().toUpperCase();
+                
+                if (!couponCode) {
+                    showToast('Please enter a coupon code', 'warning');
+                    $('#coupon-code').focus();
+                    return;
+                }
+                
+                // Disable apply button during request
+                const applyBtn = $('.coupon-section button:contains("Apply")');
+                const originalText = applyBtn.html();
+                applyBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Applying...');
+                
+                $.ajax({
+                    url: '{{ route('coupon.apply') }}',
+                    method: 'POST',
+                    data: {
+                        coupon_code: couponCode,
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast(response.message, 'success');
+                            // Reload page to show updated cart with coupon
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            showToast(response.message, 'error');
+                            $('#coupon-code').val('').focus();
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('Coupon apply error:', xhr);
+                        let errorMessage = 'Unable to apply coupon. Please try again.';
+                        
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        
+                        showToast(errorMessage, 'error');
+                        $('#coupon-code').val('').focus();
+                    },
+                    complete: function() {
+                        // Re-enable apply button
+                        applyBtn.prop('disabled', false).html(originalText);
+                    }
+                });
+            };
+            
+            window.removeCoupon = function() {
+                if (!confirm('Are you sure you want to remove the applied coupon?')) {
+                    return;
+                }
+                
+                $.ajax({
+                    url: '{{ route('coupon.remove') }}',
+                    method: 'DELETE',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast(response.message, 'success');
+                            // Reload page to show updated cart without coupon
+                            setTimeout(() => {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            showToast('Unable to remove coupon. Please try again.', 'error');
+                        }
+                    },
+                    error: function() {
+                        showToast('Unable to remove coupon. Please try again.', 'error');
+                    }
+                });
+            };
+            
+            window.showAvailableCoupons = function() {
+                // Show loading state
+                const viewBtn = $('.coupon-section button:contains("View available")');
+                const originalText = viewBtn.html();
+                viewBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading...');
+                
+                $.ajax({
+                    url: '{{ route('coupon.available') }}',
+                    method: 'GET',
+                    success: function(response) {
+                        if (response.success && response.coupons.length > 0) {
+                            displayAvailableCoupons(response.coupons);
+                        } else {
+                            showToast('No active coupons available at the moment.', 'info');
+                        }
+                    },
+                    error: function() {
+                        showToast('Unable to load available coupons.', 'error');
+                    },
+                    complete: function() {
+                        viewBtn.prop('disabled', false).html(originalText);
+                    }
+                });
+            };
+            
+            function displayAvailableCoupons(coupons) {
+                const modalHtml = `
+                    <div class="modal fade" id="couponsModal" tabindex="-1">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-gift text-success"></i> Available Coupons
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row">
+                                        ${coupons.map(coupon => `
+                                            <div class="col-md-6 mb-3">
+                                                <div class="card coupon-card h-100 border-success">
+                                                    <div class="card-body">
+                                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                                            <h6 class="card-title text-success mb-0">
+                                                                <i class="fas fa-tag"></i> ${coupon.code}
+                                                            </h6>
+                                                            <span class="badge bg-success">${coupon.discount_display}</span>
+                                                        </div>
+                                                        <p class="card-text small text-muted mb-2">${coupon.description}</p>
+                                                        <div class="small text-muted mb-2">
+                                                            <i class="fas fa-clock"></i> Valid until: ${coupon.valid_until}
+                                                        </div>
+                                                        <div class="d-grid">
+                                                            <button class="btn btn-outline-success btn-sm" 
+                                                                    onclick="useCoupon('${coupon.code}')">
+                                                                <i class="fas fa-percent"></i> Use This Coupon
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Remove existing modal
+                $('#couponsModal').remove();
+                
+                // Add new modal to body
+                $('body').append(modalHtml);
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('couponsModal'));
+                modal.show();
+                
+                // Remove modal from DOM when hidden
+                $('#couponsModal').on('hidden.bs.modal', function() {
+                    $(this).remove();
+                });
+            }
+            
+            window.useCoupon = function(couponCode) {
+                $('#coupon-code').val(couponCode);
+                $('#couponsModal').modal('hide');
+                
+                // Auto-apply the coupon after modal closes
+                setTimeout(() => {
+                    applyCoupon();
+                }, 500);
+            };
+            
+            // Allow Enter key to apply coupon
+            $(document).on('keypress', '#coupon-code', function(e) {
+                if (e.which === 13) { // Enter key
+                    e.preventDefault();
+                    applyCoupon();
+                }
+            });
         </script>
     @endpush
 @endsection
