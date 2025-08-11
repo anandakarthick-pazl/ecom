@@ -172,6 +172,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
     
     // E-commerce Management
     Route::resource('categories', CategoryController::class);
+    
+    // Bulk Upload Routes (MUST come BEFORE resource routes to avoid conflicts)
+    Route::get('products/bulk-upload', [ProductController::class, 'showBulkUpload'])->name('products.bulk-upload');
+    Route::post('products/bulk-upload', [ProductController::class, 'processBulkUpload'])->name('products.process-bulk-upload');
+    Route::get('products/download-template', [ProductController::class, 'downloadTemplate'])->name('products.download-template');
+    Route::get('products/upload-history', [ProductController::class, 'uploadHistory'])->name('products.upload-history');
+    
+    // Product Resource and specific routes
     Route::resource('products', ProductController::class);
     Route::patch('products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggle-status');
     Route::patch('products/{product}/toggle-featured', [ProductController::class, 'toggleFeatured'])->name('products.toggle-featured');
@@ -595,6 +603,11 @@ if (config('app.debug')) {
     Route::get('/super-admin/storage-test', [\App\Http\Controllers\SuperAdmin\StorageTestController::class, 'index'])
         ->middleware(['auth', 'super.admin'])
         ->name('super-admin.storage.test');
+        
+    // Temporary storage test route (remove after testing)
+    Route::get('/test-storage', function() {
+        require base_path('test_storage_route.php');
+    })->name('test.storage');
         
     // Banner debug routes
     Route::get('/debug/banners', function() {

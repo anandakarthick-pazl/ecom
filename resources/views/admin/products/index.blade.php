@@ -29,6 +29,14 @@
     <a href="{{ route('admin.products.create') }}" class="btn btn-primary">
         <i class="fas fa-plus"></i> Add Product
     </a>
+    
+    <!-- Bulk Upload Options - Select Dropdown -->
+    <select class="form-select" id="bulk-upload-select" style="width: auto; min-width: 150px;" onchange="handleBulkUploadAction(this.value)">
+        <option value="">Bulk Upload ▼</option>
+        <option value="upload">📤 Upload Products</option>
+        <option value="template">📥 Download Template</option>
+        {{-- <option value="history">📋 Upload History</option> --}}
+    </select>
 </div>
 @endsection
 
@@ -305,6 +313,31 @@
     .quick-stat-label {
         font-size: 12px;
         opacity: 0.9;
+    }
+
+    /* Select dropdown styling */
+    #bulk-upload-select {
+        border: 2px solid #28a745;
+        border-radius: 6px;
+        background-color: #fff;
+        color: #28a745;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    #bulk-upload-select:hover {
+        background-color: #f8f9fa;
+        border-color: #20c997;
+    }
+    
+    #bulk-upload-select:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        background-color: #fff;
+    }
+    
+    #bulk-upload-select option {
+        padding: 8px 12px;
     }
 
     /* View transitions */
@@ -730,9 +763,29 @@ function exportProducts() {
     window.open(`{{ route('admin.products.index') }}?${params.toString()}`, '_blank');
 }
 
+// Handle bulk upload action selection
+function handleBulkUploadAction(value) {
+    if (!value) return;
+    
+    const routes = {
+        'upload': '{{ route("admin.products.bulk-upload") }}',
+        'template': '{{ route("admin.products.download-template") }}',
+        'history': '{{ route("admin.products.upload-history") }}'
+    };
+    
+    if (routes[value]) {
+        window.location.href = routes[value];
+    }
+    
+    // Reset select to default
+    setTimeout(() => {
+        document.getElementById('bulk-upload-select').value = '';
+    }, 100);
+}
+
 // Enhanced tooltips
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Bootstrap tooltips if available
+    // Enhanced tooltips
     if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
         tooltipTriggerList.map(function (tooltipTriggerEl) {

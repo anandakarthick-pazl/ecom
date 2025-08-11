@@ -13,6 +13,62 @@ use App\Traits\HasPagination;
 class ProductController extends BaseAdminController
 {
     use DynamicStorage, HasPagination;
+    
+    /**
+     * Validate that the user owns the resource (tenant isolation)
+     */
+    protected function validateTenantOwnership($model)
+    {
+        if ($model->company_id !== $this->getCurrentCompanyId()) {
+            abort(403, 'You do not have access to this resource.');
+        }
+    }
+    
+    /**
+     * Get tenant-specific unique validation rule
+     */
+    protected function getTenantUniqueRule($table, $column, $ignore = null)
+    {
+        $rule = "unique:{$table},{$column}";
+        if ($ignore) {
+            $rule .= ",{$ignore}";
+        }
+        $rule .= ",id,company_id,{$this->getCurrentCompanyId()}";
+        return $rule;
+    }
+    
+    /**
+     * Get tenant-specific exists validation rule
+     */
+    protected function getTenantExistsRule($table, $column = 'id')
+    {
+        return "exists:{$table},{$column},company_id,{$this->getCurrentCompanyId()}";
+    }
+    
+    /**
+     * Store file content to a path
+     */
+    protected function storeFile($content, $path)
+    {
+        try {
+            $fullPath = storage_path('app/public/' . $path);
+            $directory = dirname($fullPath);
+            
+            // Ensure directory exists
+            if (!is_dir($directory)) {
+                mkdir($directory, 0755, true);
+            }
+            
+            // Store the file
+            return file_put_contents($fullPath, $content) !== false;
+        } catch (\Exception $e) {
+            \Log::error('Failed to store file', [
+                'path' => $path,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
     public function index(Request $request)
     {
         $query = Product::with('category');
@@ -668,5 +724,565 @@ class ProductController extends BaseAdminController
         
         // Remove temporary fields that shouldn't be saved to database
         unset($data['discount_type'], $data['discount_percentage']);
+    }
+
+    /**
+     * Show bulk upload form
+     */
+    public function showBulkUpload()
+    {
+        $categories = Category::active()->orderBy('name')->get();
+        return view('admin.products.bulk-upload', compact('categories'));
+    }
+
+    /**
+     * Download CSV template for bulk upload
+     */
+    public function downloadTemplate()
+    {
+        $filename = 'product_upload_template.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0'
+        ];
+
+        $callback = function() {
+            $file = fopen('php://output', 'w');
+            
+            // Add CSV headers with all product fields
+            fputcsv($file, [
+                'name',                 // Required
+                'description',          // Required
+                'short_description',    // Optional
+                'price',               // Required
+                'discount_price',      // Optional
+                'cost_price',          // Optional
+                'stock',               // Required
+                'sku',                 // Optional but recommended
+                'barcode',             // Optional
+                'code',                // Optional
+                'category_name',       // Required (category name)
+                'weight',              // Optional
+                'weight_unit',         // Optional (kg, g, lb, oz)
+                'tax_percentage',      // Required
+                'low_stock_threshold', // Optional
+                'is_active',           // Optional (1 or 0)
+                'is_featured',         // Optional (1 or 0)
+                'sort_order',          // Optional
+                'meta_title',          // Optional
+                'meta_description',    // Optional
+                'meta_keywords',       // Optional
+                'featured_image_url',  // Optional (URL to image)
+                'additional_images'    // Optional (comma-separated URLs)
+            ]);
+            
+            // Add sample data row for reference
+            fputcsv($file, [
+                'Sample Product Name',
+                'This is a detailed description of the product with all features and benefits.',
+                'Short product description for listings.',
+                '99.99',
+                '79.99',
+                '50.00',
+                '100',
+                'SKU001',
+                '1234567890123',
+                'PROD001',
+                'Electronics',
+                '1.5',
+                'kg',
+                '18',
+                '10',
+                '1',
+                '1',
+                '1',
+                'Sample Product - Buy Online',
+                'Buy sample product online at best price.',
+                'sample, product, online, buy',
+                'https://example.com/product-image.jpg',
+                'https://example.com/image1.jpg,https://example.com/image2.jpg'
+            ]);
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Process bulk upload
+     */
+    public function processBulkUpload(Request $request)
+    {
+        $request->validate([
+            'file' => [
+                'required',
+                'file',
+                'max:10240', // 10MB max
+                function ($attribute, $value, $fail) {
+                    $allowedExtensions = ['csv', 'xlsx', 'xls'];
+                    $allowedMimeTypes = [
+                        'text/csv',
+                        'text/plain',
+                        'application/csv',
+                        'application/excel',
+                        'application/vnd.ms-excel',
+                        'application/vnd.msexcel',
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    ];
+                    
+                    $extension = strtolower($value->getClientOriginalExtension());
+                    $mimeType = $value->getMimeType();
+                    
+                    if (!in_array($extension, $allowedExtensions) && !in_array($mimeType, $allowedMimeTypes)) {
+                        $fail('The file must be a CSV (.csv) or Excel (.xlsx, .xls) file.');
+                    }
+                }
+            ],
+            'update_existing' => 'nullable|boolean'
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $updateExisting = $request->boolean('update_existing');
+            
+            // Create temp directory with proper Windows path handling
+            $tempDir = storage_path('app') . DIRECTORY_SEPARATOR . 'temp';
+            if (!is_dir($tempDir)) {
+                if (!mkdir($tempDir, 0755, true)) {
+                    throw new \Exception('Failed to create temporary directory: ' . $tempDir);
+                }
+            }
+            
+            // Use direct file move instead of Laravel storage
+            $tempFileName = 'bulk_upload_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $fullPath = $tempDir . DIRECTORY_SEPARATOR . $tempFileName;
+            
+            // Move uploaded file directly to temp directory
+            if (!$file->move($tempDir, $tempFileName)) {
+                throw new \Exception('Failed to move uploaded file to: ' . $fullPath);
+            }
+            
+            // Verify file was moved successfully
+            if (!file_exists($fullPath)) {
+                throw new \Exception('File was not found after move operation: ' . $fullPath);
+            }
+            
+            \Log::info('File uploaded successfully for bulk processing', [
+                'original_name' => $file->getClientOriginalName(),
+                'temp_path' => $fullPath,
+                'file_size' => filesize($fullPath),
+                'temp_dir_exists' => is_dir($tempDir),
+                'temp_dir_writable' => is_writable($tempDir)
+            ]);
+            
+            // Parse the file based on extension
+            $data = $this->parseUploadFile($fullPath, $file->getClientOriginalExtension());
+            
+            if (empty($data)) {
+                return redirect()->back()->with('error', 'No valid data found in the uploaded file.');
+            }
+
+            // Process the data
+            $result = $this->processProductData($data, $updateExisting);
+            
+            // Clean up temp file
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+                \Log::info('Temporary file cleaned up', ['path' => $fullPath]);
+            }
+            
+            // Log the upload
+            $this->logBulkUpload($file, $result);
+            
+            $message = "Bulk upload completed! ";
+            $message .= "Created: {$result['created']}, ";
+            $message .= "Updated: {$result['updated']}, ";
+            $message .= "Errors: {$result['errors']}";
+            
+            if ($result['errors'] > 0) {
+                session()->flash('upload_errors', $result['error_details']);
+                return redirect()->back()->with('warning', $message);
+            }
+            
+            return redirect()->back()->with('success', $message);
+            
+        } catch (\Exception $e) {
+            // Enhanced error logging for debugging
+            $debugInfo = [
+                'error_message' => $e->getMessage(),
+                'file_name' => isset($file) ? $file->getClientOriginalName() : 'unknown',
+                'file_size' => isset($file) ? $file->getSize() : 'unknown',
+                'temp_dir' => isset($tempDir) ? $tempDir : 'not_set',
+                'temp_dir_exists' => isset($tempDir) ? is_dir($tempDir) : false,
+                'temp_dir_writable' => isset($tempDir) && is_dir($tempDir) ? is_writable($tempDir) : false,
+                'full_path' => isset($fullPath) ? $fullPath : 'not_set',
+                'storage_path' => storage_path('app'),
+                'directory_separator' => DIRECTORY_SEPARATOR,
+                'php_upload_max_filesize' => ini_get('upload_max_filesize'),
+                'php_post_max_size' => ini_get('post_max_size'),
+                'php_tmp_dir' => sys_get_temp_dir(),
+                'trace' => $e->getTraceAsString()
+            ];
+            
+            // Clean up temp file if it exists
+            if (isset($fullPath) && file_exists($fullPath)) {
+                unlink($fullPath);
+                $debugInfo['cleanup'] = 'temp file removed';
+            }
+            
+            \Log::error('Bulk upload failed with detailed debug info', $debugInfo);
+            
+            return redirect()->back()->with('error', 'Upload failed: ' . $e->getMessage() . ' (Check logs for details)');
+        }
+    }
+
+    /**
+     * Parse uploaded file (CSV or Excel)
+     */
+    private function parseUploadFile($filePath, $extension)
+    {
+        if ($extension === 'csv') {
+            return $this->parseCsvFile($filePath);
+        } else {
+            return $this->parseExcelFile($filePath);
+        }
+    }
+
+    /**
+     * Parse CSV file
+     */
+    private function parseCsvFile($filePath)
+    {
+        $data = [];
+        $headers = [];
+        
+        // Verify file exists
+        if (!file_exists($filePath)) {
+            throw new \Exception('CSV file not found: ' . $filePath);
+        }
+        
+        // Check if file is readable
+        if (!is_readable($filePath)) {
+            throw new \Exception('CSV file is not readable: ' . $filePath);
+        }
+        
+        try {
+            if (($handle = fopen($filePath, 'r')) !== FALSE) {
+                // Read header row
+                $headers = fgetcsv($handle);
+                
+                if ($headers === FALSE || empty($headers)) {
+                    fclose($handle);
+                    throw new \Exception('Could not read CSV headers or file is empty.');
+                }
+                
+                // Read data rows
+                $rowCount = 0;
+                while (($row = fgetcsv($handle)) !== FALSE) {
+                    $rowCount++;
+                    if (count($row) === count($headers)) {
+                        $data[] = array_combine($headers, $row);
+                    } else {
+                        \Log::warning("CSV row {$rowCount} has mismatched column count", [
+                            'expected' => count($headers),
+                            'actual' => count($row),
+                            'row' => $row
+                        ]);
+                    }
+                }
+                fclose($handle);
+                
+                \Log::info('CSV file parsed successfully', [
+                    'file' => $filePath,
+                    'headers' => count($headers),
+                    'rows' => count($data)
+                ]);
+            } else {
+                throw new \Exception('Could not open CSV file for reading.');
+            }
+        } catch (\Exception $e) {
+            \Log::error('CSV parsing failed', [
+                'file' => $filePath,
+                'error' => $e->getMessage()
+            ]);
+            throw new \Exception('Failed to parse CSV file: ' . $e->getMessage());
+        }
+        
+        return $data;
+    }
+
+    /**
+     * Parse Excel file using PhpSpreadsheet
+     */
+    private function parseExcelFile($filePath)
+    {
+        try {
+            // Check if Laravel Excel is available
+            if (!class_exists('\Maatwebsite\Excel\Facades\Excel')) {
+                throw new \Exception('Laravel Excel package is not installed. Please install maatwebsite/excel.');
+            }
+            
+            // Use Laravel Excel package which includes PhpSpreadsheet
+            $collection = \Maatwebsite\Excel\Facades\Excel::toArray([], $filePath);
+            
+            if (empty($collection) || empty($collection[0])) {
+                return [];
+            }
+            
+            $rows = $collection[0]; // Get first sheet
+            
+            if (empty($rows)) {
+                return [];
+            }
+            
+            $headers = array_shift($rows); // Remove header row
+            $data = [];
+            
+            foreach ($rows as $row) {
+                if (count($row) === count($headers)) {
+                    $data[] = array_combine($headers, $row);
+                }
+            }
+            
+            return $data;
+        } catch (\Exception $e) {
+            \Log::error('Excel parsing failed', [
+                'file' => $filePath,
+                'error' => $e->getMessage()
+            ]);
+            throw new \Exception('Failed to parse Excel file: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Process product data from upload
+     */
+    private function processProductData($data, $updateExisting = false)
+    {
+        $result = [
+            'created' => 0,
+            'updated' => 0,
+            'errors' => 0,
+            'error_details' => []
+        ];
+        
+        // Cache categories for performance
+        $categories = Category::active()->pluck('id', 'name')->toArray();
+        
+        foreach ($data as $index => $row) {
+            $rowNumber = $index + 2; // +2 because array is 0-indexed and we skip header
+            
+            try {
+                // Validate required fields
+                if (empty($row['name']) || empty($row['description']) || empty($row['price']) || empty($row['category_name'])) {
+                    $result['errors']++;
+                    $result['error_details'][] = "Row $rowNumber: Missing required fields (name, description, price, category_name)";
+                    continue;
+                }
+                
+                // Find category
+                $categoryId = $categories[$row['category_name']] ?? null;
+                if (!$categoryId) {
+                    $result['errors']++;
+                    $result['error_details'][] = "Row $rowNumber: Category '{$row['category_name']}' not found";
+                    continue;
+                }
+                
+                // Prepare product data
+                $productData = [
+                    'name' => trim($row['name']),
+                    'description' => trim($row['description']),
+                    'short_description' => trim($row['short_description'] ?? ''),
+                    'price' => (float) $row['price'],
+                    'discount_price' => !empty($row['discount_price']) ? (float) $row['discount_price'] : null,
+                    'cost_price' => !empty($row['cost_price']) ? (float) $row['cost_price'] : null,
+                    'stock' => (int) ($row['stock'] ?? 0),
+                    'sku' => trim($row['sku'] ?? ''),
+                    'barcode' => trim($row['barcode'] ?? ''),
+                    'code' => trim($row['code'] ?? ''),
+                    'category_id' => $categoryId,
+                    'weight' => !empty($row['weight']) ? (float) $row['weight'] : null,
+                    'weight_unit' => trim($row['weight_unit'] ?? 'kg'),
+                    'tax_percentage' => (float) ($row['tax_percentage'] ?? 0),
+                    'low_stock_threshold' => (int) ($row['low_stock_threshold'] ?? 5),
+                    'is_active' => !empty($row['is_active']) ? (bool) $row['is_active'] : true,
+                    'is_featured' => !empty($row['is_featured']) ? (bool) $row['is_featured'] : false,
+                    'sort_order' => (int) ($row['sort_order'] ?? 0),
+                    'meta_title' => trim($row['meta_title'] ?? ''),
+                    'meta_description' => trim($row['meta_description'] ?? ''),
+                    'meta_keywords' => trim($row['meta_keywords'] ?? ''),
+                ];
+                
+                // Apply tenant scope data
+                $productData['company_id'] = $this->getCurrentCompanyId();
+                $productData['branch_id'] = session('selected_branch_id');
+                
+                // Check for existing product
+                $existingProduct = null;
+                if (!empty($productData['sku'])) {
+                    $existingProduct = Product::where('sku', $productData['sku'])
+                        ->where('company_id', $productData['company_id'])
+                        ->first();
+                }
+                
+                if (!$existingProduct) {
+                    $existingProduct = Product::where('name', $productData['name'])
+                        ->where('company_id', $productData['company_id'])
+                        ->first();
+                }
+                
+                if ($existingProduct && $updateExisting) {
+                    // Update existing product
+                    $existingProduct->update($productData);
+                    
+                    // Handle images if provided
+                    $this->processProductImages($existingProduct, $row);
+                    
+                    $result['updated']++;
+                } elseif (!$existingProduct) {
+                    // Create new product
+                    $product = Product::create($productData);
+                    
+                    // Handle images if provided
+                    $this->processProductImages($product, $row);
+                    
+                    $result['created']++;
+                } else {
+                    // Product exists but update is not enabled
+                    $result['errors']++;
+                    $result['error_details'][] = "Row $rowNumber: Product '{$productData['name']}' already exists (enable update to modify)";
+                }
+                
+            } catch (\Exception $e) {
+                $result['errors']++;
+                $result['error_details'][] = "Row $rowNumber: {$e->getMessage()}";
+            }
+        }
+        
+        return $result;
+    }
+
+    /**
+     * Process product images from upload data
+     */
+    private function processProductImages($product, $row)
+    {
+        // Handle featured image
+        if (!empty($row['featured_image_url'])) {
+            try {
+                $imagePath = $this->downloadAndStoreImage($row['featured_image_url'], 'featured');
+                if ($imagePath) {
+                    $product->featured_image = $imagePath;
+                }
+            } catch (\Exception $e) {
+                Log::warning("Failed to download featured image for product {$product->id}: {$e->getMessage()}");
+            }
+        }
+        
+        // Handle additional images
+        if (!empty($row['additional_images'])) {
+            $imageUrls = explode(',', $row['additional_images']);
+            $imagePaths = [];
+            
+            foreach ($imageUrls as $url) {
+                $url = trim($url);
+                if (!empty($url)) {
+                    try {
+                        $imagePath = $this->downloadAndStoreImage($url, 'gallery');
+                        if ($imagePath) {
+                            $imagePaths[] = $imagePath;
+                        }
+                    } catch (\Exception $e) {
+                        Log::warning("Failed to download additional image for product {$product->id}: {$e->getMessage()}");
+                    }
+                }
+            }
+            
+            if (!empty($imagePaths)) {
+                $product->images = $imagePaths;
+            }
+        }
+        
+        if ($product->isDirty()) {
+            $product->save();
+        }
+    }
+
+    /**
+     * Download and store image from URL
+     */
+    private function downloadAndStoreImage($url, $type = 'gallery')
+    {
+        try {
+            $contents = file_get_contents($url);
+            if ($contents === false) {
+                return null;
+            }
+            
+            $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
+            if (empty($extension)) {
+                $extension = 'jpg';
+            }
+            
+            $filename = $type . '_' . time() . '_' . uniqid() . '.' . $extension;
+            $path = 'products/' . $filename;
+            
+            if ($this->storeFile($contents, $path)) {
+                return $path;
+            }
+            
+            return null;
+        } catch (\Exception $e) {
+            Log::error("Failed to download image from $url: {$e->getMessage()}");
+            return null;
+        }
+    }
+
+    /**
+     * Log bulk upload activity
+     */
+    private function logBulkUpload($file, $result)
+    {
+        try {
+            \App\Models\UploadLog::create([
+                'file_name' => 'bulk_upload_' . time() . '.' . $file->getClientOriginalExtension(),
+                'original_name' => $file->getClientOriginalName(),
+                'file_path' => '',
+                'file_size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+                'storage_type' => 'local',
+                'upload_type' => 'product_bulk',
+                'uploaded_by' => auth()->id(),
+                'meta_data' => $result,
+                'company_id' => session('selected_company_id')
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to log bulk upload: ' . $e->getMessage());
+            // Continue without logging - don't fail the upload process
+        }
+    }
+
+    /**
+     * Show upload history
+     */
+    public function uploadHistory()
+    {
+        try {
+            $uploads = \App\Models\UploadLog::where('upload_type', 'product_bulk')
+                ->with('uploader')
+                ->orderBy('created_at', 'desc')
+                ->paginate(20);
+        } catch (\Exception $e) {
+            // If UploadLog table doesn't exist or there's an error, create empty collection
+            \Log::warning('Upload history unavailable: ' . $e->getMessage());
+            $uploads = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20);
+        }
+            
+        return view('admin.products.upload-history', compact('uploads'));
     }
 }
