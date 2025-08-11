@@ -256,7 +256,7 @@ class SettingsController extends Controller
         $request->validate([
             'company_name' => 'required|string|max:255',
             'company_email' => 'required|email|max:255',
-            'company_phone' => 'nullable|string|max:20',
+            'company_phone' => 'nullable|string',
             'company_address' => 'nullable|string|max:500',
             'company_city' => 'nullable|string|max:100',
             'company_state' => 'nullable|string|max:100',
