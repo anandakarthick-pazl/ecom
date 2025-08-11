@@ -513,6 +513,110 @@
             height: 100px !important;
         }
         
+        /* ===== FLOATING CART ICON STYLES ===== */
+        .floating-cart-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: var(--primary-color);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .floating-cart-icon:hover {
+            background: var(--secondary-color);
+            transform: scale(1.1) translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            color: white;
+        }
+        
+        .floating-cart-icon:active {
+            transform: scale(0.95);
+        }
+        
+        .floating-cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+            min-width: 24px;
+            animation: pulse-floating 2s infinite;
+        }
+        
+        @keyframes pulse-floating {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .floating-cart-icon.cart-bounce {
+            animation: cartBounce 0.6s ease;
+        }
+        
+        @keyframes cartBounce {
+            0% { transform: scale(1); }
+            25% { transform: scale(1.2); }
+            50% { transform: scale(1); }
+            75% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Hide floating cart on cart page to avoid confusion */
+        .cart-page .floating-cart-icon {
+            display: none;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .floating-cart-icon {
+                width: 55px;
+                height: 55px;
+                font-size: 20px;
+                bottom: 15px;
+                right: 15px;
+            }
+            
+            .floating-cart-count {
+                width: 22px;
+                height: 22px;
+                font-size: 11px;
+                top: -6px;
+                right: -6px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .floating-cart-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 18px;
+                bottom: 80px; /* Adjust to avoid mobile browser UI */
+                right: 15px;
+            }
+        }
+        
         /* Responsive adjustments for compact layout */
         @media (max-width: 768px) {
             .hero-section .carousel-item img {
@@ -580,6 +684,15 @@
     <main>
         @yield('content')
     </main>
+    
+    <!-- Floating Cart Icon -->
+    <a href="{{ route('cart.index') }}" 
+       class="floating-cart-icon" 
+       id="floating-cart-icon"
+       title="View Cart">
+        <i class="fas fa-shopping-cart"></i>
+        <span class="floating-cart-count" id="floating-cart-count">0</span>
+    </a>
     
     {{-- Animation Demo Component --}}
     @include('components.animation-demo')
@@ -728,17 +841,33 @@
             // Update cart count
             window.updateCartCount = function() {
                 $.get('{{ route("cart.count") }}', function(data) {
-                    const countElement = $('#cart-count');
-                    countElement.text(data.count);
+                    const navbarCountElement = $('#cart-count');
+                    const floatingCountElement = $('#floating-cart-count');
+                    
+                    // Update navbar cart count
+                    navbarCountElement.text(data.count);
+                    
+                    // Update floating cart count
+                    floatingCountElement.text(data.count);
                     
                     if(data.count == 0) {
-                        countElement.hide();
+                        navbarCountElement.hide();
+                        floatingCountElement.hide();
                     } else {
-                        countElement.show();
+                        navbarCountElement.show();
+                        floatingCountElement.show();
+                        
                         // Add pulse animation for new items
-                        countElement.addClass('animate__animated animate__pulse');
+                        navbarCountElement.addClass('animate__animated animate__pulse');
+                        floatingCountElement.addClass('animate__animated animate__pulse');
+                        
+                        // Add bounce animation to floating cart
+                        $('#floating-cart-icon').addClass('cart-bounce');
+                        
                         setTimeout(() => {
-                            countElement.removeClass('animate__animated animate__pulse');
+                            navbarCountElement.removeClass('animate__animated animate__pulse');
+                            floatingCountElement.removeClass('animate__animated animate__pulse');
+                            $('#floating-cart-icon').removeClass('cart-bounce');
                         }, 1000);
                     }
                 }).fail(function() {

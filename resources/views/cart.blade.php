@@ -4,6 +4,16 @@
 
 @push('styles')
     <style>
+        /* Hide floating cart on cart page */
+        body {
+            /* Add cart-page identifier for floating cart hiding */
+        }
+        
+        /* Hide floating cart when on cart page */
+        .cart-page .floating-cart-icon {
+            display: none !important;
+        }
+        
         /* Ensure Order Summary is always visible */
         #order-summary-card {
             display: block !important;
@@ -1731,6 +1741,13 @@
                     e.preventDefault();
                     applyCoupon();
                 }
+            });
+        </script>
+        
+        <script>
+            // Add cart-page class to body to hide floating cart
+            document.addEventListener('DOMContentLoaded', function() {
+                document.body.classList.add('cart-page');
             });
         </script>
     @endpush
