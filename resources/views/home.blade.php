@@ -119,46 +119,41 @@
 
     <!-- Featured Categories -->
     @if($categories->count() > 0)
-    <section class="categories-section mb-5">
-        <h2 class="text-center mb-4">Shop by Category</h2>
-        <p class="text-center text-muted mb-4">Explore our carefully curated collections</p>
+    <section class="categories-section mb-4">
+        <h3 class="text-center mb-3">Shop by Category</h3>
+        <p class="text-center text-muted mb-3">Explore our carefully curated collections</p>
         <div class="row">
             @foreach($categories as $category)
-            <div class="col-md-4 col-sm-6 mb-4">
-                <div class="card h-100 border-0 shadow-sm category-card">
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+                <div class="card border-0 shadow-sm category-card-compact">
                     @if($category->image)
-                        <div class="category-image-wrapper">
+                        <div class="category-image-wrapper-compact">
                             <img src="{{ $category->image_url }}" 
-                                 class="card-img-top category-image" 
+                                 class="card-img-top category-image-compact" 
                                  alt="{{ $category->name }}" 
-                                 style="height: 150px; object-fit: cover;"
+                                 style="height: 100px; object-fit: cover;"
                                  loading="lazy"
                                  onerror="this.onerror=null; this.src='{{ asset('images/fallback/category-placeholder.png') }}'; this.parentElement.classList.add('fallback-image');">
                             @if($category->products_count > 0)
-                                <div class="category-badge">
-                                    <span class="badge bg-primary">{{ $category->products_count }} Products</span>
+                                <div class="category-badge-compact">
+                                    <span class="badge bg-primary">{{ $category->products_count }}</span>
                                 </div>
                             @endif
                         </div>
                     @else
-                        <div class="card-img-top bg-light-green d-flex align-items-center justify-content-center category-placeholder" style="height: 150px;">
-                            <i class="fas fa-leaf fa-3x text-success"></i>
+                        <div class="card-img-top bg-light-green d-flex align-items-center justify-content-center category-placeholder-compact" style="height: 100px;">
+                            <i class="fas fa-leaf fa-2x text-success"></i>
                             @if($category->products_count > 0)
-                                <div class="category-badge">
-                                    <span class="badge bg-primary">{{ $category->products_count }} Products</span>
+                                <div class="category-badge-compact">
+                                    <span class="badge bg-primary">{{ $category->products_count }}</span>
                                 </div>
                             @endif
                         </div>
                     @endif
-                    <div class="card-body text-center">
-                        <h5 class="card-title">{{ $category->name }}</h5>
-                        @if($category->description)
-                            <p class="card-text text-muted">{{ Str::limit($category->description, 80) }}</p>
-                        @else
-                            <p class="card-text text-muted">Discover amazing products in this category</p>
-                        @endif
-                        <a href="{{ route('category', $category->slug) }}" class="btn btn-primary btn-sm mt-2">
-                            <i class="fas fa-eye me-1"></i> Browse Products
+                    <div class="card-body text-center p-3">
+                        <h6 class="card-title mb-2">{{ $category->name }}</h6>
+                        <a href="{{ route('category', $category->slug) }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye me-1"></i> Browse
                         </a>
                     </div>
                 </div>
@@ -615,9 +610,28 @@
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
 }
 
+/* Compact Category Card Styles */
+.category-card-compact {
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    overflow: hidden;
+    max-height: 200px;
+}
+
+.category-card-compact:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
 .category-image-wrapper {
     position: relative;
     overflow: hidden;
+}
+
+.category-image-wrapper-compact {
+    position: relative;
+    overflow: hidden;
+    height: 100px;
 }
 
 .category-image {
@@ -625,14 +639,33 @@
     border-radius: 0;
 }
 
+.category-image-compact {
+    transition: transform 0.3s ease;
+    border-radius: 0;
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+}
+
 .category-card:hover .category-image {
     transform: scale(1.05);
+}
+
+.category-card-compact:hover .category-image-compact {
+    transform: scale(1.08);
 }
 
 .category-badge {
     position: absolute;
     top: 10px;
     right: 10px;
+    z-index: 2;
+}
+
+.category-badge-compact {
+    position: absolute;
+    top: 5px;
+    right: 5px;
     z-index: 2;
 }
 
@@ -644,16 +677,39 @@
     backdrop-filter: blur(10px);
 }
 
+.category-badge-compact .badge {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.4rem;
+    border-radius: 15px;
+    background: rgba(13, 110, 253, 0.9) !important;
+    backdrop-filter: blur(10px);
+    min-width: 22px;
+    text-align: center;
+}
+
 .category-placeholder {
     position: relative;
     background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
     border-radius: 0;
 }
 
+.category-placeholder-compact {
+    position: relative;
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+    border-radius: 0;
+    height: 100px;
+}
+
 .category-placeholder .category-badge {
     position: absolute;
     top: 10px;
     right: 10px;
+}
+
+.category-placeholder-compact .category-badge-compact {
+    position: absolute;
+    top: 5px;
+    right: 5px;
 }
 
 .fallback-image {
@@ -665,6 +721,11 @@
     border: 2px dashed #dee2e6;
 }
 
+.fallback-image .category-image-compact {
+    opacity: 0.7;
+    border: 2px dashed #dee2e6;
+}
+
 /* Category section header improvements */
 .categories-section h2 {
     color: var(--text-primary);
@@ -672,14 +733,25 @@
     margin-bottom: 1rem;
 }
 
+.categories-section h3 {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
 .categories-section .text-muted {
-    font-size: 1.1rem;
-    margin-bottom: 2rem;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 /* Category card body improvements */
 .category-card .card-body {
     padding: 1.5rem;
+}
+
+.category-card-compact .card-body {
+    padding: 0.75rem;
 }
 
 .category-card .card-title {
@@ -689,6 +761,14 @@
     font-size: 1.1rem;
 }
 
+.category-card-compact .card-title {
+    color: var(--text-primary);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+    line-height: 1.2;
+}
+
 .category-card .btn {
     border-radius: 25px;
     font-weight: 600;
@@ -696,9 +776,22 @@
     transition: all 0.3s ease;
 }
 
+.category-card-compact .btn {
+    border-radius: 20px;
+    font-weight: 500;
+    padding: 0.375rem 0.8rem;
+    transition: all 0.3s ease;
+    font-size: 0.85rem;
+}
+
 .category-card .btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+}
+
+.category-card-compact .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(13, 110, 253, 0.3);
 }
 
 /* Responsive category adjustments */
@@ -707,8 +800,17 @@
         margin-bottom: 1.5rem;
     }
     
+    .category-card-compact {
+        margin-bottom: 1rem;
+        max-height: 180px;
+    }
+    
     .categories-section h2 {
         font-size: 1.75rem;
+    }
+    
+    .categories-section h3 {
+        font-size: 1.4rem;
     }
     
     .category-badge {
@@ -716,9 +818,41 @@
         right: 5px;
     }
     
+    .category-badge-compact {
+        top: 3px;
+        right: 3px;
+    }
+    
     .category-badge .badge {
         font-size: 0.7rem;
         padding: 0.3rem 0.5rem;
+    }
+    
+    .category-badge-compact .badge {
+        font-size: 0.6rem;
+        padding: 0.2rem 0.3rem;
+        min-width: 18px;
+    }
+    
+    .category-image-wrapper-compact {
+        height: 80px;
+    }
+    
+    .category-image-compact {
+        height: 80px;
+    }
+    
+    .category-placeholder-compact {
+        height: 80px;
+    }
+    
+    .category-card-compact .card-title {
+        font-size: 0.9rem;
+    }
+    
+    .category-card-compact .btn {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.6rem;
     }
 }
 
