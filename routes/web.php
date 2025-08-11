@@ -356,6 +356,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
         Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
         Route::post('/bulk-mark-read', [NotificationController::class, 'bulkMarkAsRead'])->name('bulk-mark-read');
         Route::post('/{id}/mark-read', [NotificationController::class, 'markAsReadById'])->name('mark-read');
+        Route::post('/mark-read-by-id/{id}', [NotificationController::class, 'markAsReadById'])->name('mark-read');
+
         Route::delete('/{id}', [NotificationController::class, 'destroyById'])->name('destroy');
     });
 });
