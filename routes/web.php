@@ -262,8 +262,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
     
     // Estimates/Quotations
     Route::resource('estimates', EstimateController::class);
-    Route::patch('estimates/{estimate}/status', [EstimateController::class, 'updateStatus'])->name('estimates.update-status');
+    Route::patch('estimates/{estimate}/update-status', [EstimateController::class, 'updateStatus'])->name('estimates.update-status');
     Route::post('estimates/{estimate}/duplicate', [EstimateController::class, 'duplicate'])->name('estimates.duplicate');
+    Route::get('estimates/{estimate}/download', [EstimateController::class, 'download'])->name('estimates.download');
     
     // Goods Receipt Notes (GRN)
     Route::resource('grns', GrnController::class);
@@ -287,6 +288,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
         Route::get('/sales/{sale}/view-bill-debug', [PosController::class, 'viewBillDebug'])->name('view-bill-debug');
         Route::get('/sales/{sale}/bill-formats', [PosController::class, 'getBillFormats'])->name('bill-formats');
         Route::post('/sales/{sale}/refund', [PosController::class, 'refund'])->name('refund');
+        Route::post('/download-multiple-receipts', [PosController::class, 'downloadMultipleReceipts'])->name('download-multiple-receipts');
+        Route::post('/download-receipts-by-date', [PosController::class, 'downloadReceiptsByDateRange'])->name('download-receipts-by-date');
         Route::get('/products/search', [PosController::class, 'searchProducts'])->name('products.search');
         Route::get('/products/{product}', [PosController::class, 'getProduct'])->name('products.get');
         Route::get('/summary/daily', [PosController::class, 'dailySummary'])->name('summary.daily');

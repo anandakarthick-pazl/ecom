@@ -284,4 +284,157 @@ class EstimateController extends Controller
                            ->with('error', 'Error duplicating estimate: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Download estimate as PDF
+     */
+    public function download(Estimate $estimate)
+    {
+        try {
+            // Load estimate with items and relationships
+            $estimate->load(['items.product', 'creator']);
+
+            // Get company data
+            $companyId = session('selected_company_id');
+            $globalCompany = $this->getCompanyData($companyId);
+
+            // Create PDF
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.estimates.pdf', [
+                'estimate' => $estimate,
+                'globalCompany' => $globalCompany
+            ]);
+
+            $pdf->setPaper('A4', 'portrait');
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => false,
+                'defaultFont' => 'DejaVu Sans',
+                'dpi' => 150
+            ]);
+
+            // Generate filename
+            $filename = 'estimate_' . $estimate->estimate_number . '_' . date('Y-m-d') . '.pdf';
+
+            return response()->streamDownload(function () use ($pdf) {
+                echo $pdf->output();
+            }, $filename, [
+                'Content-Type' => 'application/pdf'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Estimate PDF download failed', [
+                'estimate_id' => $estimate->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()
+                           ->with('error', 'Error generating PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get company data for PDF generation
+     */
+    private function getCompanyData($companyId = null)
+    {
+        try {
+            if (!$companyId) {
+                $companyId = session('selected_company_id');
+            }
+
+            if (!$companyId) {
+                return $this->getFallbackCompanyData();
+            }
+
+            // Get company from database
+            $company = \App\Models\SuperAdmin\Company::find($companyId);
+
+            if (!$company) {
+                return $this->getFallbackCompanyData();
+            }
+
+            return (object) [
+                'company_name' => $company->name ?? 'Your Company',
+                'company_address' => $company->address ?? '',
+                'city' => $company->city ?? '',
+                'state' => $company->state ?? '',
+                'country' => $company->country ?? '',
+                'postal_code' => $company->postal_code ?? '',
+                'company_phone' => $company->phone ?? '',
+                'company_email' => $company->email ?? '',
+                'gst_number' => $company->gst_number ?? '',
+                'website' => $company->website ?? '',
+                'company_logo' => $company->logo ?? '',
+                'full_address' => $this->formatFullAddress($company),
+                'contact_info' => $this->formatContactInfo($company)
+            ];
+        } catch (\Exception $e) {
+            \Log::error('Error getting company data for estimate', [
+                'company_id' => $companyId,
+                'error' => $e->getMessage()
+            ]);
+
+            return $this->getFallbackCompanyData();
+        }
+    }
+
+    /**
+     * Format full address from company data
+     */
+    private function formatFullAddress($company)
+    {
+        $addressParts = array_filter([
+            $company->address,
+            $company->city,
+            $company->state,
+            $company->postal_code,
+            $company->country
+        ]);
+
+        return implode(', ', $addressParts);
+    }
+
+    /**
+     * Format contact information
+     */
+    private function formatContactInfo($company)
+    {
+        $contactParts = [];
+
+        if ($company->phone) {
+            $contactParts[] = "Phone: {$company->phone}";
+        }
+
+        if ($company->email) {
+            $contactParts[] = "Email: {$company->email}";
+        }
+
+        if ($company->website) {
+            $contactParts[] = "Web: {$company->website}";
+        }
+
+        return implode(' | ', $contactParts);
+    }
+
+    /**
+     * Fallback company data when actual data is not available
+     */
+    private function getFallbackCompanyData()
+    {
+        return (object) [
+            'company_name' => 'Your Company',
+            'company_address' => '',
+            'city' => '',
+            'state' => '',
+            'country' => '',
+            'postal_code' => '',
+            'company_phone' => '',
+            'company_email' => '',
+            'gst_number' => '',
+            'website' => '',
+            'company_logo' => '',
+            'full_address' => '',
+            'contact_info' => '',
+        ];
+    }
 }
