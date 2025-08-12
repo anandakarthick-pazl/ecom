@@ -294,43 +294,442 @@
             border-left: 4px solid #ef4444;
         }
 
-        /* Footer */
+        /* Modern Footer - Enhanced Alignment Design */
         .footer-modern {
-            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-            color: white;
+            background: linear-gradient(135deg, #1A202C 0%, #2D3748 50%, #1A202C 100%);
+            color: #E2E8F0;
             margin-top: 4rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
         }
-
-        .footer-modern h5 {
+        
+        .footer-modern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .footer-modern .container {
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* Footer Sections */
+        .footer-section {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+        
+        .footer-section:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        
+        /* Brand Section */
+        .footer-brand-content {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .footer-logo {
+            height: 45px;
+            width: auto;
+            max-width: 45px;
+            object-fit: contain;
+            filter: brightness(1.1) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+            transition: all 0.3s ease;
+        }
+        
+        .footer-logo:hover {
+            transform: scale(1.05);
+        }
+        
+        .footer-icon-placeholder {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
+            font-size: 1.5rem;
+        }
+        
+        .footer-brand-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #F7FAFC;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .footer-tagline {
+            font-size: 0.85rem;
+            color: var(--primary-color);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .footer-description {
+            color: #CBD5E0;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+        
+        /* Social Media */
+        .footer-social {
+            margin-top: auto;
+        }
+        
+        .social-title {
+            font-size: 1rem;
             font-weight: 600;
+            color: #F7FAFC;
             margin-bottom: 1rem;
         }
-
-        .footer-modern .footer-link {
-            color: rgba(255, 255, 255, 0.7);
-            text-decoration: none;
+        
+        .social-link {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #CBD5E0;
+            font-size: 1rem;
             transition: all 0.3s ease;
-            display: block;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .social-link::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .social-link:hover::before {
+            left: 100%;
+        }
+        
+        .social-link:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+        }
+        
+        /* Footer Titles */
+        .footer-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #F7FAFC;
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        
+        .footer-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 30px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 2px;
+        }
+        
+        /* Footer Links */
+        .footer-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .footer-links li {
+            margin-bottom: 0.75rem;
+        }
+        
+        .footer-link {
+            color: #CBD5E0;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 400;
+            transition: all 0.3s ease;
+            display: inline-block;
+            position: relative;
             padding: 0.25rem 0;
         }
-
-        .footer-modern .footer-link:hover {
-            color: white;
+        
+        .footer-link::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+        
+        .footer-link:hover {
+            color: #F7FAFC;
             transform: translateX(4px);
         }
-
-        .footer-modern .social-link {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 1.25rem;
-            transition: all 0.3s ease;
-            text-decoration: none;
+        
+        .footer-link:hover::before {
+            width: 100%;
         }
-
-        .footer-modern .social-link:hover {
+        
+        /* Contact Information */
+        .contact-details {
+            margin-bottom: 2rem;
+        }
+        
+        .contact-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            border-left: 3px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        
+        .contact-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateX(3px);
+        }
+        
+        .contact-icon {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.9rem;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .contact-info {
+            flex: 1;
+        }
+        
+        .contact-label {
+            display: block;
+            font-size: 0.8rem;
             color: var(--primary-color);
-            transform: translateY(-2px);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        
+        .contact-value {
+            display: block;
+            color: #E2E8F0;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        /* Newsletter */
+        .newsletter-signup {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .newsletter-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #F7FAFC;
+        }
+        
+        .newsletter-text {
+            color: #CBD5E0;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+        
+        .newsletter-input {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px 0 0 8px;
+            color: #E2E8F0;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .newsletter-input:focus {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            color: #F7FAFC;
+            outline: none;
+        }
+        
+        .newsletter-input::placeholder {
+            color: #9CA3AF;
+        }
+        
+        .newsletter-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 0 8px 8px 0;
+            color: white;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .newsletter-btn:hover {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Footer Bottom */
+        .footer-bottom {
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px 16px 0 0;
+            padding: 1.5rem 0;
+            margin-top: 2rem;
+        }
+        
+        .copyright {
+            color: #A0AEC0;
+            font-size: 0.9rem;
+            font-weight: 400;
+        }
+        
+        .footer-links-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: end;
+            gap: 0.5rem;
+        }
+        
+        .footer-bottom-link {
+            color: #CBD5E0;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+        }
+        
+        .footer-bottom-link:hover {
+            color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .separator {
+            color: #6B7280;
+            font-size: 0.8rem;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 991px) {
+            .footer-section {
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .footer-brand-content {
+                text-align: center;
+            }
+            
+            .newsletter-signup {
+                text-align: center;
+            }
+        }
+        
+        @media (max-width: 767px) {
+            .footer-section {
+                padding: 1.25rem;
+            }
+            
+            .footer-title {
+                font-size: 1.1rem;
+                text-align: center;
+            }
+            
+            .footer-links {
+                text-align: center;
+            }
+            
+            .contact-item {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .contact-icon {
+                margin: 0 auto 0.5rem auto;
+            }
+            
+            .footer-links-bottom {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .social-link {
+                width: 40px;
+                height: 40px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 575px) {
+            .footer-bottom {
+                text-align: center;
+            }
+            
+            .footer-links-bottom {
+                margin-top: 1rem;
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .separator {
+                display: none;
+            }
         }
 
         /* Button Improvements */
@@ -461,6 +860,11 @@
 
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+        
+        @keyframes newsletter-glow {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg); }
         }
 
         /* ===== COMPACT LAYOUT STYLES ===== */
@@ -697,83 +1101,185 @@
     {{-- Animation Demo Component --}}
     @include('components.animation-demo')
 
-    <!-- Modern Footer -->
+    <!-- Enhanced Modern Footer -->
     <footer class="footer-modern py-5">
         <div class="container">
-            <div class="row g-4">
-                <div class="col-lg-4">
-                    <div class="d-flex align-items-center mb-3">
-                        @if($globalCompany->company_logo)
-                            <img src="{{ asset('storage/' . $globalCompany->company_logo) }}" 
-                                 alt="{{ $globalCompany->company_name }}" 
-                                 style="height: 40px; width: auto; object-fit: contain;" class="me-3">
-                        @else
-                            <i class="fas fa-store fs-2 me-3"></i>
-                        @endif
-                        <h5 class="mb-0">{{ $globalCompany->company_name ?? 'Your Store' }}</h5>
-                    </div>
-                    <p class="text-light opacity-75">
-                        Your trusted online shopping destination. Quality products delivered with care to your doorstep.
-                    </p>
-                    <div class="d-flex gap-3 mt-3">
-                        @include('partials.social-media-links')
+            <!-- Main Footer Content -->
+            <div class="row g-4 mb-5">
+                <!-- Company Brand Column -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="footer-section h-100">
+                        <div class="footer-brand-content">
+                            <div class="d-flex align-items-center mb-3">
+                                @if($globalCompany->company_logo)
+                                    <img src="{{ asset('storage/' . $globalCompany->company_logo) }}" 
+                                         alt="{{ $globalCompany->company_name }}" 
+                                         class="footer-logo me-3">
+                                @else
+                                    <div class="footer-icon-placeholder me-3">
+                                        <i class="fas fa-store"></i>
+                                    </div>
+                                @endif
+                                <div>
+                                    <h5 class="footer-brand-name mb-1">{{ $globalCompany->company_name ?? 'Your Store' }}</h5>
+                                    <span class="footer-tagline">Quality & Trust</span>
+                                </div>
+                            </div>
+                            <p class="footer-description mb-4">
+                                Your trusted online shopping destination. We deliver premium quality products with exceptional service and care.
+                            </p>
+                            
+                            <!-- Social Media Links -->
+                            <div class="footer-social">
+                                <h6 class="social-title mb-3">Follow Us</h6>
+                                <div class="d-flex gap-3">
+                                    <a href="#" class="social-link" title="Facebook">
+                                        <i class="fab fa-facebook-f"></i>
+                                    </a>
+                                    <a href="#" class="social-link" title="Twitter">
+                                        <i class="fab fa-twitter"></i>
+                                    </a>
+                                    <a href="#" class="social-link" title="Instagram">
+                                        <i class="fab fa-instagram"></i>
+                                    </a>
+                                    <a href="#" class="social-link" title="LinkedIn">
+                                        <i class="fab fa-linkedin-in"></i>
+                                    </a>
+                                    <a href="#" class="social-link" title="YouTube">
+                                        <i class="fab fa-youtube"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
+                <!-- Quick Links Column -->
                 <div class="col-lg-2 col-md-6">
-                    <h5>Quick Links</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="{{ route('shop') }}" class="footer-link">Home</a></li>
-                        <li><a href="{{ route('products') }}" class="footer-link">Products</a></li>
-                        <li><a href="{{ route('offer.products') }}" class="footer-link">Offers</a></li>
-                        <li><a href="{{ route('track.order') }}" class="footer-link">Track Order</a></li>
-                    </ul>
-                </div>
-                
-                <div class="col-lg-2 col-md-6">
-                    <h5>Categories</h5>
-                    <ul class="list-unstyled">
-                        @if(isset($categories) && $categories->count() > 0)
-                            @foreach($categories->take(4) as $category)
-                                <li><a href="{{ route('category', $category->slug) }}" class="footer-link">{{ $category->name }}</a></li>
-                            @endforeach
-                        @else
+                    <div class="footer-section h-100">
+                        <h5 class="footer-title">Quick Links</h5>
+                        <ul class="footer-links">
+                            <li><a href="{{ route('shop') }}" class="footer-link">Home</a></li>
                             <li><a href="{{ route('products') }}" class="footer-link">All Products</a></li>
                             <li><a href="{{ route('offer.products') }}" class="footer-link">Special Offers</a></li>
-                        @endif
-                    </ul>
+                            <li><a href="{{ route('track.order') }}" class="footer-link">Track Order</a></li>
+                            <li><a href="#" class="footer-link">About Us</a></li>
+                            <li><a href="#" class="footer-link">Contact</a></li>
+                        </ul>
+                    </div>
                 </div>
                 
-                <div class="col-lg-4">
-                    <h5>Contact Info</h5>
-                    @if($globalCompany->company_phone)
-                        <p class="mb-2 text-light opacity-75">
-                            <i class="fas fa-phone me-2"></i>{{ $globalCompany->company_phone }}
-                        </p>
-                    @endif
-                    <p class="mb-2 text-light opacity-75">
-                        <i class="fas fa-envelope me-2"></i>{{ $globalCompany->company_email ?? 'info@example.com' }}
-                    </p>
-                    @if($globalCompany->company_address)
-                        <p class="mb-2 text-light opacity-75">
-                            <i class="fas fa-map-marker-alt me-2"></i>{{ $globalCompany->company_address }}
-                        </p>
-                    @endif
+                <!-- Categories Column -->
+                <div class="col-lg-2 col-md-6">
+                    <div class="footer-section h-100">
+                        <h5 class="footer-title">Categories</h5>
+                        <ul class="footer-links">
+                            @if(isset($globalCategories) && $globalCategories->count() > 0)
+                                @foreach($globalCategories->take(6) as $category)
+                                    <li><a href="{{ route('category', $category->slug) }}" class="footer-link">{{ $category->name }}</a></li>
+                                @endforeach
+                            @else
+                                <li><a href="{{ route('products') }}" class="footer-link">Featured Items</a></li>
+                                <li><a href="{{ route('products') }}" class="footer-link">New Arrivals</a></li>
+                                <li><a href="{{ route('offer.products') }}" class="footer-link">Best Deals</a></li>
+                                <li><a href="{{ route('products') }}" class="footer-link">Top Rated</a></li>
+                                <li><a href="{{ route('products') }}" class="footer-link">Popular</a></li>
+                                <li><a href="{{ route('products') }}" class="footer-link">Trending</a></li>
+                            @endif
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Customer Service Column -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="footer-section h-100">
+                        <h5 class="footer-title">Contact Information</h5>
+                        
+                        <!-- Contact Details -->
+                        <div class="contact-details mb-4">
+                            @if($globalCompany->company_phone)
+                                <div class="contact-item">
+                                    <div class="contact-icon">
+                                        <i class="fas fa-phone"></i>
+                                    </div>
+                                    <div class="contact-info">
+                                        <span class="contact-label">Phone</span>
+                                        <span class="contact-value">{{ $globalCompany->company_phone }}</span>
+                                    </div>
+                                </div>
+                            @endif
+                            
+                            <div class="contact-item">
+                                <div class="contact-icon">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                                <div class="contact-info">
+                                    <span class="contact-label">Email</span>
+                                    <span class="contact-value">{{ $globalCompany->company_email ?? 'info@example.com' }}</span>
+                                </div>
+                            </div>
+                            
+                            @if($globalCompany->company_address)
+                                <div class="contact-item">
+                                    <div class="contact-icon">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </div>
+                                    <div class="contact-info">
+                                        <span class="contact-label">Address</span>
+                                        <span class="contact-value">{{ $globalCompany->company_address }}</span>
+                                    </div>
+                                </div>
+                            @endif
+                            
+                            <div class="contact-item">
+                                <div class="contact-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="contact-info">
+                                    <span class="contact-label">Business Hours</span>
+                                    <span class="contact-value">Mon - Sat: 9:00 AM - 8:00 PM</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Newsletter Signup -->
+                        <div class="newsletter-signup">
+                            <h6 class="newsletter-title mb-3">Stay Updated</h6>
+                            <p class="newsletter-text mb-3">Subscribe for exclusive offers and updates</p>
+                            <div class="newsletter-form">
+                                <div class="input-group">
+                                    <input type="email" class="form-control newsletter-input" placeholder="Enter your email">
+                                    <button class="btn newsletter-btn" type="button">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <hr class="my-4 opacity-25">
-            
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <p class="mb-0 text-light opacity-75">
-                        &copy; {{ date('Y') }} {{ $globalCompany->company_name ?? 'Your Store' }}. All rights reserved.
-                    </p>
-                </div>
-                <div class="col-md-6 text-md-end">
-                    <p class="mb-0 text-light opacity-75">
-                        Designed by <a href="https://kasoftware.in">KA software</a>
-                    </p>
+            <!-- Footer Bottom -->
+            <div class="footer-bottom">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="footer-bottom-left">
+                            <p class="copyright mb-0">
+                                &copy; {{ date('Y') }} {{ $globalCompany->company_name ?? 'Your Store' }}. All rights reserved.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="footer-bottom-right text-md-end">
+                            <div class="footer-links-bottom">
+                                <a href="#" class="footer-bottom-link">Privacy Policy</a>
+                                <span class="separator">|</span>
+                                <a href="#" class="footer-bottom-link">Terms of Service</a>
+                                <span class="separator">|</span>
+                                <a href="https://kasoftware.in" class="footer-bottom-link">KA Software</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
