@@ -134,12 +134,14 @@ class ProductController extends BaseAdminController
 
     public function store(Request $request)
     {
+        $data = $request->all();
+        // echo "<pre>";print_r($data);exit;
         $request->validate([
             'name' => [
                 'required',
                 'string',
                 'max:255',
-                $this->getTenantUniqueRule('products', 'name')
+                // $this->getTenantUniqueRule('products', 'name')
             ],
             'description' => 'required|string',
             'short_description' => 'nullable|string|max:500',
@@ -152,11 +154,11 @@ class ProductController extends BaseAdminController
             'sku' => [
                 'nullable',
                 'string',
-                $this->getTenantUniqueRule('products', 'sku')
+                // $this->getTenantUniqueRule('products', 'sku')
             ],
             'category_id' => [
                 'required',
-                $this->getTenantExistsRule('categories')
+                // $this->getTenantExistsRule('categories')
             ],
             'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
@@ -170,7 +172,8 @@ class ProductController extends BaseAdminController
             'sort_order' => 'integer|min:0'
         ]);
 
-        $data = $request->all();
+        
+       
         
         // Handle checkbox values
         $data['is_active'] = $request->input('is_active', 0) == '1';
