@@ -69,13 +69,42 @@ class OrderItemPricingService
         else {
             $bestOffer = $product->getBestOffer();
             if ($bestOffer) {
-                // Check if this is a virtual offer (product onboarding discount)
-                if (isset($bestOffer->is_virtual) && $bestOffer->is_virtual) {
-                    // For virtual offers, use the pre-calculated discount amount
-                    $offerDiscount = $bestOffer->discount_amount;
-                } else {
-                    // For regular offers, call the calculateDiscount method
-                    $offerDiscount = $bestOffer->calculateDiscount($product->price, $product, $product->category);
+                $offerDiscount = 0;
+                
+                // Debug logging
+                \Log::info('Processing bestOffer', [
+                    'class' => get_class($bestOffer),
+                    'is_virtual' => property_exists($bestOffer, 'is_virtual') ? $bestOffer->is_virtual : false,
+                    'product_id' => $product->id
+                ]);
+                
+                try {
+                    // Check if this is a virtual offer (product onboarding discount)
+                    if (property_exists($bestOffer, 'is_virtual') && $bestOffer->is_virtual === true) {
+                        // For virtual offers, use the pre-calculated discount amount
+                        $offerDiscount = property_exists($bestOffer, 'discount_amount') ? floatval($bestOffer->discount_amount) : 0;
+                        \Log::info('Using virtual offer discount', ['discount' => $offerDiscount]);
+                    } else {
+                        // For regular offers, call the calculateDiscount method
+                        if (is_object($bestOffer) && method_exists($bestOffer, 'calculateDiscount')) {
+                            $offerDiscount = $bestOffer->calculateDiscount($product->price, $product, $product->category);
+                            \Log::info('Calculated regular offer discount', ['discount' => $offerDiscount]);
+                        } else {
+                            \Log::warning('Offer object missing calculateDiscount method', [
+                                'class' => get_class($bestOffer),
+                                'methods' => get_class_methods($bestOffer),
+                                'properties' => array_keys(get_object_vars($bestOffer))
+                            ]);
+                            $offerDiscount = 0;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Error processing offer discount', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                        'product_id' => $product->id
+                    ]);
+                    $offerDiscount = 0;
                 }
                 
                 if ($offerDiscount > 0) {
