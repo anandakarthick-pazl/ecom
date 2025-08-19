@@ -72,9 +72,10 @@
     </div>
     
     <div class="product-content">
-        <div class="product-category">{{ $product->category->name }}</div>
+        {{-- <div class="product-category"><a href="{{ route('product', $product->slug) }}">{{ $product->name }}</a></div> --}}
+        <div class="product-category">{{ $product->name }}</div>
         <h3 class="product-title">
-            <a href="{{ route('product', $product->slug) }}">{{ $product->name }}</a>
+            {{ $product->category->name }}
         </h3>
         <p class="product-description">{{ Str::limit($product->short_description ?? '', 60) }}</p>
         
