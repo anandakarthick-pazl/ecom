@@ -69,12 +69,20 @@ class OrderItemPricingService
         else {
             $bestOffer = $product->getBestOffer();
             if ($bestOffer) {
-                $offerDiscount = $bestOffer->calculateDiscount($product->price, $product, $product->category);
+                // Check if this is a virtual offer (product onboarding discount)
+                if (isset($bestOffer->is_virtual) && $bestOffer->is_virtual) {
+                    // For virtual offers, use the pre-calculated discount amount
+                    $offerDiscount = $bestOffer->discount_amount;
+                } else {
+                    // For regular offers, call the calculateDiscount method
+                    $offerDiscount = $bestOffer->calculateDiscount($product->price, $product, $product->category);
+                }
+                
                 if ($offerDiscount > 0) {
                     $discountAmount = $offerDiscount;
                     $discountPercentage = round(($offerDiscount / $product->price) * 100, 2);
-                    $offerId = $bestOffer->id;
-                    $offerName = $bestOffer->name;
+                    $offerId = property_exists($bestOffer, 'id') ? $bestOffer->id : null;
+                    $offerName = property_exists($bestOffer, 'name') ? $bestOffer->name : 'Discount';
                 }
             }
         }
