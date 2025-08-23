@@ -53,6 +53,22 @@ class CartController extends Controller
             }
         }
         
+        // Check if fabric theme is enabled
+        $theme = \App\Models\AppSetting::get('store_theme', 'default');
+        $host = request()->getHost();
+        
+        // Use fabric theme if conditions met
+        if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'fabric' || $theme === 'fabric') {
+            return view('cart-fabric', compact(
+                'cartItems', 
+                'subtotal', 
+                'couponDiscount',
+                'appliedCoupon',
+                'minOrderValidationSettings', 
+                'minOrderValidation'
+            ));
+        }
+        
         return view('cart', compact(
             'cartItems', 
             'subtotal', 

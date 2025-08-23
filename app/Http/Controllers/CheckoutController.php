@@ -49,6 +49,25 @@ class CheckoutController extends Controller
         // Get active payment methods using the service
         $paymentMethods = PaymentMethodService::getActiveForCheckout($total);
 
+        // Check if fabric theme is enabled
+        $theme = \App\Models\AppSetting::get('store_theme', 'default');
+        $host = request()->getHost();
+        
+        // Use fabric theme if conditions met
+        if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'fabric' || $theme === 'fabric') {
+            return view('checkout-fabric', compact(
+                'cartItems', 
+                'subtotal', 
+                'deliveryCharge', 
+                'deliveryInfo', 
+                'discount',
+                'appliedCoupon',
+                'total', 
+                'paymentMethods',
+                'minOrderValidationSettings'
+            ));
+        }
+        
         return view('checkout', compact(
             'cartItems', 
             'subtotal', 
