@@ -4,7 +4,7 @@
 
 @section('content')
 <!-- Category Header Section -->
-<section style="padding: 2rem 0; background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);">
+<section style="padding: 2rem 0; background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-md-8">
@@ -12,7 +12,7 @@
                     <ol class="breadcrumb" style="background: transparent; padding: 0; margin-bottom: 0.5rem;">
                         <li class="breadcrumb-item"><a href="{{ route('shop') }}" style="color: white; text-decoration: none;">Home</a></li>
                         <li class="breadcrumb-item"><a href="{{ route('products') }}" style="color: white; text-decoration: none;">Products</a></li>
-                        <li class="breadcrumb-item active" style="color: #ffd93d;">{{ $category->name }}</li>
+                        <li class="breadcrumb-item active" style="color: #5cb85c;">{{ $category->name }}</li>
                     </ol>
                 </nav>
                 <h1 style="color: white; font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">{{ $category->name }}</h1>
@@ -24,7 +24,7 @@
                         <i class="fas fa-box"></i> {{ $products->total() ?? count($products) }} Products
                     </span>
                     @if($categoryOffers && $categoryOffers->count() > 0)
-                        <span style="background: #ffd93d; padding: 0.5rem 1rem; border-radius: 20px; color: #333; font-weight: 600;">
+                        <span style="background: #5cb85c; padding: 0.5rem 1rem; border-radius: 20px; color: #333; font-weight: 600;">
                             <i class="fas fa-fire"></i> Special Offers Available
                         </span>
                     @endif
@@ -45,7 +45,7 @@
 @if($categoryOffers && $categoryOffers->count() > 0)
 <section style="padding: 2rem 0; background: #fff3e0;">
     <div class="container">
-        <div style="background: linear-gradient(135deg, #ffd93d 0%, #ff6b35 100%); padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(255,107,53,0.2);">
+        <div style="background: linear-gradient(135deg, #5cb85c 0%, #28a745 100%); padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(255,107,53,0.2);">
             <div class="row align-items-center">
                 <div class="col-md-8">
                     @foreach($categoryOffers as $offer)
@@ -56,7 +56,7 @@
                             @if($offer->description)
                                 <p style="color: rgba(255,255,255,0.9); margin-bottom: 0.5rem;">{{ $offer->description }}</p>
                             @endif
-                            <span style="background: white; color: #ff6b35; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 700; font-size: 1.2rem;">
+                            <span style="background: white; color: #28a745; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 700; font-size: 1.2rem;">
                                 {{ $offer->discount_value_display }} OFF
                             </span>
                         </div>
@@ -64,7 +64,7 @@
                 </div>
                 <div class="col-md-4 text-center">
                     <div style="background: white; padding: 1rem; border-radius: 10px;">
-                        <i class="fas fa-percentage" style="font-size: 3rem; color: #ff6b35;"></i>
+                        <i class="fas fa-percentage" style="font-size: 3rem; color: #28a745;"></i>
                         <p style="margin-top: 0.5rem; color: #333; font-weight: 600;">Limited Time Offer</p>
                     </div>
                 </div>
@@ -120,7 +120,7 @@
                         </a>
                         
                         @if($product->discount_percentage > 0)
-                            <span style="position: absolute; top: 10px; right: 10px; background: #ff6b35; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; z-index: 5;">
+                            <span style="position: absolute; top: 10px; right: 10px; background: #28a745; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; z-index: 5;">
                                 {{ $product->discount_percentage }}% OFF
                             </span>
                         @endif
@@ -130,12 +130,22 @@
                         </h6>
                         
                         <div style="margin-bottom: 0.5rem;">
-                            @if($product->sale_price)
-                                <span style="font-size: 1rem; font-weight: 700; color: #ff6b35;">₹{{ number_format($product->sale_price, 2) }}</span>
-                                <br>
-                                <span style="font-size: 0.8rem; color: #999; text-decoration: line-through;">₹{{ number_format($product->price, 2) }}</span>
+                            @php
+                                $originalPrice = $product->price;
+                                $salePrice = $product->sale_price ?? $product->discount_price ?? null;
+                                $hasDiscount = $salePrice && $salePrice < $originalPrice;
+                            @endphp
+                            
+                            @if($hasDiscount)
+                                <div>
+                                    <span style="font-size: 0.85rem; color: #999; text-decoration: line-through; display: block;">MRP: ₹{{ number_format($originalPrice, 2) }}</span>
+                                    <span style="font-size: 1.1rem; font-weight: 700; color: #28a745;">₹{{ number_format($salePrice, 2) }}</span>
+                                    @if($product->discount_percentage > 0)
+                                        <span style="font-size: 0.75rem; color: #dc3545; font-weight: 600; margin-left: 5px;">({{ round($product->discount_percentage) }}% OFF)</span>
+                                    @endif
+                                </div>
                             @else
-                                <span style="font-size: 1rem; font-weight: 700; color: #ff6b35;">₹{{ number_format($product->price, 2) }}</span>
+                                <span style="font-size: 1rem; font-weight: 700; color: #28a745;">₹{{ number_format($originalPrice, 2) }}</span>
                             @endif
                         </div>
                         
@@ -150,7 +160,7 @@
                                        value="1" 
                                        style="width: 60%; padding: 0.25rem; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 0.9rem;">
                                 <button onclick="addToCart({{ $product->id }})" 
-                                        style="width: 40%; padding: 0.25rem; background: #ff6b35; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">
+                                        style="width: 40%; padding: 0.25rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">
                                     ADD
                                 </button>
                             </div>
@@ -170,7 +180,7 @@
                     <i class="fas fa-box-open" style="font-size: 4rem; color: #ddd; margin-bottom: 1rem;"></i>
                     <h3 style="color: #6c757d;">No products found in this category</h3>
                     <p style="color: #6c757d;">Please check back later or browse other categories.</p>
-                    <a href="{{ route('products') }}" style="display: inline-block; margin-top: 1rem; padding: 0.75rem 2rem; background: #ff6b35; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                    <a href="{{ route('products') }}" style="display: inline-block; margin-top: 1rem; padding: 0.75rem 2rem; background: #28a745; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
                         Browse All Products
                     </a>
                 </div>
@@ -193,7 +203,7 @@
                     {{-- Pagination Elements --}}
                     @foreach ($products->getUrlRange(1, $products->lastPage()) as $page => $url)
                         @if ($page == $products->currentPage())
-                            <li class="page-item active"><span class="page-link" style="background-color: #ff6b35; border-color: #ff6b35;">{{ $page }}</span></li>
+                            <li class="page-item active"><span class="page-link" style="background-color: #28a745; border-color: #28a745;">{{ $page }}</span></li>
                         @else
                             <li class="page-item"><a class="page-link" href="{{ $url }}">{{ $page }}</a></li>
                         @endif
@@ -237,7 +247,7 @@
             <div class="col-lg-3 col-md-6 mb-3">
                 <a href="{{ route('category', $relatedCategory->slug) }}" style="text-decoration: none;">
                     <div style="background: #f8f9fa; padding: 1.5rem; text-align: center; border-radius: 8px; transition: all 0.3s;">
-                        <i class="fas fa-box-open" style="font-size: 2rem; color: #ff6b35; margin-bottom: 0.5rem;"></i>
+                        <i class="fas fa-box-open" style="font-size: 2rem; color: #28a745; margin-bottom: 0.5rem;"></i>
                         <h5 style="color: #212529; margin: 0;">{{ $relatedCategory->name }}</h5>
                         <small style="color: #6c757d;">{{ $relatedCategory->products()->active()->count() }} Products</small>
                     </div>
@@ -252,7 +262,7 @@
 <!-- Floating Cart Button -->
 <div style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
     <a href="{{ route('cart.index') }}" 
-       style="display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; background: #ff6b35; color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-decoration: none; position: relative;">
+       style="display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; background: #28a745; color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-decoration: none; position: relative;">
         <i class="fas fa-shopping-cart" style="font-size: 1.5rem;"></i>
         <span id="floating-cart-count" 
               style="position: absolute; top: -5px; right: -5px; background: #dc3545; color: white; font-size: 0.75rem; font-weight: 600; padding: 2px 6px; border-radius: 50%; min-width: 20px; text-align: center; display: none;">

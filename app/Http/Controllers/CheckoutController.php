@@ -353,6 +353,15 @@ class CheckoutController extends Controller
             
             \Log::info('Order found for success page', ['order_id' => $order->id]);
             
+            // Check if fabric theme is enabled
+            $theme = \App\Models\AppSetting::get('store_theme', 'default');
+            $host = request()->getHost();
+            
+            // Use fabric theme if conditions met
+            if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'fabric' || $theme === 'fabric') {
+                return view('order-success-fabric', compact('order'));
+            }
+            
             return view('order-success', compact('order'));
         } catch (\Exception $e) {
             \Log::error('Order success page error', [

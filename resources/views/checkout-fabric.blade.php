@@ -191,15 +191,15 @@
                             
                             <div style="display: flex; justify-content: space-between; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e0e0e0; font-size: 1.2rem;">
                                 <span style="font-weight: 600;">Total:</span>
-                                <span style="font-weight: 700; color: #ff6b35;">₹{{ number_format($total, 2) }}</span>
+                                <span style="font-weight: 700; color: #28a745;">₹{{ number_format($total, 2) }}</span>
                             </div>
                         </div>
                         
                         <!-- Place Order Button -->
                         <button type="submit" 
-                                style="width: 100%; padding: 1rem; background: #ff6b35; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; margin-top: 1.5rem; cursor: pointer; transition: all 0.3s;"
-                                onmouseover="this.style.background='#e55a2b'" 
-                                onmouseout="this.style.background='#ff6b35'">
+                                style="width: 100%; padding: 1rem; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; margin-top: 1.5rem; cursor: pointer; transition: all 0.3s;"
+                                onmouseover="this.style.background='#1e7e34'" 
+                                onmouseout="this.style.background='#28a745'">
                             Place Order
                         </button>
                         
@@ -225,8 +225,8 @@ function selectPaymentMethod(methodId, element) {
     });
     
     // Add active class to selected method
-    element.style.borderColor = '#ff6b35';
-    element.style.background = '#fff5f2';
+    element.style.borderColor = '#28a745';
+    element.style.background = '#d4edda';
     
     // Check the radio button
     document.getElementById('payment_' + methodId).checked = true;
@@ -238,8 +238,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (checkedRadio) {
         const parentDiv = checkedRadio.closest('.payment-methods > div');
         if (parentDiv) {
-            parentDiv.style.borderColor = '#ff6b35';
-            parentDiv.style.background = '#fff5f2';
+            parentDiv.style.borderColor = '#28a745';
+            parentDiv.style.background = '#d4edda';
         }
     }
 });

@@ -36,14 +36,14 @@
     
     <style>
         :root {
-            --primary-color: #000000;
-            --secondary-color: #ff6b35;
-            --accent-color: #ffd93d;
-            --success-color: #4caf50;
-            --fabric-orange: #ff6b35;
-            --fabric-yellow: #ffd93d;
-            --fabric-teal: #6bcf7f;
-            --fabric-pink: #ff6b9d;
+            --primary-color: #28a745;
+            --secondary-color: #20c997;
+            --accent-color: #28a745;
+            --success-color: #28a745;
+            --fabric-green: #28a745;
+            --fabric-green-light: #5cb85c;
+            --fabric-green-dark: #1e7e34;
+            --fabric-teal: #20c997;
             --surface: #ffffff;
             --background: #f8f9fa;
             --text-primary: #212529;
@@ -68,7 +68,7 @@
             color: var(--text-primary);
             line-height: 1.6;
             overflow-x: hidden;
-            padding-top: 70px; /* Space for fixed navbar */
+            padding-top: 72px; /* Space for modern navbar */
         }
 
         /* Modern Navbar for Fabric Store */
@@ -111,7 +111,7 @@
         }
 
         .navbar-brand-fabric:hover {
-            color: var(--fabric-orange);
+            color: var(--fabric-green);
             text-decoration: none;
         }
 
@@ -137,7 +137,7 @@
         }
 
         .nav-link-fabric:hover {
-            color: var(--fabric-orange);
+            color: var(--fabric-green);
         }
 
         .nav-link-fabric.active::after {
@@ -147,7 +147,7 @@
             left: 0;
             width: 100%;
             height: 2px;
-            background: var(--fabric-orange);
+            background: var(--fabric-green);
         }
 
         /* Dropdown Styles */
@@ -196,7 +196,7 @@
 
         .dropdown-item-fabric:hover {
             background: var(--background);
-            color: var(--fabric-orange);
+            color: var(--fabric-green);
             padding-left: 1.5rem;
         }
 
@@ -236,7 +236,7 @@
         }
 
         .search-input-fabric:focus {
-            border-color: var(--fabric-orange);
+            border-color: var(--fabric-green);
         }
 
         .search-submit-fabric {
@@ -244,7 +244,7 @@
             right: 5px;
             top: 50%;
             transform: translateY(-50%);
-            background: var(--fabric-orange);
+            background: var(--fabric-green);
             color: white;
             border: none;
             padding: 0.5rem 1.5rem;
@@ -254,7 +254,7 @@
         }
 
         .search-submit-fabric:hover {
-            background: #ff5722;
+            background: var(--fabric-green-dark);
         }
 
         /* Navbar Actions */
@@ -276,14 +276,14 @@
         }
 
         .nav-icon-btn:hover {
-            color: var(--fabric-orange);
+            color: var(--fabric-green);
         }
 
         .cart-count {
             position: absolute;
             top: -8px;
             right: -8px;
-            background: var(--fabric-orange);
+            background: var(--fabric-green);
             color: white;
             font-size: 0.7rem;
             font-weight: 600;
@@ -329,7 +329,7 @@
 
         .mobile-link-fabric:hover {
             background: var(--background);
-            color: var(--fabric-orange);
+            color: var(--fabric-green);
             padding-left: 2rem;
         }
 
@@ -353,7 +353,7 @@
         }
 
         .mobile-dropdown-item:hover {
-            color: var(--fabric-orange);
+            color: var(--fabric-green);
             padding-left: 3rem;
         }
 
@@ -382,7 +382,7 @@
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            background: var(--fabric-orange);
+            background: var(--fabric-green);
             color: white;
             padding: 1rem 2rem;
             border: none;
@@ -394,7 +394,7 @@
         }
 
         .btn-explore:hover {
-            background: #ff5722;
+            background: var(--fabric-green-dark);
             transform: translateX(5px);
             color: white;
         }
@@ -467,7 +467,7 @@
         }
 
         .category-item:hover {
-            background: var(--fabric-orange);
+            background: var(--fabric-green);
             color: white;
             transform: translateY(-2px);
         }
@@ -496,7 +496,7 @@
             font-size: 1.2rem;
             font-weight: 600;
             margin-bottom: 1rem;
-            color: var(--fabric-orange);
+            color: var(--fabric-green);
         }
 
         .footer-section ul {
@@ -515,7 +515,7 @@
         }
 
         .footer-section a:hover {
-            color: var(--fabric-orange);
+            color: var(--fabric-green);
         }
 
         /* Toast Notifications */
@@ -547,19 +547,7 @@
         /* Responsive Design */
         @media (max-width: 992px) {
             body {
-                padding-top: 60px;
-            }
-
-            .navbar-fabric {
-                padding: 0.75rem 0;
-            }
-
-            .navbar-nav-fabric {
-                display: none;
-            }
-
-            .mobile-menu-fabric {
-                display: block;
+                padding-top: 64px; /* Adjusted for modern navbar on mobile */
             }
 
             .hero-title {
@@ -598,254 +586,16 @@
     </style>
 </head>
 <body>
-    <!-- Modern Fabric Store Navbar -->
-    <nav class="navbar-fabric" id="navbar">
-        <div class="container-fluid px-4">
-            <div class="d-flex justify-content-between align-items-center w-100">
-                <!-- Brand -->
-                <a href="{{ route('shop') }}" class="navbar-brand-fabric">
-                    @if($globalCompany->company_logo)
-                        <img src="{{ asset('storage/' . $globalCompany->company_logo) }}" alt="{{ $globalCompany->company_name }}" class="navbar-logo-fabric">
-                    @endif
-                    <span class="brand-text">{{ $globalCompany->company_name ?? 'JEOMSU' }}</span>
-                </a>
-                
-                <!-- Navigation Links -->
-                <ul class="navbar-nav-fabric d-none d-lg-flex">
-                    <li><a href="{{ route('shop') }}" class="nav-link-fabric {{ request()->routeIs('shop') ? 'active' : '' }}">Home</a></li>
-                    
-                    <!-- Categories Dropdown -->
-                    <li class="nav-dropdown">
-                        <a href="#" class="nav-link-fabric" onclick="toggleDropdown(event, 'categoriesDropdown')">
-                            Categories <i class="fas fa-chevron-down ms-1"></i>
-                        </a>
-                        <div class="fabric-dropdown" id="categoriesDropdown">
-                            <div class="dropdown-content">
-                                @php
-                                    $categories = \App\Models\Category::active()->parent()->orderBy('sort_order')->get();
-                                @endphp
-                                @forelse($categories as $category)
-                                    <a href="{{ route('category', $category->slug) }}" class="dropdown-item-fabric">
-                                        <span>{{ $category->name }}</span>
-                                        @if($category->activeProducts()->count() > 0)
-                                            <small class="count">({{ $category->activeProducts()->count() }})</small>
-                                        @endif
-                                    </a>
-                                @empty
-                                    <span class="dropdown-item-fabric">No categories available</span>
-                                @endforelse
-                            </div>
-                        </div>
-                    </li>
-                    
-                    <li><a href="{{ route('products') }}" class="nav-link-fabric {{ request()->routeIs('products') ? 'active' : '' }}">Products</a></li>
-                    <li><a href="{{ route('offer.products') }}" class="nav-link-fabric {{ request()->routeIs('offer.products') ? 'active' : '' }}">Offers</a></li>
-                    <li><a href="{{ route('track.order') }}" class="nav-link-fabric {{ request()->routeIs('track.order') ? 'active' : '' }}">Track Order</a></li>
-                </ul>
-                
-                <!-- Actions -->
-                <div class="navbar-actions">
-                    <!-- Search Toggle -->
-                    <button class="nav-icon-btn" onclick="toggleSearch()">
-                        <i class="fas fa-search"></i>
-                    </button>
-                    
-                    <!-- Cart -->
-                    <a href="{{ route('cart.index') }}" class="nav-icon-btn position-relative">
-                        <i class="fas fa-shopping-bag"></i>
-                        <span class="cart-count" id="cart-count-badge">0</span>
-                    </a>
-                    
-                    <!-- User/Account -->
-                    <button class="nav-icon-btn">
-                        <i class="fas fa-user"></i>
-                    </button>
-                    
-                    <!-- Mobile Menu Toggle -->
-                    <button class="nav-icon-btn d-lg-none" onclick="toggleMobileMenu()">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Search Bar (Hidden by default) -->
-            <div class="search-bar-fabric" id="searchBar">
-                <form action="{{ route('search') }}" method="GET" class="search-form-fabric">
-                    <input type="search" name="q" placeholder="Search for products..." class="search-input-fabric" value="{{ request('q') }}">
-                    <button type="submit" class="search-submit-fabric">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </form>
-            </div>
-        </div>
-        
-        <!-- Mobile Menu -->
-        <div class="mobile-menu-fabric" id="mobileMenu">
-            <ul class="mobile-nav-fabric">
-                <li><a href="{{ route('shop') }}" class="mobile-link-fabric">Home</a></li>
-                <li>
-                    <a href="#" class="mobile-link-fabric" onclick="toggleMobileDropdown(event)">
-                        Categories <i class="fas fa-chevron-down"></i>
-                    </a>
-                    <div class="mobile-dropdown-fabric">
-                        @forelse($categories ?? [] as $category)
-                            <a href="{{ route('category', $category->slug) }}" class="mobile-dropdown-item">
-                                {{ $category->name }}
-                                @if($category->activeProducts()->count() > 0)
-                                    <span>({{ $category->activeProducts()->count() }})</span>
-                                @endif
-                            </a>
-                        @empty
-                            <span class="mobile-dropdown-item">No categories</span>
-                        @endforelse
-                    </div>
-                </li>
-                <li><a href="{{ route('products') }}" class="mobile-link-fabric">Products</a></li>
-                <li><a href="{{ route('offer.products') }}" class="mobile-link-fabric">Offers</a></li>
-                <li><a href="{{ route('track.order') }}" class="mobile-link-fabric">Track Order</a></li>
-            </ul>
-        </div>
-    </nav>
+    <!-- Modern Premium Navigation -->
+    @include('partials.modern-navbar')
 
     <!-- Main Content -->
     <main>
         @yield('content')
     </main>
 
-    <!-- Footer -->
-    <footer class="footer-fabric" style="background: #1a1a1a; color: white; padding: 3rem 0 1rem; margin-top: 0;">
-        <div class="container">
-            <div class="row">
-                <!-- Company Information -->
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="footer-brand" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-                        @if($globalCompany->company_logo)
-                            <img src="{{ asset('storage/' . $globalCompany->company_logo) }}" 
-                                 alt="{{ $globalCompany->company_name }}" 
-                                 style="height: 50px; width: auto; object-fit: contain;">
-                        @endif
-                        <h4 style="margin: 0; color: white; font-weight: 600;">{{ $globalCompany->company_name ?? 'Your Store' }}</h4>
-                    </div>
-                    
-                    <p style="color: rgba(255,255,255,0.7); margin-bottom: 1.5rem;">
-                        {{ $globalCompany->company_description ?? 'Your trusted online shopping destination for quality products.' }}
-                    </p>
-                    
-                    <!-- Social Media Icons -->
-                    <div class="social-links" style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-                        @php
-                            $socialLinks = \App\Models\SocialMediaLink::where('is_active', true)
-                                ->orderBy('sort_order')
-                                ->get();
-                        @endphp
-                        
-                        @forelse($socialLinks as $social)
-                            <a href="{{ $social->url }}" 
-                               target="_blank" 
-                               rel="noopener noreferrer"
-                               style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border-radius: 50%; color: white; text-decoration: none; transition: all 0.3s;">
-                                <i class="{{ $social->icon_class }}" style="font-size: 1.2rem;"></i>
-                            </a>
-                        @empty
-                            <!-- Default social links if none in database -->
-                            @if($globalCompany->facebook ?? null)
-                                <a href="{{ $globalCompany->facebook }}" target="_blank" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border-radius: 50%; color: white; text-decoration: none;">
-                                    <i class="fab fa-facebook-f"></i>
-                                </a>
-                            @endif
-                            @if($globalCompany->instagram ?? null)
-                                <a href="{{ $globalCompany->instagram }}" target="_blank" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border-radius: 50%; color: white; text-decoration: none;">
-                                    <i class="fab fa-instagram"></i>
-                                </a>
-                            @endif
-                            @if($globalCompany->twitter ?? null)
-                                <a href="{{ $globalCompany->twitter }}" target="_blank" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.1); border-radius: 50%; color: white; text-decoration: none;">
-                                    <i class="fab fa-twitter"></i>
-                                </a>
-                            @endif
-                        @endforelse
-                    </div>
-                </div>
-                
-                <!-- Contact Information -->
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <h5 style="color: white; margin-bottom: 1.5rem; font-weight: 600;">Contact Us</h5>
-                    
-                    @if($globalCompany->company_address ?? null)
-                    <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; color: rgba(255,255,255,0.8);">
-                        <i class="fas fa-map-marker-alt" style="margin-top: 0.25rem; color: #ff6b35;"></i>
-                        <span>{{ $globalCompany->company_address }}</span>
-                    </div>
-                    @endif
-                    
-                    @if($globalCompany->company_phone ?? null)
-                    <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; color: rgba(255,255,255,0.8);">
-                        <i class="fas fa-phone" style="color: #ff6b35;"></i>
-                        <a href="tel:{{ $globalCompany->company_phone }}" style="color: rgba(255,255,255,0.8); text-decoration: none;">
-                            {{ $globalCompany->company_phone }}
-                        </a>
-                    </div>
-                    @endif
-                    
-                    @if($globalCompany->company_email ?? null)
-                    <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem; color: rgba(255,255,255,0.8);">
-                        <i class="fas fa-envelope" style="color: #ff6b35;"></i>
-                        <a href="mailto:{{ $globalCompany->company_email }}" style="color: rgba(255,255,255,0.8); text-decoration: none;">
-                            {{ $globalCompany->company_email }}
-                        </a>
-                    </div>
-                    @endif
-                </div>
-                
-                <!-- Quick Links -->
-                <div class="col-lg-2 col-md-6 mb-4">
-                    <h5 style="color: white; margin-bottom: 1.5rem; font-weight: 600;">Quick Links</h5>
-                    <ul style="list-style: none; padding: 0;">
-                        <li style="margin-bottom: 0.75rem;">
-                            <a href="{{ route('shop') }}" style="color: rgba(255,255,255,0.8); text-decoration: none;">Home</a>
-                        </li>
-                        <li style="margin-bottom: 0.75rem;">
-                            <a href="{{ route('products') }}" style="color: rgba(255,255,255,0.8); text-decoration: none;">All Products</a>
-                        </li>
-                        <li style="margin-bottom: 0.75rem;">
-                            <a href="{{ route('offer.products') }}" style="color: rgba(255,255,255,0.8); text-decoration: none;">Offers</a>
-                        </li>
-                        <li style="margin-bottom: 0.75rem;">
-                            <a href="{{ route('track.order') }}" style="color: rgba(255,255,255,0.8); text-decoration: none;">Track Order</a>
-                        </li>
-                        <li style="margin-bottom: 0.75rem;">
-                            <a href="{{ route('cart.index') }}" style="color: rgba(255,255,255,0.8); text-decoration: none;">Shopping Cart</a>
-                        </li>
-                    </ul>
-                </div>
-                
-                <!-- Categories -->
-                <div class="col-lg-2 col-md-6 mb-4">
-                    <h5 style="color: white; margin-bottom: 1.5rem; font-weight: 600;">Categories</h5>
-                    <ul style="list-style: none; padding: 0;">
-                        @php
-                            $footerCategories = \App\Models\Category::active()->parent()->orderBy('sort_order')->limit(5)->get();
-                        @endphp
-                        @foreach($footerCategories as $category)
-                            <li style="margin-bottom: 0.75rem;">
-                                <a href="{{ route('category', $category->slug) }}" style="color: rgba(255,255,255,0.8); text-decoration: none;">
-                                    {{ $category->name }}
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            </div>
-            
-            <hr style="border-color: rgba(255,255,255,0.1); margin: 2rem 0 1rem;">
-            
-            <div class="text-center">
-                <p style="color: rgba(255,255,255,0.6); margin: 0;">
-                    &copy; {{ date('Y') }} {{ $globalCompany->company_name ?? 'Your Store' }}. All rights reserved.
-                </p>
-            </div>
-        </div>
-    </footer>
+    <!-- Modern Premium Footer -->
+    @include('partials.modern-footer')
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -860,82 +610,29 @@
             fetch('{{ route("cart.count") }}')
                 .then(response => response.json())
                 .then(data => {
+                    // Update both the old badge and modern navbar badge
                     const badge = document.getElementById('cart-count-badge');
+                    const modernBadge = document.getElementById('cart-count-modern');
+                    
                     if (badge) {
                         badge.textContent = data.count || 0;
                         badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+                    }
+                    
+                    if (modernBadge) {
+                        modernBadge.textContent = data.count || 0;
+                        modernBadge.style.display = data.count > 0 ? 'flex' : 'none';
+                    }
+                    
+                    // Also call the modern navbar's update function if it exists
+                    if (typeof updateModernCartCount === 'function') {
+                        updateModernCartCount();
                     }
                 })
                 .catch(error => console.error('Error fetching cart count:', error));
         }
 
-        // Navbar scroll effect
-        window.addEventListener('scroll', function() {
-            const navbar = document.getElementById('navbar');
-            if (window.scrollY > 50) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
-            }
-        });
-
-        // Toggle dropdown
-        function toggleDropdown(event, dropdownId) {
-            event.preventDefault();
-            event.stopPropagation();
-            const dropdown = document.getElementById(dropdownId);
-            
-            // Close other dropdowns
-            document.querySelectorAll('.fabric-dropdown').forEach(d => {
-                if (d.id !== dropdownId) {
-                    d.classList.remove('show');
-                }
-            });
-            
-            dropdown.classList.toggle('show');
-        }
-
-        // Toggle search bar
-        function toggleSearch() {
-            const searchBar = document.getElementById('searchBar');
-            searchBar.classList.toggle('show');
-            if (searchBar.classList.contains('show')) {
-                searchBar.querySelector('input').focus();
-            }
-        }
-
-        // Toggle mobile menu
-        function toggleMobileMenu() {
-            const mobileMenu = document.getElementById('mobileMenu');
-            mobileMenu.classList.toggle('show');
-        }
-
-        // Toggle mobile dropdown
-        function toggleMobileDropdown(event) {
-            event.preventDefault();
-            const dropdown = event.target.nextElementSibling;
-            if (dropdown) {
-                dropdown.classList.toggle('show');
-            }
-        }
-
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', function(event) {
-            if (!event.target.closest('.nav-dropdown')) {
-                document.querySelectorAll('.fabric-dropdown').forEach(dropdown => {
-                    dropdown.classList.remove('show');
-                });
-            }
-        });
-
-        // Close search when clicking outside
-        document.addEventListener('click', function(event) {
-            const searchBar = document.getElementById('searchBar');
-            const searchBtn = event.target.closest('.nav-icon-btn');
-            if (!event.target.closest('.search-bar-fabric') && !searchBtn) {
-                searchBar.classList.remove('show');
-            }
-        });
+        // The modern navbar has its own JavaScript functions included
     </script>
     
     @yield('scripts')

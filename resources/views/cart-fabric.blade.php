@@ -36,7 +36,7 @@
                             <div style="display: flex; align-items: center; gap: 2rem;">
                                 <!-- Price -->
                                 <div>
-                                    <span style="font-size: 1.1rem; font-weight: 600; color: #ff6b35;">
+                                    <span style="font-size: 1.1rem; font-weight: 600; color: #28a745;">
                                         ₹{{ number_format($item->price, 2) }}
                                     </span>
                                     @if($item->product->price > $item->price)
@@ -119,7 +119,7 @@
                         
                         <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700;">
                             <span>Total</span>
-                            <span style="color: #ff6b35;">
+                            <span style="color: #28a745;">
                                 ₹{{ number_format($subtotal + \App\Services\DeliveryService::calculateDeliveryCharge($subtotal) - $couponDiscount, 2) }}
                             </span>
                         </div>
@@ -163,13 +163,13 @@
                     
                     <!-- Checkout Button -->
                     <a href="{{ route('checkout') }}" 
-                       style="display: block; width: 100%; padding: 1rem; background: {{ ($minOrderValidation['valid'] ?? true) ? '#ff6b35' : '#6c757d' }}; color: white; text-align: center; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 1rem; {{ isset($minOrderValidation['valid']) && !$minOrderValidation['valid'] ? 'pointer-events: none;' : '' }}">
+                       style="display: block; width: 100%; padding: 1rem; background: {{ ($minOrderValidation['valid'] ?? true) ? '#28a745' : '#6c757d' }}; color: white; text-align: center; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 1rem; {{ isset($minOrderValidation['valid']) && !$minOrderValidation['valid'] ? 'pointer-events: none;' : '' }}">
                         Proceed to Checkout
                     </a>
                     
                     <!-- Continue Shopping -->
                     <a href="{{ route('products') }}" 
-                       style="display: block; width: 100%; padding: 0.75rem; background: transparent; color: #ff6b35; text-align: center; text-decoration: none; border: 2px solid #ff6b35; border-radius: 8px; font-weight: 600; margin-top: 0.75rem;">
+                       style="display: block; width: 100%; padding: 0.75rem; background: transparent; color: #28a745; text-align: center; text-decoration: none; border: 2px solid #28a745; border-radius: 8px; font-weight: 600; margin-top: 0.75rem;">
                         Continue Shopping
                     </a>
                 </div>
@@ -182,7 +182,7 @@
             <h3 style="margin-bottom: 1rem;">Your cart is empty</h3>
             <p style="color: #6c757d; margin-bottom: 2rem;">Looks like you haven't added anything to your cart yet.</p>
             <a href="{{ route('products') }}" 
-               style="display: inline-block; padding: 0.75rem 2rem; background: #ff6b35; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+               style="display: inline-block; padding: 0.75rem 2rem; background: #28a745; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
                 Start Shopping
             </a>
         </div>

@@ -4,14 +4,14 @@
 
 @section('content')
 <!-- Search Header Section -->
-<section style="padding: 2rem 0; background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);">
+<section style="padding: 2rem 0; background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-md-8">
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb" style="background: transparent; padding: 0; margin-bottom: 0.5rem;">
                         <li class="breadcrumb-item"><a href="{{ route('shop') }}" style="color: white; text-decoration: none;">Home</a></li>
-                        <li class="breadcrumb-item active" style="color: #ffd93d;">Search Results</li>
+                        <li class="breadcrumb-item active" style="color: #5cb85c;">Search Results</li>
                     </ol>
                 </nav>
                 <h1 style="color: white; font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">
@@ -34,7 +34,7 @@
                                style="flex: 1; padding: 0.75rem; border: none; border-radius: 25px; font-size: 1rem;"
                                required>
                         <button type="submit" 
-                                style="padding: 0.75rem 1.5rem; background: white; color: #ff6b35; border: none; border-radius: 25px; font-weight: 600; cursor: pointer;">
+                                style="padding: 0.75rem 1.5rem; background: white; color: #28a745; border: none; border-radius: 25px; font-weight: 600; cursor: pointer;">
                             <i class="fas fa-search"></i> Search
                         </button>
                     </div>
@@ -48,8 +48,8 @@
 @if($products->count() == 0)
 <section style="padding: 2rem 0; background: #fff3e0;">
     <div class="container">
-        <div style="background: white; padding: 1.5rem; border-radius: 12px; border-left: 4px solid #ff6b35;">
-            <h4 style="color: #ff6b35; margin-bottom: 1rem;">
+        <div style="background: white; padding: 1.5rem; border-radius: 12px; border-left: 4px solid #28a745;">
+            <h4 style="color: #28a745; margin-bottom: 1rem;">
                 <i class="fas fa-lightbulb"></i> Search Tips
             </h4>
             <ul style="margin: 0; padding-left: 1.5rem; color: #666;">
@@ -111,7 +111,7 @@
                         </a>
                         
                         @if($product->discount_percentage > 0)
-                            <span style="position: absolute; top: 10px; right: 10px; background: #ff6b35; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; z-index: 5;">
+                            <span style="position: absolute; top: 10px; right: 10px; background: #28a745; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; z-index: 5;">
                                 {{ $product->discount_percentage }}% OFF
                             </span>
                         @endif
@@ -119,18 +119,18 @@
                         <!-- Highlight search term in product name -->
                         <h6 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; height: 40px; overflow: hidden; color: #333;">
                             @php
-                                $highlightedName = str_ireplace($query, '<mark style="background: #ffd93d; padding: 0 2px;">' . $query . '</mark>', $product->name);
+                                $highlightedName = str_ireplace($query, '<mark style="background: #5cb85c; padding: 0 2px;">' . $query . '</mark>', $product->name);
                             @endphp
                             {!! Str::limit($highlightedName, 40) !!}
                         </h6>
                         
                         <div style="margin-bottom: 0.5rem;">
                             @if($product->sale_price)
-                                <span style="font-size: 1rem; font-weight: 700; color: #ff6b35;">₹{{ number_format($product->sale_price, 2) }}</span>
+                                <span style="font-size: 1rem; font-weight: 700; color: #28a745;">₹{{ number_format($product->sale_price, 2) }}</span>
                                 <br>
                                 <span style="font-size: 0.8rem; color: #999; text-decoration: line-through;">₹{{ number_format($product->price, 2) }}</span>
                             @else
-                                <span style="font-size: 1rem; font-weight: 700; color: #ff6b35;">₹{{ number_format($product->price, 2) }}</span>
+                                <span style="font-size: 1rem; font-weight: 700; color: #28a745;">₹{{ number_format($product->price, 2) }}</span>
                             @endif
                         </div>
                         
@@ -145,7 +145,7 @@
                                        value="1" 
                                        style="width: 60%; padding: 0.25rem; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 0.9rem;">
                                 <button onclick="addToCart({{ $product->id }})" 
-                                        style="width: 40%; padding: 0.25rem; background: #ff6b35; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">
+                                        style="width: 40%; padding: 0.25rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">
                                     ADD
                                 </button>
                             </div>

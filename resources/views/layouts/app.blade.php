@@ -1064,8 +1064,8 @@
     @endif
 </head>
 <body class="{{ $animationClasses ?? '' }}">
-    <!-- Adaptive Modern Navigation -->
-    <x-adaptive-navbar :company="$globalCompany" />
+    <!-- Modern Premium Navigation -->
+    @include('partials.modern-navbar')
 
     <!-- Alert Messages -->
     @if(session('success'))

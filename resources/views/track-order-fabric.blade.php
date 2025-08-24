@@ -53,7 +53,7 @@
                                 @enderror
                             </div>
                             
-                            <button type="submit" style="width: 100%; padding: 0.75rem; background: #ff6b35; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem;">
+                            <button type="submit" style="width: 100%; padding: 0.75rem; background: #28a745; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem;">
                                 Track Order
                             </button>
                         </form>
@@ -127,7 +127,7 @@
                             </div>
                             @endforeach
                             
-                            <a href="{{ route('track.order') }}" style="display: inline-block; padding: 0.75rem 1.5rem; background: #ff6b35; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                            <a href="{{ route('track.order') }}" style="display: inline-block; padding: 0.75rem 1.5rem; background: #28a745; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
                                 Track Another Order
                             </a>
                         @else
@@ -135,7 +135,7 @@
                                 <i class="fas fa-box-open" style="font-size: 3rem; color: #ddd; margin-bottom: 1rem;"></i>
                                 <h4>No Orders Found</h4>
                                 <p style="color: #6c757d;">No orders found for the provided mobile number.</p>
-                                <a href="{{ route('track.order') }}" style="display: inline-block; padding: 0.75rem 1.5rem; background: #ff6b35; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 1rem;">
+                                <a href="{{ route('track.order') }}" style="display: inline-block; padding: 0.75rem 1.5rem; background: #28a745; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 1rem;">
                                     Try Again
                                 </a>
                             </div>
@@ -150,7 +150,7 @@
 <!-- Floating Cart Button -->
 <div style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
     <a href="{{ route('cart.index') }}" 
-       style="display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; background: #ff6b35; color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-decoration: none; position: relative;">
+       style="display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; background: #28a745; color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.2); text-decoration: none; position: relative;">
         <i class="fas fa-shopping-cart" style="font-size: 1.5rem;"></i>
         <span id="floating-cart-count" 
               style="position: absolute; top: -5px; right: -5px; background: #dc3545; color: white; font-size: 0.75rem; font-weight: 600; padding: 2px 6px; border-radius: 50%; min-width: 20px; text-align: center; display: none;">

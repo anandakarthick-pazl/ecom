@@ -26,8 +26,14 @@
                 </h6>
                 
                 <div style="margin-bottom: 0.5rem;">
-                    @if($product->sale_price)
-                        <span style="font-size: 1rem; font-weight: 700; color: #ff6b35;">₹{{ number_format($product->sale_price, 2) }}</span>
+                    @php
+                        // Check for effective price (from offers) or discount price (manual)
+                        $finalPrice = isset($product->effective_price) ? $product->effective_price : ($product->discount_price ?: $product->price);
+                        $hasDiscount = $finalPrice < $product->price;
+                    @endphp
+                    
+                    @if($hasDiscount)
+                        <span style="font-size: 1rem; font-weight: 700; color: #ff6b35;">₹{{ number_format($finalPrice, 2) }}</span>
                         <br>
                         <span style="font-size: 0.8rem; color: #999; text-decoration: line-through;">₹{{ number_format($product->price, 2) }}</span>
                     @else
