@@ -69,11 +69,66 @@
                     </div>
                 </li>
                 
-                <li class="nav-item">
-                    <a href="{{ route('products') }}" class="nav-link {{ request()->routeIs('products') ? 'active' : '' }}">
+                <li class="nav-item has-dropdown">
+                    <a href="#" class="nav-link {{ request()->routeIs('products') ? 'active' : '' }}" onclick="toggleModernDropdown(event, 'productsMenu')">
                         <span class="nav-icon"><i class="fas fa-box"></i></span>
                         <span class="nav-text">Products</span>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
                     </a>
+                    <div class="mega-dropdown products-dropdown" id="productsMenu">
+                        <div class="dropdown-header">
+                            <h3>Quick Shop</h3>
+                            <p>Browse and add products to cart</p>
+                        </div>
+                        <div class="products-quick-grid">
+                            @php
+                                $featuredProducts = \App\Models\Product::active()
+                                    ->inStock()
+                                    ->take(6)
+                                    ->get();
+                            @endphp
+                            @foreach($featuredProducts as $product)
+                                <div class="quick-product-card">
+                                    <div class="quick-product-image">
+                                        @if($product->featured_image)
+                                            <img src="{{ $product->featured_image_url }}" alt="{{ $product->name }}">
+                                        @else
+                                            <div class="product-placeholder-mini">
+                                                <i class="fas fa-image"></i>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div class="quick-product-info">
+                                        <h5>{{ Str::limit($product->name, 20) }}</h5>
+                                        <p class="quick-product-price">₹{{ number_format($product->price, 2) }}</p>
+                                        <div class="quick-cart-controls">
+                                            <div class="quick-qty-selector">
+                                                <button class="quick-qty-btn" onclick="quickDecrementQty({{ $product->id }})">
+                                                    <i class="fas fa-minus"></i>
+                                                </button>
+                                                <input type="number" class="quick-qty-input" id="quick-qty-{{ $product->id }}" value="1" min="1" max="{{ $product->stock }}">
+                                                <button class="quick-qty-btn" onclick="quickIncrementQty({{ $product->id }})">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </div>
+                                            <button class="quick-add-btn" onclick="quickAddToCart({{ $product->id }})">
+                                                <i class="fas fa-cart-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        <div class="dropdown-footer">
+                            <a href="{{ route('products') }}" class="view-all-link">
+                                View All Products <i class="fas fa-arrow-right"></i>
+                            </a>
+                            <a href="{{ route('cart.index') }}" class="view-cart-link">
+                                <i class="fas fa-shopping-cart"></i> View Cart
+                                <span class="cart-items-count" id="dropdown-cart-count">0</span>
+                            </a>
+                        </div>
+                    </div>
                 </li>
                 
                 <li class="nav-item">
@@ -131,50 +186,11 @@
                 <div class="action-tooltip">Cart</div>
             </a>
             
-            {{-- User Account --}}
-            <div class="user-menu-container">
-                <button class="action-btn user-btn" onclick="toggleUserMenu()">
-                    <i class="fas fa-user-circle"></i>
-                    <div class="action-tooltip">Account</div>
-                </button>
-                <div class="user-dropdown" id="modernUserMenu">
-                    <div class="user-dropdown-header">
-                        <i class="fas fa-user-circle user-avatar"></i>
-                        <div>
-                            <h4>Welcome!</h4>
-                            <p>Manage your account</p>
-                        </div>
-                    </div>
-                    <div class="user-dropdown-body">
-                        <a href="#" class="user-menu-item">
-                            <i class="fas fa-user"></i>
-                            <span>My Profile</span>
-                        </a>
-                        <a href="#" class="user-menu-item">
-                            <i class="fas fa-shopping-bag"></i>
-                            <span>My Orders</span>
-                        </a>
-                        <a href="#" class="user-menu-item">
-                            <i class="fas fa-heart"></i>
-                            <span>Wishlist</span>
-                        </a>
-                        <a href="#" class="user-menu-item">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>Addresses</span>
-                        </a>
-                        <a href="#" class="user-menu-item">
-                            <i class="fas fa-cog"></i>
-                            <span>Settings</span>
-                        </a>
-                    </div>
-                    <div class="user-dropdown-footer">
-                        <a href="#" class="logout-btn">
-                            <i class="fas fa-sign-out-alt"></i>
-                            <span>Logout</span>
-                        </a>
-                    </div>
-                </div>
-            </div>
+            {{-- Track Order Button --}}
+            <a href="{{ route('track.order') }}" class="action-btn track-btn">
+                <i class="fas fa-truck"></i>
+                <div class="action-tooltip">Track Order</div>
+            </a>
             
             {{-- Mobile Menu Toggle --}}
             <button class="mobile-menu-toggle" onclick="toggleMobileModernMenu()">
@@ -477,6 +493,185 @@
 @keyframes pulse {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.1); }
+}
+
+/* Products Dropdown with Cart */
+.products-dropdown {
+    min-width: 700px !important;
+    max-width: 900px !important;
+}
+
+.products-quick-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    padding: 1rem;
+    max-height: 450px;
+    overflow-y: auto;
+}
+
+.quick-product-card {
+    background: #f7fafc;
+    border-radius: 12px;
+    padding: 1rem;
+    transition: var(--transition);
+    border: 1px solid #e2e8f0;
+}
+
+.quick-product-card:hover {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+}
+
+.quick-product-image {
+    width: 100%;
+    height: 120px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+    background: white;
+}
+
+.quick-product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-placeholder-mini {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    color: #9ca3af;
+    font-size: 2rem;
+}
+
+.quick-product-info h5 {
+    margin: 0 0 0.5rem 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.quick-product-price {
+    font-size: 16px;
+    font-weight: 700;
+    color: #667eea;
+    margin: 0 0 0.75rem 0;
+}
+
+.quick-cart-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.quick-qty-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: 1;
+    background: white;
+    border-radius: 8px;
+    padding: 0.25rem;
+    border: 1px solid #e2e8f0;
+}
+
+.quick-qty-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: #f3f4f6;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 10px;
+    color: #6b7280;
+}
+
+.quick-qty-btn:hover {
+    background: #667eea;
+    color: white;
+}
+
+.quick-qty-input {
+    width: 35px;
+    height: 24px;
+    text-align: center;
+    border: none;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.quick-qty-input:focus {
+    outline: none;
+}
+
+.quick-add-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 16px;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.quick-add-btn:hover {
+    background: linear-gradient(135deg, #764ba2, #667eea);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.quick-add-btn:active {
+    transform: scale(0.95);
+}
+
+.view-cart-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: var(--transition);
+    margin-left: auto;
+}
+
+.view-cart-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.cart-items-count {
+    background: white;
+    color: #10b981;
+    padding: 2px 6px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 20px;
+    text-align: center;
 }
 
 /* Mega Dropdown */
@@ -1154,6 +1349,15 @@ body {
 }
 
 @media (max-width: 768px) {
+    .products-quick-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+    
+    .products-dropdown {
+        min-width: 90vw !important;
+    }
+    
     .modern-navbar {
         height: 64px;
     }
@@ -1298,19 +1502,106 @@ function toggleModernSearch() {
     });
 }
 
-// Toggle User Menu
-function toggleUserMenu() {
-    const userMenu = document.getElementById('modernUserMenu');
+// Quick Add to Cart Functions
+function quickIncrementQty(productId) {
+    const input = document.getElementById('quick-qty-' + productId);
+    const currentValue = parseInt(input.value);
+    const maxValue = parseInt(input.getAttribute('max'));
     
-    userMenu.classList.toggle('show');
+    if (currentValue < maxValue) {
+        input.value = currentValue + 1;
+    }
+}
+
+function quickDecrementQty(productId) {
+    const input = document.getElementById('quick-qty-' + productId);
+    const currentValue = parseInt(input.value);
+    const minValue = parseInt(input.getAttribute('min')) || 1;
     
-    // Close on outside click
-    document.addEventListener('click', function closeUserMenu(e) {
-        if (!e.target.closest('.user-menu-container')) {
-            userMenu.classList.remove('show');
-            document.removeEventListener('click', closeUserMenu);
+    if (currentValue > minValue) {
+        input.value = currentValue - 1;
+    }
+}
+
+function quickAddToCart(productId) {
+    const quantity = document.getElementById('quick-qty-' + productId).value;
+    const button = event.currentTarget;
+    
+    // Add loading state
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    fetch('{{ route("cart.add") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            product_id: productId,
+            quantity: parseInt(quantity)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update cart counts
+            updateModernCartCount();
+            updateDropdownCartCount();
+            
+            // Show success animation
+            button.innerHTML = '<i class="fas fa-check"></i>';
+            button.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            
+            // Reset quantity
+            document.getElementById('quick-qty-' + productId).value = 1;
+            
+            // Show toast if function exists
+            if (typeof showToast === 'function') {
+                showToast(data.message || 'Product added to cart!', 'success');
+            }
+            
+            setTimeout(() => {
+                button.innerHTML = '<i class="fas fa-cart-plus"></i>';
+                button.style.background = '';
+                button.disabled = false;
+            }, 1500);
+        } else {
+            button.innerHTML = '<i class="fas fa-exclamation"></i>';
+            button.style.background = '#ef4444';
+            
+            if (typeof showToast === 'function') {
+                showToast(data.message || 'Failed to add to cart', 'error');
+            }
+            
+            setTimeout(() => {
+                button.innerHTML = '<i class="fas fa-cart-plus"></i>';
+                button.style.background = '';
+                button.disabled = false;
+            }, 2000);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        button.innerHTML = '<i class="fas fa-cart-plus"></i>';
+        button.disabled = false;
+        
+        if (typeof showToast === 'function') {
+            showToast('Something went wrong!', 'error');
         }
     });
+}
+
+function updateDropdownCartCount() {
+    fetch('{{ route("cart.count") }}')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.getElementById('dropdown-cart-count');
+            if (badge) {
+                badge.textContent = data.count;
+            }
+        })
+        .catch(error => console.error('Error updating dropdown cart count:', error));
 }
 
 // Toggle Mobile Menu
@@ -1378,9 +1669,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update cart count on load
     updateModernCartCount();
+    updateDropdownCartCount();
     
     // Update cart count every 30 seconds
-    setInterval(updateModernCartCount, 30000);
+    setInterval(() => {
+        updateModernCartCount();
+        updateDropdownCartCount();
+    }, 30000);
     
     // Close dropdowns on ESC key
     document.addEventListener('keydown', function(e) {

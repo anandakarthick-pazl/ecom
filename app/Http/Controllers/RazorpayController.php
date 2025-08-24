@@ -12,8 +12,41 @@ use Illuminate\Support\Facades\Log;
 
 class RazorpayController extends Controller
 {
+    /**
+     * Initiate payment page that auto-redirects to Razorpay
+     */
+    public function initiatePayment($order_id)
+    {
+        $order = Order::findOrFail($order_id);
+        
+        // Security check: Only allow payment for pending orders
+        if ($order->payment_status === 'paid') {
+            return redirect()->route('order.success', $order->order_number)
+                           ->with('info', 'This order has already been paid.');
+        }
+        
+        // Check which theme to use
+        $theme = \App\Models\AppSetting::get('store_theme', 'default');
+        $host = request()->getHost();
+        
+        // Determine the view based on theme
+        $viewName = 'razorpay-payment';
+        if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'foodie') {
+            $viewName = 'razorpay-payment-foodie';
+        } elseif (request()->get('theme') === 'fabric' || $theme === 'fabric') {
+            $viewName = 'razorpay-payment-fabric';
+        }
+        
+        return view($viewName, compact('order'));
+    }
+    
     public function createOrder(Request $request)
     {
+        // Handle both JSON and form-encoded requests
+        if ($request->isJson() || $request->wantsJson()) {
+            $data = $request->json()->all();
+            $request->merge($data);
+        }
         // Enhanced logging for debugging
         Log::info('Razorpay order creation started', [
             'order_id' => $request->order_id,
@@ -238,6 +271,12 @@ class RazorpayController extends Controller
 
     public function verifyPayment(Request $request)
     {
+        // Handle both JSON and form-encoded requests
+        if ($request->isJson() || $request->wantsJson()) {
+            $data = $request->json()->all();
+            $request->merge($data);
+        }
+        
         // Enhanced logging for debugging
         Log::info('Razorpay payment verification started', [
             'razorpay_payment_id' => $request->razorpay_payment_id,

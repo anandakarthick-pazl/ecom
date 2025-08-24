@@ -49,12 +49,24 @@ class CheckoutController extends Controller
         // Get active payment methods using the service
         $paymentMethods = PaymentMethodService::getActiveForCheckout($total);
 
-        // Check if fabric theme is enabled
+        // Check which theme to use
         $theme = \App\Models\AppSetting::get('store_theme', 'default');
         $host = request()->getHost();
         
-        // Use fabric theme if conditions met
-        if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'fabric' || $theme === 'fabric') {
+        // Use foodie theme for greenvalleyherbs.local
+        if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'foodie') {
+            return view('checkout-foodie', compact(
+                'cartItems', 
+                'subtotal', 
+                'deliveryCharge', 
+                'deliveryInfo', 
+                'discount',
+                'appliedCoupon',
+                'total', 
+                'paymentMethods',
+                'minOrderValidationSettings'
+            ));
+        } elseif (request()->get('theme') === 'fabric' || $theme === 'fabric') {
             return view('checkout-fabric', compact(
                 'cartItems', 
                 'subtotal', 
@@ -315,11 +327,11 @@ class CheckoutController extends Controller
             
             // Handle payment method specific redirects
             if ($paymentMethod->type === 'razorpay') {
-                // For Razorpay, store order ID and redirect to payment page
+                // For Razorpay, redirect to payment page directly
                 session(['razorpay_order_id' => $order->id]);
-                return redirect()->route('order.success', $order->order_number)
-                               ->with('initiate_payment', true)
-                               ->with('payment_method', 'razorpay');
+                
+                // Create a temporary payment initiation page that will auto-redirect
+                return redirect()->route('razorpay.initiate-payment', ['order_id' => $order->id]);
             } else {
                 // For other payment methods, redirect to success page
                 $successUrl = route('order.success', $order->order_number);
@@ -353,12 +365,14 @@ class CheckoutController extends Controller
             
             \Log::info('Order found for success page', ['order_id' => $order->id]);
             
-            // Check if fabric theme is enabled
+            // Check which theme to use
             $theme = \App\Models\AppSetting::get('store_theme', 'default');
             $host = request()->getHost();
             
-            // Use fabric theme if conditions met
-            if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'fabric' || $theme === 'fabric') {
+            // Use foodie theme for greenvalleyherbs.local
+            if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'foodie') {
+                return view('order-success-foodie', compact('order'));
+            } elseif (request()->get('theme') === 'fabric' || $theme === 'fabric') {
                 return view('order-success-fabric', compact('order'));
             }
             

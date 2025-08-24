@@ -5,13 +5,28 @@
 
 @push('styles')
 <style>
-/* Ultra Compact Grid Styles - Remove white space */
+/* Enhanced Product Grid with Visible Controls */
 .products-grid-compact {
     display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
-    gap: 0.4rem !important;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+    gap: 1.25rem !important;
     margin-bottom: 1.5rem !important;
-    align-items: start !important; /* Prevent stretching */
+    align-items: start !important;
+}
+
+/* Add pulsing animation to draw attention to cart controls */
+@keyframes subtle-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+.products-grid-compact .product-card:hover .quantity-selector,
+.products-grid-compact .product-card:hover .btn-add-cart {
+    animation: subtle-pulse 2s ease-in-out infinite;
+}
+
+.products-grid-compact .product-card:hover .product-actions {
+    animation: none !important;
 }
 
 /* Remove flex stretching and minimize white space */
@@ -24,24 +39,25 @@
 }
 
 .products-grid-compact .product-image-container {
-    height: 80px !important;
-    margin-bottom: 0.3rem !important;
+    height: 120px !important;
+    margin-bottom: 0.5rem !important;
 }
 
 .products-grid-compact .product-content {
-    padding: 0.4rem !important;
-    display: block !important; /* Remove flex */
+    padding: 0.75rem !important;
+    display: block !important;
 }
 
 .products-grid-compact .product-title {
-    font-size: 0.7rem !important;
-    line-height: 1.1 !important;
-    margin-bottom: 0.2rem !important;
-    height: 2.2rem !important;
+    font-size: 0.85rem !important;
+    line-height: 1.2 !important;
+    margin-bottom: 0.4rem !important;
+    height: 2.4rem !important;
     overflow: hidden !important;
     display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
     -webkit-box-orient: vertical !important;
+    font-weight: 600 !important;
 }
 
 .products-grid-compact .product-category {
@@ -54,8 +70,9 @@
 }
 
 .products-grid-compact .current-price {
-    font-size: 0.8rem !important;
+    font-size: 1rem !important;
     font-weight: 700 !important;
+    color: {{ $globalCompany->primary_color ?? '#2563eb' }} !important;
 }
 
 .products-grid-compact .original-price {
@@ -77,37 +94,115 @@
     display: block !important; /* Remove flex */
 }
 
+/* Enhanced Add to Cart Button with Emphasis */
 .products-grid-compact .btn-add-cart {
-    padding: 0.3rem 0.5rem !important;
-    font-size: 0.65rem !important;
-    border-radius: 4px !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.9rem !important;
+    border-radius: 10px !important;
     width: 100% !important;
-    display: block !important;
-    margin-top: 0.3rem !important;
-    white-space: nowrap !important; /* Prevent text wrapping */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+    margin-top: 0.5rem !important;
+    background: linear-gradient(135deg, {{ $globalCompany->primary_color ?? '#2563eb' }}, {{ $globalCompany->secondary_color ?? '#10b981' }}) !important;
+    color: white !important;
+    border: none !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3) !important;
+    position: relative !important;
     overflow: hidden !important;
-    text-overflow: ellipsis !important;
 }
 
+/* Add shimmer effect on hover */
+.products-grid-compact .btn-add-cart::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent) !important;
+    transition: left 0.5s ease !important;
+}
+
+.products-grid-compact .btn-add-cart:hover {
+    background: linear-gradient(135deg, {{ $globalCompany->secondary_color ?? '#10b981' }}, {{ $globalCompany->primary_color ?? '#2563eb' }}) !important;
+    transform: translateY(-2px) scale(1.02) !important;
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4) !important;
+}
+
+.products-grid-compact .btn-add-cart:hover::before {
+    left: 100% !important;
+}
+
+.products-grid-compact .btn-add-cart:active {
+    transform: translateY(0) scale(0.98) !important;
+}
+
+.products-grid-compact .btn-add-cart i {
+    font-size: 0.9rem !important;
+}
+
+/* Enhanced Quantity Selector - More Visible with Visual Emphasis */
 .products-grid-compact .quantity-selector {
-    margin-bottom: 0.2rem !important;
-    gap: 0.25rem !important;
+    margin-bottom: 0.5rem !important;
+    gap: 0.3rem !important;
     display: flex !important;
     justify-content: center !important;
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb) !important;
+    padding: 0.4rem !important;
+    border-radius: 8px !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05) !important;
+    position: relative !important;
+}
+
+/* Add "Qty:" label for clarity */
+.products-grid-compact .quantity-selector::before {
+    content: "Qty:" !important;
+    position: absolute !important;
+    left: 0.3rem !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    color: #6b7280 !important;
+    display: none !important; /* Hidden by default, shown on larger grids */
 }
 
 .products-grid-compact .qty-btn {
-    width: 20px !important;
-    height: 20px !important;
-    font-size: 0.6rem !important;
-    border-radius: 4px !important;
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 0.9rem !important;
+    border-radius: 6px !important;
+    background: white !important;
+    border: 1px solid #e5e7eb !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.products-grid-compact .qty-btn:hover {
+    background: {{ $globalCompany->primary_color ?? '#2563eb' }} !important;
+    color: white !important;
+    border-color: {{ $globalCompany->primary_color ?? '#2563eb' }} !important;
 }
 
 .products-grid-compact .qty-input {
-    width: 30px !important;
-    height: 20px !important;
-    font-size: 0.65rem !important;
-    border-radius: 4px !important;
+    width: 45px !important;
+    height: 28px !important;
+    font-size: 0.9rem !important;
+    border-radius: 6px !important;
+    text-align: center !important;
+    border: 1px solid #e5e7eb !important;
+    font-weight: 600 !important;
 }
 
 .products-grid-compact .badge-discount {
@@ -131,17 +226,21 @@
 }
 
 .products-grid-compact .btn-out-stock {
-    padding: 0.3rem !important;
-    font-size: 0.65rem !important;
-    border-radius: 4px !important;
+    padding: 0.6rem 0.8rem !important;
+    font-size: 0.85rem !important;
+    border-radius: 8px !important;
     width: 100% !important;
-    margin-bottom: 0.2rem !important;
+    margin-bottom: 0.3rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.4rem !important;
 }
 
 @media (max-width: 768px) {
     .products-grid-compact {
-        grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)) !important;
-        gap: 0.3rem !important;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+        gap: 1rem !important;
     }
     
     .products-grid-compact .product-image-container {
@@ -165,8 +264,8 @@
 
 @media (max-width: 576px) {
     .products-grid-compact {
-        grid-template-columns: repeat(4, 1fr) !important;
-        gap: 0.25rem !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.75rem !important;
     }
     
     .products-grid-compact .product-image-container {

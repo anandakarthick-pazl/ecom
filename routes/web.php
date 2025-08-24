@@ -148,6 +148,7 @@ Route::middleware(['tenant'])->group(function () {
     // Razorpay Payment Routes
     Route::prefix('razorpay')->name('razorpay.')->group(function () {
         Route::post('/create-order', [\App\Http\Controllers\RazorpayController::class, 'createOrder'])->name('create-order');
+        Route::get('/initiate-payment/{order_id}', [\App\Http\Controllers\RazorpayController::class, 'initiatePayment'])->name('initiate-payment');
         Route::post('/verify-payment', [\App\Http\Controllers\RazorpayController::class, 'verifyPayment'])->name('verify-payment');
         Route::post('/webhook', [\App\Http\Controllers\RazorpayController::class, 'webhook'])->name('webhook')->withoutMiddleware(['auth:customer']);
     });
@@ -599,6 +600,11 @@ if (app()->environment('local')) {
         return $html;
     });
 }
+
+// Test cart features page
+Route::get('/test-cart-features', function() {
+    return view('test-cart-features');
+})->name('test.cart.features');
 
 // Include debug routes in development
 if (config('app.debug')) {

@@ -87,23 +87,36 @@ class DeliveryService
         $validationEnabled = AppSetting::get('min_order_validation_enabled', false);
         
         if (!$validationEnabled) {
-            return ['valid' => true, 'message' => ''];
+            return [
+                'is_valid' => true, 
+                'valid' => true, // Keep for backward compatibility
+                'message' => '',
+                'amount_needed' => 0
+            ];
         }
         
         $minOrderAmount = (float) AppSetting::get('min_order_amount', 1000.00);
         $minOrderMessage = AppSetting::get('min_order_message', 'Minimum order amount is ₹1000 for online orders.');
         
         if ($orderTotal < $minOrderAmount) {
+            $shortfall = $minOrderAmount - $orderTotal;
             return [
-                'valid' => false,
+                'is_valid' => false,
+                'valid' => false, // Keep for backward compatibility
                 'message' => $minOrderMessage,
                 'min_amount' => $minOrderAmount,
                 'current_amount' => $orderTotal,
-                'shortfall' => $minOrderAmount - $orderTotal
+                'shortfall' => $shortfall,
+                'amount_needed' => $shortfall
             ];
         }
         
-        return ['valid' => true, 'message' => ''];
+        return [
+            'is_valid' => true,
+            'valid' => true, // Keep for backward compatibility
+            'message' => '',
+            'amount_needed' => 0
+        ];
     }
     
     /**
