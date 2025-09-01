@@ -53,8 +53,7 @@ class CheckoutController extends Controller
         $theme = \App\Models\AppSetting::get('store_theme', 'default');
         $host = request()->getHost();
         
-        // Use foodie theme for greenvalleyherbs.local
-        if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'foodie') {
+       
             return view('checkout-foodie', compact(
                 'cartItems', 
                 'subtotal', 
@@ -66,31 +65,7 @@ class CheckoutController extends Controller
                 'paymentMethods',
                 'minOrderValidationSettings'
             ));
-        } elseif (request()->get('theme') === 'fabric' || $theme === 'fabric') {
-            return view('checkout-fabric', compact(
-                'cartItems', 
-                'subtotal', 
-                'deliveryCharge', 
-                'deliveryInfo', 
-                'discount',
-                'appliedCoupon',
-                'total', 
-                'paymentMethods',
-                'minOrderValidationSettings'
-            ));
-        }
-        
-        return view('checkout', compact(
-            'cartItems', 
-            'subtotal', 
-            'deliveryCharge', 
-            'deliveryInfo', 
-            'discount',
-            'appliedCoupon',
-            'total', 
-            'paymentMethods',
-            'minOrderValidationSettings'
-        ));
+       
     }
 
     public function store(Request $request)
@@ -369,12 +344,9 @@ class CheckoutController extends Controller
             $theme = \App\Models\AppSetting::get('store_theme', 'default');
             $host = request()->getHost();
             
-            // Use foodie theme for greenvalleyherbs.local
-            if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'foodie') {
+         
                 return view('order-success-foodie', compact('order'));
-            } elseif (request()->get('theme') === 'fabric' || $theme === 'fabric') {
-                return view('order-success-fabric', compact('order'));
-            }
+           
             
             return view('order-success', compact('order'));
         } catch (\Exception $e) {

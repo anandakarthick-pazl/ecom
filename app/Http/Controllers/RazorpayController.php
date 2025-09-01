@@ -30,14 +30,9 @@ class RazorpayController extends Controller
         $host = request()->getHost();
         
         // Determine the view based on theme
-        $viewName = 'razorpay-payment';
-        if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'foodie') {
+     
             $viewName = 'razorpay-payment-foodie';
-        } elseif (request()->get('theme') === 'fabric' || $theme === 'fabric') {
-            $viewName = 'razorpay-payment-fabric';
-        }
         
-        return view($viewName, compact('order'));
     }
     
     public function createOrder(Request $request)

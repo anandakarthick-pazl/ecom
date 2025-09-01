@@ -135,9 +135,7 @@ class HomeController extends Controller
         // Check if fabric theme is enabled
         $theme = AppSetting::get('store_theme', 'default');
         
-        // Force foodie theme for greenvalleyherbs.local domain
-        $host = request()->getHost();
-        if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'foodie') {
+       
             return view('home-foodie', compact(
                 'banners',
                 'featuredProducts',
@@ -149,30 +147,7 @@ class HomeController extends Controller
                 'flashOffer',
                 'latestProducts'
             ));
-        } elseif (request()->get('theme') === 'fabric' || $theme === 'fabric') {
-            return view('home-fabric', compact(
-                'banners',
-                'featuredProducts',
-                'categories',
-                'products',
-                'activeMenu',
-                'frontendPaginationSettings',
-                'frontendPaginationControls',
-                'flashOffer',
-                'latestProducts'
-            ));
-        }
-
-        return view('home-enhanced', compact(
-            'banners',
-            'featuredProducts',
-            'categories',
-            'products',
-            'activeMenu',
-            'frontendPaginationSettings',
-            'frontendPaginationControls',
-            'flashOffer'
-        ));
+      
     }
 
     public function products(Request $request)
@@ -230,8 +205,7 @@ class HomeController extends Controller
         $theme = AppSetting::get('store_theme', 'default');
         $host = request()->getHost();
         
-        // Use foodie theme for greenvalleyherbs.local
-        if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'foodie') {
+     
             if ($request->ajax()) {
                 // Handle AJAX requests for pagination
                 $paginationHtml = '';
@@ -254,30 +228,7 @@ class HomeController extends Controller
                 'frontendPaginationSettings',
                 'frontendPaginationControls'
             ));
-        } elseif (request()->get('theme') === 'fabric' || $theme === 'fabric') {
-            if ($request->ajax()) {
-                // Handle AJAX requests for pagination
-                $paginationHtml = '';
-                if ($frontendPaginationSettings['enabled'] && method_exists($products, 'appends')) {
-                    $paginationHtml = $products->appends($request->query())->links()->render();
-                }
-
-                $productsHtml = view('partials.products-grid-fabric', compact('products'))->render();
-                
-                return response()->json([
-                    'html' => $productsHtml,
-                    'pagination' => $paginationHtml
-                ]);
-            }
-            
-            return view('products-fabric', compact(
-                'products',
-                'categories',
-                'categoryOffers',
-                'frontendPaginationSettings',
-                'frontendPaginationControls'
-            ));
-        }
+       
 
         if ($request->ajax()) {
             $paginationHtml = '';
@@ -417,8 +368,7 @@ class HomeController extends Controller
         $theme = AppSetting::get('store_theme', 'default');
         $host = request()->getHost();
         
-        // Use foodie theme for greenvalleyherbs.local
-        if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'foodie') {
+        
             if ($request->ajax()) {
                 // Handle AJAX requests for pagination
                 $paginationHtml = '';
@@ -440,30 +390,7 @@ class HomeController extends Controller
                 'frontendPaginationSettings',
                 'frontendPaginationControls'
             ));
-        } elseif (request()->get('theme') === 'fabric' || $theme === 'fabric') {
-            if ($request->ajax()) {
-                // Handle AJAX requests for pagination
-                $paginationHtml = '';
-                if ($frontendPaginationSettings['enabled'] && method_exists($products, 'appends')) {
-                    $paginationHtml = $products->appends($request->query())->links()->render();
-                }
-
-                $productsHtml = view('partials.products-grid-fabric', compact('products'))->render();
-                
-                return response()->json([
-                    'html' => $productsHtml,
-                    'pagination' => $paginationHtml
-                ]);
-            }
-            
-            return view('offer-products-fabric', compact(
-                'products',
-                'categories',
-                'frontendPaginationSettings',
-                'frontendPaginationControls'
-            ));
-        }
-
+        
         if ($request->ajax()) {
             $paginationHtml = '';
             if ($frontendPaginationSettings['enabled'] && method_exists($products, 'appends')) {
@@ -549,8 +476,7 @@ class HomeController extends Controller
         $theme = AppSetting::get('store_theme', 'default');
         $host = request()->getHost();
         
-        // Use foodie theme for greenvalleyherbs.local
-        if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'foodie') {
+      
             return view('category-foodie', compact(
                 'category',
                 'products',
@@ -558,23 +484,7 @@ class HomeController extends Controller
                 'frontendPaginationSettings',
                 'frontendPaginationControls'
             ));
-        } elseif (request()->get('theme') === 'fabric' || $theme === 'fabric') {
-            return view('category-fabric', compact(
-                'category',
-                'products',
-                'categoryOffers',
-                'frontendPaginationSettings',
-                'frontendPaginationControls'
-            ));
-        }
-
-        return view('category', compact(
-            'category',
-            'products',
-            'categoryOffers',
-            'frontendPaginationSettings',
-            'frontendPaginationControls'
-        ));
+        
     }
 
     public function product($slug)
@@ -597,20 +507,12 @@ class HomeController extends Controller
         $theme = AppSetting::get('store_theme', 'default');
         $host = request()->getHost();
         
-        // Use foodie theme for greenvalleyherbs.local
-        if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'foodie') {
+      
             // Check if product-foodie view exists, if not use default
             if (view()->exists('product-foodie')) {
                 return view('product-foodie', compact('product', 'relatedProducts'));
             }
-        } elseif (request()->get('theme') === 'fabric' || $theme === 'fabric') {
-            // Check if product-fabric view exists
-            if (view()->exists('product-fabric')) {
-                return view('product-fabric', compact('product', 'relatedProducts'));
-            }
-        }
-
-        return view('product', compact('product', 'relatedProducts'));
+        
     }
 
     public function search(Request $request)
@@ -639,38 +541,21 @@ class HomeController extends Controller
         $theme = AppSetting::get('store_theme', 'default');
         $host = request()->getHost();
         
-        // Use foodie theme for greenvalleyherbs.local
-        if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'foodie') {
+      
             return view('search-foodie', compact(
                 'products',
                 'query',
                 'frontendPaginationSettings',
                 'frontendPaginationControls'
             ));
-        } elseif (request()->get('theme') === 'fabric' || $theme === 'fabric') {
-            return view('search-fabric', compact(
-                'products',
-                'query',
-                'frontendPaginationSettings',
-                'frontendPaginationControls'
-            ));
-        }
-
-        return view('search', compact(
-            'products',
-            'query',
-            'frontendPaginationSettings',
-            'frontendPaginationControls'
-        ));
+       
     }
 
     public function trackOrder(Request $request)
     {
         // Check which theme to use
         $theme = AppSetting::get('store_theme', 'default');
-        $host = request()->getHost();
-        $useFoodieTheme = ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'foodie');
-        $useFabricTheme = (!$useFoodieTheme && (request()->get('theme') === 'fabric' || $theme === 'fabric'));
+       
         
         if ($request->isMethod('post')) {
             $request->validate([
@@ -686,12 +571,9 @@ class HomeController extends Controller
 
             $orders = $query->with('items.product')->latest()->get();
 
-            if ($useFoodieTheme) {
+          
                 return view('track-order-foodie', compact('orders'));
-            } elseif ($useFabricTheme) {
-                return view('track-order-fabric', compact('orders'));
-            }
-            return view('track-order', compact('orders'));
+           
         }
 
         if ($useFoodieTheme) {

@@ -57,8 +57,8 @@ class CartController extends Controller
         $theme = \App\Models\AppSetting::get('store_theme', 'default');
         $host = request()->getHost();
         
-        // Use foodie theme for greenvalleyherbs.local
-        if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'foodie') {
+        
+        
             return view('cart-foodie', compact(
                 'cartItems', 
                 'subtotal', 
@@ -67,25 +67,9 @@ class CartController extends Controller
                 'minOrderValidationSettings', 
                 'minOrderValidation'
             ));
-        } elseif (request()->get('theme') === 'fabric' || $theme === 'fabric') {
-            return view('cart-fabric', compact(
-                'cartItems', 
-                'subtotal', 
-                'couponDiscount',
-                'appliedCoupon',
-                'minOrderValidationSettings', 
-                'minOrderValidation'
-            ));
-        }
+       
         
-        return view('cart', compact(
-            'cartItems', 
-            'subtotal', 
-            'couponDiscount',
-            'appliedCoupon',
-            'minOrderValidationSettings', 
-            'minOrderValidation'
-        ));
+        
     }
 
     public function add(Request $request)
