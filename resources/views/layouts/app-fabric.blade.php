@@ -607,7 +607,7 @@
                     @if($globalCompany->company_logo)
                         <img src="{{ asset('storage/' . $globalCompany->company_logo) }}" alt="{{ $globalCompany->company_name }}" class="navbar-logo-fabric">
                     @endif
-                    <span class="brand-text">{{ $globalCompany->company_name ?? 'JEOMSU' }}</span>
+                    {{-- <span class="brand-text">{{ $globalCompany->company_name ?? 'JEOMSU' }}</span> --}}
                 </a>
                 
                 <!-- Navigation Links -->
