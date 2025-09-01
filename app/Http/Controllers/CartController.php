@@ -58,7 +58,7 @@ class CartController extends Controller
         $host = request()->getHost();
         
         // Use fabric theme if conditions met
-        if ($host === 'greenvalleyherbs.local' || request()->get('theme') === 'fabric' || $theme === 'fabric') {
+       
             return view('cart-fabric', compact(
                 'cartItems', 
                 'subtotal', 
@@ -67,16 +67,7 @@ class CartController extends Controller
                 'minOrderValidationSettings', 
                 'minOrderValidation'
             ));
-        }
-        
-        return view('cart', compact(
-            'cartItems', 
-            'subtotal', 
-            'couponDiscount',
-            'appliedCoupon',
-            'minOrderValidationSettings', 
-            'minOrderValidation'
-        ));
+       
     }
 
     public function add(Request $request)
