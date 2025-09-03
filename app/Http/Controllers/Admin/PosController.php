@@ -51,12 +51,11 @@ class PosController extends Controller
             $query->where('category_id', $request->category);
         }
 
-        // Paginate products - 25 per page
-        $products = $query->paginate(25)->appends($request->query());
+        // Get all products without pagination
+        $products = $query->get();
 
-        // Apply offers to paginated products
-        $productsWithOffers = $this->offerService->applyOffersToProducts($products->getCollection());
-        $products->setCollection($productsWithOffers);
+        // Apply offers to products
+        $products = $this->offerService->applyOffersToProducts($products);
         
         // Get all categories for filter - Fixed to get from Category model
         $categories = \App\Models\Category::active()

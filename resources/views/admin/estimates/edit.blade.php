@@ -1,9 +1,12 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Create Estimate')
-@section('page_title', 'Create Estimate')
+@section('title', 'Edit Estimate')
+@section('page_title', 'Edit Estimate #' . $estimate->estimate_number)
 
 @section('page_actions')
+<a href="{{ route('admin.estimates.show', $estimate) }}" class="btn btn-secondary">
+    <i class="fas fa-eye"></i> View Estimate
+</a>
 <a href="{{ route('admin.estimates.index') }}" class="btn btn-secondary">
     <i class="fas fa-arrow-left"></i> Back to List
 </a>
@@ -47,8 +50,9 @@
 @endpush
 
 @section('content')
-<form action="{{ route('admin.estimates.store') }}" method="POST" id="estimateForm">
+<form action="{{ route('admin.estimates.update', $estimate) }}" method="POST" id="estimateForm">
     @csrf
+    @method('PUT')
     
     <div class="row">
         <div class="col-lg-8">
@@ -62,7 +66,7 @@
                             <div class="mb-3">
                                 <label for="customer_name" class="form-label">Customer Name <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control @error('customer_name') is-invalid @enderror" 
-                                       id="customer_name" name="customer_name" value="{{ old('customer_name') }}" required>
+                                       id="customer_name" name="customer_name" value="{{ old('customer_name', $estimate->customer_name) }}" required>
                                 @error('customer_name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -73,7 +77,7 @@
                             <div class="mb-3">
                                 <label for="customer_email" class="form-label">Email</label>
                                 <input type="email" class="form-control @error('customer_email') is-invalid @enderror" 
-                                       id="customer_email" name="customer_email" value="{{ old('customer_email') }}">
+                                       id="customer_email" name="customer_email" value="{{ old('customer_email', $estimate->customer_email) }}">
                                 @error('customer_email')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -84,7 +88,7 @@
                             <div class="mb-3">
                                 <label for="customer_phone" class="form-label">Phone</label>
                                 <input type="text" class="form-control @error('customer_phone') is-invalid @enderror" 
-                                       id="customer_phone" name="customer_phone" value="{{ old('customer_phone') }}">
+                                       id="customer_phone" name="customer_phone" value="{{ old('customer_phone', $estimate->customer_phone) }}">
                                 @error('customer_phone')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -95,7 +99,7 @@
                             <div class="mb-3">
                                 <label for="estimate_date" class="form-label">Estimate Date <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control @error('estimate_date') is-invalid @enderror" 
-                                       id="estimate_date" name="estimate_date" value="{{ old('estimate_date', date('Y-m-d')) }}" required>
+                                       id="estimate_date" name="estimate_date" value="{{ old('estimate_date', $estimate->estimate_date) }}" required>
                                 @error('estimate_date')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -106,7 +110,7 @@
                             <div class="mb-3">
                                 <label for="valid_until" class="form-label">Valid Until <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control @error('valid_until') is-invalid @enderror" 
-                                       id="valid_until" name="valid_until" value="{{ old('valid_until', date('Y-m-d', strtotime('+30 days'))) }}" required>
+                                       id="valid_until" name="valid_until" value="{{ old('valid_until', $estimate->valid_until) }}" required>
                                 @error('valid_until')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -117,7 +121,7 @@
                             <div class="mb-3">
                                 <label for="customer_address" class="form-label">Address</label>
                                 <textarea class="form-control @error('customer_address') is-invalid @enderror" 
-                                          id="customer_address" name="customer_address" rows="3">{{ old('customer_address') }}</textarea>
+                                          id="customer_address" name="customer_address" rows="3">{{ old('customer_address', $estimate->customer_address) }}</textarea>
                                 @error('customer_address')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -137,7 +141,71 @@
                 </div>
                 <div class="card-body">
                     <div id="itemsContainer">
-                        <!-- Items will be added here dynamically -->
+                        <!-- Existing items will be loaded here -->
+                        @foreach($estimate->items as $index => $item)
+                        <div class="product-row border rounded p-3 mb-3" data-index="{{ $index }}">
+                            <div class="row align-items-end">
+                                <div class="col-md-4">
+                                    <label class="form-label">Product <span class="text-danger">*</span></label>
+                                    <select class="form-select product-select" name="items[{{ $index }}][product_id]" required>
+                                        <option value="">Search and Select Product</option>
+                                        @foreach($products as $product)
+                                            <option value="{{ $product->id }}" 
+                                                    data-price="{{ $product->effective_price ?? $product->price }}"
+                                                    data-original-price="{{ $product->price }}"
+                                                    data-sku="{{ $product->sku }}"
+                                                    data-stock="{{ $product->stock }}"
+                                                    data-has-offer="{{ ($product->has_offer ?? false) ? 'true' : 'false' }}"
+                                                    data-discount-percentage="{{ $product->discount_percentage ?? 0 }}"
+                                                    {{ $item->product_id == $product->id ? 'selected' : '' }}>
+                                                {{ $product->name }} 
+                                                @if($product->sku) ({{ $product->sku }}) @endif
+                                                @if($product->has_offer && $product->effective_price < $product->price)
+                                                    - ₹{{ number_format($product->effective_price, 2) }}
+                                                    (MRP: ₹{{ number_format($product->price, 2) }})
+                                                    [{{ $product->discount_percentage }}% OFF]
+                                                @else
+                                                    - ₹{{ number_format($product->price, 2) }}
+                                                @endif
+                                                [Stock: {{ $product->stock }}]
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-2">
+                                    <label class="form-label">Quantity <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control quantity-input" 
+                                           name="items[{{ $index }}][quantity]" min="1" value="{{ $item->quantity }}" required>
+                                </div>
+                                
+                                <div class="col-md-2">
+                                    <label class="form-label">Unit Price <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control price-input" 
+                                           name="items[{{ $index }}][unit_price]" min="0" step="0.01" value="{{ $item->unit_price }}" required>
+                                </div>
+                                
+                                <div class="col-md-2">
+                                    <label class="form-label">Total</label>
+                                    <input type="text" class="form-control total-input" value="{{ $item->total_price }}" readonly>
+                                </div>
+                                
+                                <div class="col-md-2 text-end">
+                                    <button type="button" class="btn btn-outline-danger remove-item" title="Remove Item">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-2">
+                                <div class="col-12">
+                                    <label class="form-label">Description (Optional)</label>
+                                    <input type="text" class="form-control" name="items[{{ $index }}][description]" 
+                                           value="{{ $item->description }}" placeholder="Additional description for this item">
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
                     </div>
                     
                     <div class="alert alert-info d-none" id="noItemsAlert">
@@ -157,7 +225,7 @@
                             <div class="mb-3">
                                 <label for="notes" class="form-label">Notes</label>
                                 <textarea class="form-control @error('notes') is-invalid @enderror" 
-                                          id="notes" name="notes" rows="4" placeholder="Internal notes">{{ old('notes') }}</textarea>
+                                          id="notes" name="notes" rows="4" placeholder="Internal notes">{{ old('notes', $estimate->notes) }}</textarea>
                                 @error('notes')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -169,7 +237,7 @@
                                 <label for="terms_conditions" class="form-label">Terms & Conditions</label>
                                 <textarea class="form-control @error('terms_conditions') is-invalid @enderror" 
                                           id="terms_conditions" name="terms_conditions" rows="4" 
-                                          placeholder="Terms and conditions for this estimate">{{ old('terms_conditions') }}</textarea>
+                                          placeholder="Terms and conditions for this estimate">{{ old('terms_conditions', $estimate->terms_conditions) }}</textarea>
                                 @error('terms_conditions')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -187,11 +255,29 @@
                     <h5 class="card-title mb-0">Estimate Summary</h5>
                 </div>
                 <div class="card-body">
+                    <!-- Status Badge -->
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <div>
+                            @if($estimate->status === 'draft')
+                                <span class="badge bg-secondary">Draft</span>
+                            @elseif($estimate->status === 'sent')
+                                <span class="badge bg-info">Sent</span>
+                            @elseif($estimate->status === 'accepted')
+                                <span class="badge bg-success">Accepted</span>
+                            @elseif($estimate->status === 'rejected')
+                                <span class="badge bg-danger">Rejected</span>
+                            @elseif($estimate->status === 'expired')
+                                <span class="badge bg-warning">Expired</span>
+                            @endif
+                        </div>
+                    </div>
+                    
                     <div class="mb-3">
                         <label class="form-label">Subtotal</label>
                         <div class="input-group">
                             <span class="input-group-text">₹</span>
-                            <input type="text" class="form-control" id="subtotalDisplay" readonly value="0.00">
+                            <input type="text" class="form-control" id="subtotalDisplay" readonly value="{{ $estimate->subtotal }}">
                         </div>
                     </div>
                     
@@ -200,7 +286,7 @@
                         <div class="input-group">
                             <span class="input-group-text">₹</span>
                             <input type="number" class="form-control @error('tax_amount') is-invalid @enderror" 
-                                   id="tax_amount" name="tax_amount" value="{{ old('tax_amount', 0) }}" 
+                                   id="tax_amount" name="tax_amount" value="{{ old('tax_amount', $estimate->tax_amount) }}" 
                                    min="0" step="0.01">
                         </div>
                         @error('tax_amount')
@@ -213,7 +299,7 @@
                         <div class="input-group">
                             <span class="input-group-text">₹</span>
                             <input type="number" class="form-control @error('discount') is-invalid @enderror" 
-                                   id="discount" name="discount" value="{{ old('discount', 0) }}" 
+                                   id="discount" name="discount" value="{{ old('discount', $estimate->discount) }}" 
                                    min="0" step="0.01">
                         </div>
                         @error('discount')
@@ -227,7 +313,7 @@
                         <label class="form-label"><strong>Total Amount</strong></label>
                         <div class="input-group">
                             <span class="input-group-text">₹</span>
-                            <input type="text" class="form-control fw-bold" id="totalDisplay" readonly value="0.00">
+                            <input type="text" class="form-control fw-bold" id="totalDisplay" readonly value="{{ $estimate->total_amount }}">
                         </div>
                     </div>
                     
@@ -235,9 +321,9 @@
                     
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Create Estimate
+                            <i class="fas fa-save"></i> Update Estimate
                         </button>
-                        <a href="{{ route('admin.estimates.index') }}" class="btn btn-secondary">
+                        <a href="{{ route('admin.estimates.show', $estimate) }}" class="btn btn-secondary">
                             Cancel
                         </a>
                     </div>
@@ -318,7 +404,8 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function() {
-    let itemIndex = 0;
+    // Initialize with the highest existing index
+    let itemIndex = {{ $estimate->items->count() }};
     
     // Add new item
     $('#addItem').click(function() {
@@ -472,7 +559,7 @@ $(document).ready(function() {
         }
     });
     
-    // Initialize Select2 for existing product selects (if any)
+    // Initialize Select2 for all existing product selects
     function initializeAllSelect2() {
         $('.product-select').each(function() {
             if (!$(this).hasClass('select2-hidden-accessible')) {
@@ -481,8 +568,15 @@ $(document).ready(function() {
         });
     }
     
-    // Initialize with one empty item
-    addNewItem();
+    // Initialize calculations for existing items
+    $('.product-row').each(function() {
+        updateRowTotal($(this));
+    });
+    updateCalculations();
+    checkEmptyItems();
+    
+    // Initialize Select2 for existing items
+    initializeAllSelect2();
     
     // Reinitialize Select2 when modal is shown (if using modals)
     $(document).on('shown.bs.modal', function() {

@@ -18,9 +18,9 @@
                     <i class="fas fa-edit me-2"></i>Edit
                 </a>
             @endif
-            <button onclick="window.print()" class="btn btn-info">
+            {{-- <button onclick="window.print()" class="btn btn-info">
                 <i class="fas fa-print me-2"></i>Print
-            </button>
+            </button> --}}
             <a href="{{ route('admin.estimates.download', $estimate) }}" class="btn btn-success">
                 <i class="fas fa-download me-2"></i>Download PDF
             </a>

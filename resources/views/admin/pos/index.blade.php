@@ -179,14 +179,6 @@
         font-size: 10px;
     }
     
-    .pagination-wrapper {
-        padding: 10px 15px;
-        background: #f8f9fa;
-        border-top: 1px solid #e9ecef;
-        border-radius: 0 0 8px 8px;
-        flex-shrink: 0;
-    }
-    
     .cart-header {
         background: #2d5016;
         color: white;
@@ -343,25 +335,7 @@
         background-color: #f8f9fa;
         border-color: #adb5bd;
     }
-    
-    /* Custom pagination styles */
-    .pagination .page-link {
-        color: #2d5016;
-        border-color: #2d5016;
-        font-size: 12px;
-        padding: 4px 8px;
-    }
-    
-    .pagination .page-item.active .page-link {
-        background-color: #2d5016;
-        border-color: #2d5016;
-    }
-    
-    .pagination .page-link:hover {
-        color: #fff;
-        background-color: #2d5016;
-        border-color: #2d5016;
-    }
+
 </style>
 @endpush
 
@@ -404,8 +378,7 @@
                 <div class="products-area">
                     <!-- Products Info -->
                     <div class="products-info">
-                        <span><strong>{{ $products->total() }}</strong> products found</span>
-                        <span>Page {{ $products->currentPage() }} of {{ $products->lastPage() }}</span>
+                        <span><strong>{{ $products->count() }}</strong> products found</span>
                     </div>
                     
                     <!-- Products Table -->
@@ -522,18 +495,6 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- Pagination -->
-                @if($products->hasPages())
-                    <div class="pagination-wrapper">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                Showing {{ $products->firstItem() }} to {{ $products->lastItem() }} of {{ $products->total() }} results
-                            </small>
-                            {{ $products->appends(request()->query())->links('pagination::bootstrap-4') }}
-                        </div>
-                    </div>
-                @endif
             </div>
         </div>
         

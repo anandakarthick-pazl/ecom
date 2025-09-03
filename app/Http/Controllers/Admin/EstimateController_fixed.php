@@ -316,48 +316,12 @@ class EstimateController extends Controller
     public function download(Estimate $estimate)
     {
         try {
-            // Load estimate with items, products, and their offer details
-            $estimate->load([
-                'items.product.category',
-                'items.product.offers' => function($query) {
-                    $query->active()->current();
-                },
-                'creator'
-            ]);
-            
-            // Apply offers to each product in estimate items
-            foreach ($estimate->items as $item) {
-                if ($item->product) {
-                    // Get offer details for this product
-                    $item->product = $this->offerService->applyOffersToProducts(collect([$item->product]))->first();
-                    
-                    // Calculate tax amounts
-                    $item->product->item_tax_amount = $item->product->getTaxAmount($item->unit_price);
-                    $item->product->item_tax_percentage = $item->product->tax_percentage ?? 0;
-                    
-                    // Store pricing details for PDF
-                    $item->mrp_price = $item->product->price; // Original MRP
-                    $item->offer_price = $item->product->effective_price ?? $item->unit_price; // Discounted price
-                    $item->discount_amount = max(0, $item->mrp_price - $item->offer_price);
-                    $item->discount_percentage = $item->discount_amount > 0 
-                        ? round(($item->discount_amount / $item->mrp_price) * 100, 1)
-                        : 0;
-                    $item->tax_amount = ($item->unit_price * $item->quantity * $item->product->item_tax_percentage) / 100;
-                    $item->line_total_with_tax = $item->total_price + $item->tax_amount;
-                }
-            }
+            // Load estimate with items and relationships
+            $estimate->load(['items.product', 'creator']);
 
-            // Get company data with error handling
+            // Get company data
             $companyId = session('selected_company_id');
             $globalCompany = $this->getCompanyData($companyId);
-            
-            // Log company data for debugging
-            \Log::info('Company data for estimate PDF', [
-                'estimate_id' => $estimate->id,
-                'company_id' => $companyId,
-                'has_full_address' => isset($globalCompany->full_address),
-                'company_name' => $globalCompany->company_name ?? 'N/A'
-            ]);
 
             // Create PDF
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.estimates.pdf', [
@@ -385,8 +349,7 @@ class EstimateController extends Controller
         } catch (\Exception $e) {
             \Log::error('Estimate PDF download failed', [
                 'estimate_id' => $estimate->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage()
             ]);
 
             return redirect()->back()
@@ -418,26 +381,26 @@ class EstimateController extends Controller
 
             // Build full address - properly handle null values
             $addressParts = array_filter([
-                $company->address ?? '',
-                $company->city ?? '',
-                $company->state ?? '',
-                $company->postal_code ?? '',
-                $company->country ?? ''
+                $company->address,
+                $company->city,
+                $company->state,
+                $company->postal_code,
+                $company->country
             ], function($value) {
                 return !empty(trim((string)$value));
             });
             
-            $fullAddress = !empty($addressParts) ? implode(', ', $addressParts) : 'Address not configured';
+            $fullAddress = !empty($addressParts) ? implode(', ', $addressParts) : '';
 
             // Build contact info
             $contactParts = [];
-            if (!empty($company->phone ?? '')) {
+            if (!empty($company->phone)) {
                 $contactParts[] = "Phone: {$company->phone}";
             }
-            if (!empty($company->email ?? '')) {
+            if (!empty($company->email)) {
                 $contactParts[] = "Email: {$company->email}";
             }
-            $contactInfo = !empty($contactParts) ? implode(' | ', $contactParts) : 'Contact info not configured';
+            $contactInfo = !empty($contactParts) ? implode(' | ', $contactParts) : '';
 
             // Return properly structured object with all required properties
             return (object) [
@@ -496,6 +459,8 @@ class EstimateController extends Controller
         if ($company->email) {
             $contactParts[] = "Email: {$company->email}";
         }
+
+        // Removed website reference since it doesn't exist in Company model
 
         return implode(' | ', $contactParts);
     }
