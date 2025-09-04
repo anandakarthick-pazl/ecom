@@ -29,7 +29,7 @@ class PriceListPdfService
         return Pdf::loadHtml($html)
             ->setPaper('A4', 'portrait')
             ->setOptions([
-                'defaultFont' => 'Arial',
+                'defaultFont' => 'DejaVu Sans',
                 'isRemoteEnabled' => false,
                 'isHtml5ParserEnabled' => true,
                 'dpi' => 96,
@@ -38,7 +38,9 @@ class PriceListPdfService
                 'tempDir' => storage_path('app/temp/'),
                 'chroot' => false,
                 'debugKeepTemp' => false,
-                'logOutputFile' => false
+                'logOutputFile' => false,
+                'isUnicode' => true,
+                'isFontSubsettingEnabled' => true
             ]);
     }
     
@@ -55,7 +57,7 @@ class PriceListPdfService
             $company = app('current_tenant');
             return [
                 'name' => $company->name ?? 'Your Company',
-                'logo' => $company->logo ? asset('storage/' . $company->logo) : null,
+                'logo' => $company->logo ? asset('storage/logos/' . $company->logo) : null,
                 'address' => $company->address ?? '',
                 'city' => $company->city ?? '',
                 'state' => $company->state ?? '',
@@ -159,7 +161,7 @@ class PriceListPdfService
         }
         
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'DejaVu Sans', 'Noto Sans Tamil', Arial, sans-serif;
             font-size: 12px;
             line-height: 1.4;
             color: #333;

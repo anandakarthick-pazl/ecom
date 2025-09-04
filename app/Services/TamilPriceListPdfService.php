@@ -6,23 +6,23 @@ use App\Models\Product;
 use App\Models\Category;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class SimplePriceListPdfService
+class TamilPriceListPdfService
 {
     /**
-     * Generate Simple Price List PDF
+     * Generate Tamil-compatible Price List PDF
      */
-    public function generatePriceListPdf()
+    public function generateTamilPriceListPdf()
     {
-        // Get company information (simple version)
+        // Get company information
         $companyInfo = $this->getSimpleCompanyInfo();
         
         // Get all active products grouped by category
         $categoriesWithProducts = $this->getProductsByCategory();
         
-        // Generate simple HTML content
-        $html = $this->generateSimpleHtmlContent($companyInfo, $categoriesWithProducts);
+        // Generate Tamil-compatible HTML content
+        $html = $this->generateTamilHtmlContent($companyInfo, $categoriesWithProducts);
         
-        // Create PDF with minimal options
+        // Create PDF with Tamil font support
         return Pdf::loadHtml($html)
             ->setPaper('A4', 'portrait')
             ->setOptions([
@@ -30,12 +30,16 @@ class SimplePriceListPdfService
                 'isRemoteEnabled' => false,
                 'isHtml5ParserEnabled' => true,
                 'isUnicode' => true,
-                'isFontSubsettingEnabled' => true
+                'isFontSubsettingEnabled' => true,
+                'fontDir' => storage_path('fonts/'),
+                'fontCache' => storage_path('fonts/cache/'),
+                'enable_font_subsetting' => true,
+                'dpi' => 96
             ]);
     }
     
     /**
-     * Get company information (simple version)
+     * Get company information
      */
     protected function getSimpleCompanyInfo()
     {
@@ -83,17 +87,17 @@ class SimplePriceListPdfService
             }
         }
         
-        // Try to get from app settings as fallback
+        // Fallback
         return [
-            'name' => \App\Models\AppSetting::get('company_name', 'Your Company'),
-            'logo' => \App\Models\AppSetting::get('company_logo') ? asset('storage/' . \App\Models\AppSetting::get('company_logo')) : null,
-            'address' => \App\Models\AppSetting::get('company_address', ''),
-            'city' => \App\Models\AppSetting::get('company_city', ''),
-            'state' => \App\Models\AppSetting::get('company_state', ''),
-            'postal_code' => \App\Models\AppSetting::get('company_postal_code', ''),
-            'phone' => \App\Models\AppSetting::get('company_phone', ''),
-            'email' => \App\Models\AppSetting::get('company_email', ''),
-            'gst_number' => \App\Models\AppSetting::get('company_gst_number', '')
+            'name' => 'Your Company',
+            'logo' => null,
+            'address' => '',
+            'city' => '',
+            'state' => '',
+            'postal_code' => '',
+            'phone' => '',
+            'email' => '',
+            'gst_number' => ''
         ];
     }
     
@@ -115,100 +119,137 @@ class SimplePriceListPdfService
     }
     
     /**
-     * Generate simple HTML content for PDF
+     * Generate Tamil-compatible HTML content for PDF
      */
-    protected function generateSimpleHtmlContent($companyInfo, $categoriesWithProducts)
+    protected function generateTamilHtmlContent($companyInfo, $categoriesWithProducts)
     {
         $html = '<!DOCTYPE html>
-<html>
+<html lang="ta">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Price List - ' . htmlspecialchars($companyInfo['name']) . '</title>
     <style>
+        @font-face {
+            font-family: "DejaVu Sans";
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            font-family: 'DejaVu Sans', 'Noto Sans Tamil', Arial, sans-serif;
+            font-family: "DejaVu Sans", "Noto Sans Tamil", "Tamil Sangam MN", "Latha", Arial, sans-serif;
             font-size: 12px;
-            line-height: 1.4;
+            line-height: 1.5;
             color: #333;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
         }
         
         .header {
             text-align: center;
             background: #f8f9fa;
             padding: 20px;
-            border-bottom: 3px solid #28a745;
+            border: 2px solid #28a745;
             margin-bottom: 20px;
         }
         
         .company-name {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             color: #28a745;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         
         .company-address {
-            font-size: 11px;
+            font-size: 10px;
             color: #666;
-            line-height: 1.5;
+            line-height: 1.4;
+            margin-bottom: 10px;
         }
         
         .price-list-title {
             text-align: center;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
-            margin: 20px 0;
+            margin: 15px 0;
             color: #333;
+            border-bottom: 2px solid #28a745;
+            padding-bottom: 5px;
         }
         
         .category-header {
             background: #28a745;
             color: white;
-            padding: 8px 12px;
-            font-size: 14px;
+            padding: 8px 10px;
+            font-size: 13px;
             font-weight: bold;
-            margin: 20px 0 10px 0;
+            margin: 15px 0 8px 0;
             text-align: center;
         }
         
         .products-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            font-size: 10px;
         }
         
         .products-table th,
         .products-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            border: 1px solid #333;
+            padding: 6px 4px;
             text-align: left;
+            vertical-align: top;
         }
         
         .products-table th {
-            background-color: #f8f9fa;
+            background-color: #e9ecef;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 9px;
             text-align: center;
         }
         
-        .products-table td {
-            font-size: 11px;
-        }
+        .sno-col { width: 6%; text-align: center; }
+        .product-col { width: 35%; }
+        .mrp-col { width: 12%; text-align: right; }
+        .unit-col { width: 10%; text-align: center; }
+        .offer-col { width: 12%; text-align: right; }
+        .qty-col { width: 10%; text-align: center; }
+        .amount-col { width: 15%; text-align: right; }
         
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .price { font-weight: bold; }
+        .price { 
+            font-weight: bold; 
+            font-family: "DejaVu Sans", Arial, sans-serif;
+        }
         .offer-price { color: #dc3545; }
+        .tamil-text {
+            font-family: "DejaVu Sans", "Noto Sans Tamil", "Tamil Sangam MN", "Latha", sans-serif;
+        }
         
         .footer {
             text-align: center;
-            font-size: 10px;
+            font-size: 9px;
             color: #666;
-            margin-top: 30px;
+            margin-top: 20px;
             border-top: 1px solid #ddd;
             padding-top: 10px;
+        }
+        
+        @page {
+            margin: 15mm;
+            size: A4;
+        }
+        
+        /* Ensure Tamil text displays correctly */
+        .tamil-text, 
+        .category-header,
+        .products-table td {
+            unicode-bidi: embed;
+            direction: ltr;
         }
     </style>
 </head>
@@ -219,31 +260,37 @@ class SimplePriceListPdfService
         
         // Add company logo if available
         if ($companyInfo['logo']) {
-            $html .= '<img src="' . $companyInfo['logo'] . '" style="height: 60px; width: auto; object-fit: contain; margin-bottom: 10px;" alt="Company Logo">';
+            $html .= '<div style="margin-bottom: 10px;">
+                <img src="' . $companyInfo['logo'] . '" style="height: 50px; width: auto; object-fit: contain;" alt="Company Logo">
+            </div>';
         }
         
-        $html .= '<div class="company-name">' . htmlspecialchars($companyInfo['name']) . '</div>
-            <div class="company-address">';
-                
-        $addressParts = array_filter([
-            $companyInfo['address'],
-            $companyInfo['city'] . ' ' . $companyInfo['state'] . ' ' . $companyInfo['postal_code']
-        ]);
+        $html .= '<div class="company-name tamil-text">' . htmlspecialchars($companyInfo['name']) . '</div>';
         
-        if (!empty($addressParts)) {
-            $html .= implode('<br>', array_map('htmlspecialchars', $addressParts)) . '<br>';
+        if ($companyInfo['address'] || $companyInfo['city'] || $companyInfo['phone'] || $companyInfo['email']) {
+            $html .= '<div class="company-address tamil-text">';
+            
+            $addressParts = array_filter([
+                $companyInfo['address'],
+                $companyInfo['city'] . ' ' . $companyInfo['state'] . ' ' . $companyInfo['postal_code']
+            ]);
+            
+            if (!empty($addressParts)) {
+                $html .= implode('<br>', array_map('htmlspecialchars', $addressParts)) . '<br>';
+            }
+            
+            if ($companyInfo['phone']) {
+                $html .= 'Phone: ' . htmlspecialchars($companyInfo['phone']) . '<br>';
+            }
+            
+            if ($companyInfo['email']) {
+                $html .= 'Email: ' . htmlspecialchars($companyInfo['email']);
+            }
+            
+            $html .= '</div>';
         }
         
-        if ($companyInfo['phone']) {
-            $html .= 'Phone: ' . htmlspecialchars($companyInfo['phone']) . '<br>';
-        }
-        
-        if ($companyInfo['email']) {
-            $html .= 'Email: ' . htmlspecialchars($companyInfo['email']);
-        }
-        
-        $html .= '</div>
-        </div>';
+        $html .= '</div>';
     
         $html .= '<div class="price-list-title">PRICE LIST</div>';
         
@@ -251,17 +298,18 @@ class SimplePriceListPdfService
         $overallSerialNumber = 1;
         
         foreach ($categoriesWithProducts as $category) {
-            $html .= '<div class="category-header">' . strtoupper(htmlspecialchars($category->name)) . '</div>';
+            $html .= '<div class="category-header tamil-text">' . strtoupper(htmlspecialchars($category->name)) . '</div>';
             
             $html .= '<table class="products-table">
                 <thead>
                     <tr>
-                        <th style="width: 8%;">S.No</th>
-                        <th style="width: 40%;">Product</th>
-                        <th style="width: 15%;">MRP</th>
-                        <th style="width: 12%;">Unit</th>
-                        <th style="width: 15%;">Offer Price</th>
-                        <th style="width: 10%;">Amount</th>
+                        <th class="sno-col">S.No</th>
+                        <th class="product-col">Product</th>
+                        <th class="mrp-col">MRP</th>
+                        <th class="unit-col">Unit</th>
+                        <th class="offer-col">Offer Price</th>
+                        <th class="qty-col">Qty</th>
+                        <th class="amount-col">Amount</th>
                     </tr>
                 </thead>
                 <tbody>';
@@ -269,11 +317,11 @@ class SimplePriceListPdfService
             if ($category->activeProducts->count() > 0) {
                 foreach ($category->activeProducts as $product) {
                     $html .= '<tr>
-                        <td class="text-center">' . $overallSerialNumber . '</td>
-                        <td>' . htmlspecialchars($product->name) . '</td>
-                        <td class="text-right price">' . number_format($product->price, 2) . '</td>
-                        <td class="text-center">' . htmlspecialchars($product->weight_unit ?? 'pcs') . '</td>
-                        <td class="text-right">';
+                        <td class="sno-col">' . $overallSerialNumber . '</td>
+                        <td class="product-col tamil-text">' . htmlspecialchars($product->name) . '</td>
+                        <td class="mrp-col price">' . number_format($product->price, 2) . '</td>
+                        <td class="unit-col">' . htmlspecialchars($product->weight_unit ?? 'pcs') . '</td>
+                        <td class="offer-col">';
                     
                     // Check for offer price
                     if ($product->discount_price && $product->discount_price < $product->price) {
@@ -283,14 +331,15 @@ class SimplePriceListPdfService
                     }
                     
                     $html .= '</td>
-                        <td class="text-right">-</td>
+                        <td class="qty-col">-</td>
+                        <td class="amount-col">-</td>
                     </tr>';
                     
                     $overallSerialNumber++;
                 }
             } else {
                 $html .= '<tr>
-                    <td colspan="6" class="text-center">No products available in this category</td>
+                    <td colspan="7" style="text-align: center; font-style: italic;">No products available</td>
                 </tr>';
             }
             
@@ -314,10 +363,10 @@ class SimplePriceListPdfService
      */
     public function downloadPdf($filename = null)
     {
-        $pdf = $this->generatePriceListPdf();
+        $pdf = $this->generateTamilPriceListPdf();
         
         if (!$filename) {
-            $filename = 'price-list-' . date('Y-m-d') . '.pdf';
+            $filename = 'price-list-tamil-' . date('Y-m-d') . '.pdf';
         }
         
         return $pdf->download($filename);
@@ -328,10 +377,10 @@ class SimplePriceListPdfService
      */
     public function viewPdf($filename = null)
     {
-        $pdf = $this->generatePriceListPdf();
+        $pdf = $this->generateTamilPriceListPdf();
         
         if (!$filename) {
-            $filename = 'price-list-' . date('Y-m-d') . '.pdf';
+            $filename = 'price-list-tamil-' . date('Y-m-d') . '.pdf';
         }
         
         return $pdf->stream($filename);

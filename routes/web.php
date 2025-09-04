@@ -132,6 +132,16 @@ Route::middleware(['tenant'])->group(function () {
     Route::get('/price-list/csv', [\App\Http\Controllers\SimplePriceListController::class, 'downloadCsv'])->name('price-list.csv');
     Route::get('/price-list/txt', [\App\Http\Controllers\SimplePriceListController::class, 'downloadTxt'])->name('price-list.txt');
     
+    // Tamil PDF test route
+    Route::get('/test/tamil-pdf', function() {
+        try {
+            $service = new \App\Services\TamilPriceListPdfService();
+            return $service->downloadPdf('test-tamil-' . date('Y-m-d') . '.pdf');
+        } catch (Exception $e) {
+            return response('Tamil PDF Error: ' . $e->getMessage(), 500);
+        }
+    })->name('test.tamil-pdf');
+    
     // Cart Routes
     Route::prefix('cart')->name('cart.')->group(function () {
         Route::get('/', [CartController::class, 'index'])->name('index');
