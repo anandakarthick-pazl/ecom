@@ -26,11 +26,9 @@ class SimplePriceListPdfService
         return Pdf::loadHtml($html)
             ->setPaper('A4', 'portrait')
             ->setOptions([
-                'defaultFont' => 'DejaVu Sans',
+                'defaultFont' => 'Arial',
                 'isRemoteEnabled' => false,
-                'isHtml5ParserEnabled' => true,
-                'isUnicode' => true,
-                'isFontSubsettingEnabled' => true
+                'isHtml5ParserEnabled' => true
             ]);
     }
     
@@ -126,7 +124,7 @@ class SimplePriceListPdfService
     <title>Price List - ' . htmlspecialchars($companyInfo['name']) . '</title>
     <style>
         body {
-            font-family: 'DejaVu Sans', 'Noto Sans Tamil', Arial, sans-serif;
+            font-family: Arial, sans-serif;
             font-size: 12px;
             line-height: 1.4;
             color: #333;

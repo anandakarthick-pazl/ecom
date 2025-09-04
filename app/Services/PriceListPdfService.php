@@ -9,8 +9,6 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class PriceListPdfService
 {
-
-    
     /**
      * Generate Price List PDF
      */
@@ -32,15 +30,7 @@ class PriceListPdfService
                 'defaultFont' => 'DejaVu Sans',
                 'isRemoteEnabled' => false,
                 'isHtml5ParserEnabled' => true,
-                'dpi' => 96,
-                'fontDir' => storage_path('fonts/'),
-                'fontCache' => storage_path('fonts/cache/'),
-                'tempDir' => storage_path('app/temp/'),
-                'chroot' => false,
-                'debugKeepTemp' => false,
-                'logOutputFile' => false,
-                'isUnicode' => true,
-                'isFontSubsettingEnabled' => true
+                'dpi' => 96
             ]);
     }
     
@@ -49,15 +39,12 @@ class PriceListPdfService
      */
     protected function getCompanyInfo()
     {
-        // Try to get company info from globalCompany (set by view composer)
-        $globalCompany = null;
-        
         // Try to get from current tenant
         if (app()->has('current_tenant')) {
             $company = app('current_tenant');
             return [
                 'name' => $company->name ?? 'Your Company',
-                'logo' => $company->logo ? asset('storage/logos/' . $company->logo) : null,
+                'logo' => $company->logo ? asset('storage/' . $company->logo) : null,
                 'address' => $company->address ?? '',
                 'city' => $company->city ?? '',
                 'state' => $company->state ?? '',
@@ -161,7 +148,7 @@ class PriceListPdfService
         }
         
         body {
-            font-family: 'DejaVu Sans', 'Noto Sans Tamil', Arial, sans-serif;
+            font-family: Arial, sans-serif;
             font-size: 12px;
             line-height: 1.4;
             color: #333;
@@ -172,23 +159,7 @@ class PriceListPdfService
             padding: 20px;
             border-bottom: 3px solid #28a745;
             margin-bottom: 20px;
-        }
-        
-        .header-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .company-info {
-            flex: 1;
-        }
-        
-        .company-logo {
-            width: 80px;
-            height: 80px;
-            object-fit: contain;
-            margin-right: 20px;
+            text-align: center;
         }
         
         .company-name {
@@ -249,16 +220,15 @@ class PriceListPdfService
         
         .products-table td {
             font-size: 11px;
-            text-align: center;
         }
         
-        .sno-col { width: 6%; text-align: center; }
+        .sno-col { width: 8%; text-align: center; }
         .product-col { width: 35%; }
         .mrp-col { width: 12%; text-align: right; }
         .unit-col { width: 10%; text-align: center; }
-        .offer-col { width: 12%; text-align: right; }
+        .offer-col { width: 15%; text-align: right; }
         .qty-col { width: 10%; text-align: center; }
-        .amount-col { width: 15%; text-align: right; }
+        .amount-col { width: 10%; text-align: right; }
         
         .price {
             font-weight: bold;
@@ -268,77 +238,60 @@ class PriceListPdfService
             color: #dc3545;
         }
         
-        .original-price {
-            text-decoration: line-through;
-            color: #666;
-        }
-        
         .footer {
-            position: fixed;
-            bottom: 20px;
-            left: 0;
-            right: 0;
             text-align: center;
             font-size: 10px;
             color: #666;
+            margin-top: 30px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
         }
         
         @page {
             margin: 20mm;
-        }
-        
-        .page-break {
-            page-break-before: always;
-        }
-        
-        .no-products {
-            text-align: center;
-            color: #666;
-            font-style: italic;
-            padding: 20px;
         }
     </style>
 </head>
 <body>';
 
         // Header section
-        $html .= '<div class="header">
-            <div class="header-content">';
-            
+        $html .= '<div class="header">';
+        
+        // Add company logo if available
         if ($companyInfo['logo']) {
-            $html .= '<img src="' . $companyInfo['logo'] . '" class="company-logo" alt="Company Logo">';
+            $html .= '<img src="' . $companyInfo['logo'] . '" style="height: 60px; width: auto; object-fit: contain; margin-bottom: 10px;" alt="Company Logo">';
         }
         
-        $html .= '<div class="company-info">
-                <div class="company-name">' . htmlspecialchars($companyInfo['name']) . '</div>
-                <div class="company-address">';
-                
-        $addressParts = array_filter([
-            $companyInfo['address'],
-            $companyInfo['city'],
-            $companyInfo['state'] . ' ' . $companyInfo['postal_code']
-        ]);
+        $html .= '<div class="company-name">' . htmlspecialchars($companyInfo['name']) . '</div>';
         
-        if (!empty($addressParts)) {
-            $html .= implode('<br>', array_map('htmlspecialchars', $addressParts)) . '<br>';
+        if ($companyInfo['address'] || $companyInfo['city'] || $companyInfo['phone'] || $companyInfo['email']) {
+            $html .= '<div class="company-address">';
+            
+            $addressParts = array_filter([
+                $companyInfo['address'],
+                $companyInfo['city'] . ' ' . $companyInfo['state'] . ' ' . $companyInfo['postal_code']
+            ]);
+            
+            if (!empty($addressParts)) {
+                $html .= implode('<br>', array_map('htmlspecialchars', $addressParts)) . '<br>';
+            }
+            
+            if ($companyInfo['phone']) {
+                $html .= 'Phone: ' . htmlspecialchars($companyInfo['phone']) . '<br>';
+            }
+            
+            if ($companyInfo['email']) {
+                $html .= 'Email: ' . htmlspecialchars($companyInfo['email']);
+            }
+            
+            if ($companyInfo['gst_number']) {
+                $html .= '<br>GST No: ' . htmlspecialchars($companyInfo['gst_number']);
+            }
+            
+            $html .= '</div>';
         }
         
-        if ($companyInfo['phone']) {
-            $html .= 'Phone: ' . htmlspecialchars($companyInfo['phone']) . '<br>';
-        }
-        
-        if ($companyInfo['email']) {
-            $html .= 'Email: ' . htmlspecialchars($companyInfo['email']) . '<br>';
-        }
-        
-        if ($companyInfo['gst_number']) {
-            $html .= 'GST No: ' . htmlspecialchars($companyInfo['gst_number']);
-        }
-        
-        $html .= '</div>
-            </div>
-        </div>
-    </div>';
+        $html .= '</div>';
     
         $html .= '<div class="price-list-title">PRICE LIST</div>';
         
@@ -373,10 +326,7 @@ class PriceListPdfService
                         <td class="offer-col">';
                     
                     // Check for offer price
-                    $offerDetails = $product->getOfferDetails();
-                    if ($offerDetails && $offerDetails['discounted_price'] < $product->price) {
-                        $html .= '<span class="offer-price price">' . number_format($offerDetails['discounted_price'], 2) . '</span>';
-                    } elseif ($product->discount_price && $product->discount_price < $product->price) {
+                    if ($product->discount_price && $product->discount_price < $product->price) {
                         $html .= '<span class="offer-price price">' . number_format($product->discount_price, 2) . '</span>';
                     } else {
                         $html .= '<span class="price">' . number_format($product->price, 2) . '</span>';
@@ -391,7 +341,7 @@ class PriceListPdfService
                 }
             } else {
                 $html .= '<tr>
-                    <td colspan="7" class="no-products">No products available in this category</td>
+                    <td colspan="7" style="text-align: center; font-style: italic;">No products available in this category</td>
                 </tr>';
             }
             
