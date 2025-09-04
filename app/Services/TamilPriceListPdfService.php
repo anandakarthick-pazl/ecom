@@ -56,7 +56,7 @@ class TamilPriceListPdfService
             if ($company) {
                 return [
                     'name' => $company->name ?? 'Your Company',
-                    'logo' => $company->logo ? asset('storage/' . $company->logo) : null,
+                    'logo' => $company->logo ? asset('storage/logos/' . $company->logo) : null,
                     'address' => $company->address ?? '',
                     'city' => $company->city ?? '',
                     'state' => $company->state ?? '',
