@@ -320,6 +320,32 @@
             color: white;
             transform: translateX(4px);
         }
+        
+        .footer-modern .price-list-link {
+            font-weight: 500;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .footer-modern .price-list-link:hover {
+            color: var(--primary-color) !important;
+            transform: translateX(6px) translateY(-1px);
+        }
+        
+        .footer-modern .price-list-link::before {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 1px;
+            bottom: -2px;
+            left: 0;
+            background-color: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+        
+        .footer-modern .price-list-link:hover::before {
+            width: 100%;
+        }
 
         .footer-modern .social-link {
             color: rgba(255, 255, 255, 0.7);
@@ -727,6 +753,9 @@
                         <li><a href="{{ route('products') }}" class="footer-link">Products</a></li>
                         <li><a href="{{ route('offer.products') }}" class="footer-link">Offers</a></li>
                         <li><a href="{{ route('track.order') }}" class="footer-link">Track Order</a></li>
+                        <li><a href="{{ route('price-list.download') }}" class="footer-link price-list-link" 
+                               onclick="trackPriceListDownload()"
+                               title="Download our complete price list PDF">📋 Price List</a></li>
                     </ul>
                 </div>
                 
@@ -974,6 +1003,24 @@
                 btn.html('<span class="spinner"></span>');
             });
         });
+        
+        // Track price list downloads
+        function trackPriceListDownload() {
+            // Analytics tracking (if available)
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'download', {
+                    'event_category': 'price_list',
+                    'event_label': 'footer_link'
+                });
+            }
+            
+            // Show a brief loading message
+            if (typeof showToast !== 'undefined' && window.showToast) {
+                showToast('Preparing price list download...', 'info');
+            } else {
+                console.log('Price list download initiated');
+            }
+        }
     </script>
     
     {{-- Dynamic Animation Scripts --}}

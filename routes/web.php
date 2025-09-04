@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\SocialMediaController;
+use App\Http\Controllers\PriceListController;
 
 /*
 |--------------------------------------------------------------------------
@@ -118,6 +119,18 @@ Route::middleware(['tenant'])->group(function () {
     
     // Order Tracking
     Route::match(['get', 'post'], '/track-order', [HomeController::class, 'trackOrder'])->name('track.order');
+    
+    // Price List Routes
+    Route::get('/price-list/download', [PriceListController::class, 'downloadPdf'])->name('price-list.download');
+    Route::get('/price-list/view', [PriceListController::class, 'viewPdf'])->name('price-list.view');
+    
+    // Test Routes for debugging
+    Route::get('/test/price-list', [\App\Http\Controllers\TestPriceListController::class, 'test'])->name('test.price-list');
+    Route::get('/test/price-list/html', [\App\Http\Controllers\TestPriceListController::class, 'simpleHtml'])->name('test.price-list.html');
+    
+    // Alternative download formats
+    Route::get('/price-list/csv', [\App\Http\Controllers\SimplePriceListController::class, 'downloadCsv'])->name('price-list.csv');
+    Route::get('/price-list/txt', [\App\Http\Controllers\SimplePriceListController::class, 'downloadTxt'])->name('price-list.txt');
     
     // Cart Routes
     Route::prefix('cart')->name('cart.')->group(function () {

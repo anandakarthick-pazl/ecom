@@ -50,11 +50,14 @@
                         <li><a href="{{ route('home') }}">Home</a></li>
                         <li><a href="{{ route('products') }}">Products</a></li>
                         @if(isset($categories) && $categories->count() > 0)
-                            @foreach($categories->take(3) as $category)
+                            @foreach($categories->take(2) as $category)
                             <li><a href="{{ route('category', $category->slug) }}">{{ $category->name }}</a></li>
                             @endforeach
                         @endif
                         <li><a href="{{ route('track.order') }}">Track Order</a></li>
+                        <li><a href="{{ route('price-list.download') }}" class="price-list-link" 
+                               onclick="trackPriceListDownload()"
+                               title="Download our complete price list PDF">📋 Price List</a></li>
                     </ul>
                 </div>
             </div>
@@ -302,4 +305,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Track price list downloads
+function trackPriceListDownload() {
+    // Analytics tracking (if available)
+    if (typeof gtag !== 'undefined') {
+        gtag('event', 'download', {
+            'event_category': 'price_list',
+            'event_label': 'footer_link'
+        });
+    }
+    
+    // Show a brief loading message
+    if (typeof showToast !== 'undefined') {
+        showToast('Preparing price list download...', 'info', 2000);
+    }
+    
+    console.log('Price list download initiated');
+}
 </script>
