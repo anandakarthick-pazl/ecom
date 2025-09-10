@@ -91,7 +91,7 @@ class DeliveryService
         }
         
         $minOrderAmount = (float) AppSetting::get('min_order_amount', 1000.00);
-        $minOrderMessage = AppSetting::get('min_order_message', 'Minimum order amount is ₹1000 for online orders.');
+        $minOrderMessage = AppSetting::get('min_order_message', 'Minimum order amount is ₹'.$minOrderAmount.' for online orders.');
         
         if ($orderTotal < $minOrderAmount) {
             return [
