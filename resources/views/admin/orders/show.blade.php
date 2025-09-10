@@ -14,7 +14,7 @@
         <a href="{{ route('admin.orders.print-invoice', $order) }}?format={{ $defaultBillFormat }}" 
            class="btn btn-secondary" target="_blank"
            title="Print {{ $formatLabel }}"
-           onclick="openPrintWindow(this.href); return false;">
+        ">
             <i class="fas {{ $formatIcon }}"></i> Print {{ $formatLabel }}
         </a>
 
@@ -37,11 +37,11 @@
         @endif
 
         <!-- Download Invoice -->
-        <a href="{{ route('admin.orders.download-invoice', $order) }}?format={{ $defaultBillFormat }}" 
+        {{-- <a href="{{ route('admin.orders.download-invoice', $order) }}?format={{ $defaultBillFormat }}" 
            class="btn btn-info"
            title="Download {{ $formatLabel }}">
             <i class="fas fa-download"></i> Download {{ $formatLabel }}
-        </a>
+        </a> --}}
 
         <!-- Send via WhatsApp -->
         @if ($order->customer_mobile)

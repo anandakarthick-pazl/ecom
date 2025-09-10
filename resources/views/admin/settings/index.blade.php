@@ -79,6 +79,19 @@
                                     <!-- Hidden field to fix custom_tax_enabled validation error -->
                                     <input type="hidden" name="custom_tax_enabled" value="0">
                                     <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <label for="company_address">
+                                                    <i class="fas fa-map-marker-alt text-danger"></i> Company Address
+                                                </label>
+                                                <textarea class="form-control" id="company_address" name="company_address" 
+                                                         rows="2" placeholder="Enter complete business address">{!! $company ? $company->address : '' !!}</textarea>
+                                                <small class="text-muted">Complete business address for invoices and contact</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group">
                                                 <label for="company_name">Company Name *</label>
@@ -101,17 +114,101 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                <label for="company_phone">Company Phone</label>
+                                                <label for="company_phone">Office Phone</label>
                                                 <input type="text" class="form-control" id="company_phone"
-                                                    name="company_phone" value="{{ $company ? $company->phone : '' }}">
+                                                    name="company_phone" value="{{ $company ? $company->phone : '' }}"
+                                                    placeholder="e.g., +91 98765 43210" maxlength="30">
+                                                <small class="text-muted">Main office/landline number (up to 30 characters)</small>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                <label for="company_address">Company Address</label>
-                                                <input type="text" class="form-control" id="company_address"
-                                                    name="company_address"
-                                                    value="{{ $company ? $company->address : '' }}">
+                                                <label for="whatsapp_number">
+                                                    <i class="fab fa-whatsapp text-success"></i> WhatsApp Number
+                                                </label>
+                                                <input type="text" class="form-control" id="whatsapp_number"
+                                                    name="whatsapp_number" value="{{ $company && isset($company->whatsapp_number) ? $company->whatsapp_number : '' }}"
+                                                    placeholder="e.g., +91 98765 43210" maxlength="30">
+                                                <small class="text-muted">WhatsApp business number for customer support (up to 30 characters)</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="mobile_number">
+                                                    <i class="fas fa-mobile-alt text-primary"></i> Primary Mobile
+                                                </label>
+                                                <input type="text" class="form-control" id="mobile_number"
+                                                    name="mobile_number" value="{{ $company && isset($company->mobile_number) ? $company->mobile_number : '' }}"
+                                                    placeholder="e.g., +91 98765 43210" maxlength="30">
+                                                <small class="text-muted">Primary mobile contact number (up to 30 characters)</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="alternate_phone">
+                                                    <i class="fas fa-phone text-info"></i> Alternate Phone
+                                                </label>
+                                                <input type="text" class="form-control" id="alternate_phone"
+                                                    name="alternate_phone" value="{{ $company && isset($company->alternate_phone) ? $company->alternate_phone : '' }}"
+                                                    placeholder="e.g., +91 98765 43210" maxlength="30">
+                                                <small class="text-muted">Secondary/alternate contact number (up to 30 characters)</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- G Pay Payment Section -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-12">
+                                            <div class="alert alert-warning">
+                                                <h6><i class="fab fa-google-pay"></i> Digital Payment Configuration</h6>
+                                                <p class="mb-0">Add your Google Pay number for easy digital payments from customers on your website.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <div class="form-group">
+                                                <label for="gpay_number" class="form-label">
+                                                    <i class="fab fa-google-pay text-warning"></i> 
+                                                    <strong>Google Pay Number</strong> 
+                                                    <span class="badge bg-secondary">Optional</span>
+                                                </label>
+                                                <input type="text" 
+                                                       class="form-control form-control-lg" 
+                                                       id="gpay_number"
+                                                       name="gpay_number" 
+                                                       value="{{ $company && isset($company->gpay_number) ? $company->gpay_number : '' }}"
+                                                       placeholder="Enter Google Pay mobile number (e.g., +91 98765 43210)"
+                                                       maxlength="30"
+                                                       style="border: 2px solid #ddd;">
+                                                <div class="form-text">
+                                                    <i class="fas fa-info-circle text-info"></i> 
+                                                    This number will be displayed on your website for customer payments
+                                                    <br>
+                                                    <i class="fas fa-check text-success"></i> 
+                                                    <strong>Example:</strong> +91 98765 43210
+                                                    <br>
+                                                    <i class="fas fa-magic text-success"></i> 
+                                                    <strong>When entered:</strong> Customers can easily pay via Google Pay using this number
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card bg-light">
+                                                <div class="card-body text-center">
+                                                    <h6 class="card-title"><i class="fab fa-google-pay text-warning"></i> G Pay Benefits</h6>
+                                                    <ul class="list-unstyled small text-left">
+                                                        <li>✅ Shows on website contact banner</li>
+                                                        <li>✅ Quick payment option for customers</li>
+                                                        <li>✅ Tap to pay functionality</li>
+                                                        <li>✅ Mobile-friendly interface</li>
+                                                        <li>✅ Instant payment notifications</li>
+                                                    </ul>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -139,6 +236,8 @@
                                                     value="{{ $company ? $company->postal_code : '' }}">
                                             </div>
                                         </div>
+
+                                        
                                     </div>
 
                                     <!-- GST Number Section - IMPORTANT FOR INVOICES -->
@@ -212,7 +311,61 @@
                                         </div>
                                     </div>
 
-                                    <button type="submit" class="btn btn-primary">
+                                    <!-- Website Announcement Section -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-12">
+                                            <div class="alert alert-success">
+                                                <h6><i class="fas fa-bullhorn"></i> Website Announcement Banner</h6>
+                                                <p class="mb-0">Create a scrolling announcement text that will appear at the top of your website for all visitors to see.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-4">
+                                        <div class="col-md-8">
+                                            <div class="form-group">
+                                                <label for="announcement_text" class="form-label">
+                                                    <i class="fas fa-scroll text-primary"></i> 
+                                                    <strong>Announcement Text</strong> 
+                                                    <span class="badge bg-secondary">Optional</span>
+                                                </label>
+                                                <textarea class="form-control form-control-lg" 
+                                                         id="announcement_text"
+                                                         name="announcement_text" 
+                                                         rows="3"
+                                                         maxlength="500"
+                                                         placeholder="🌿 Welcome to Green Valley Herbs – Fresh & Organic Products 🌿"
+                                                         style="border: 2px solid #ddd;">{{ $company && isset($company->announcement_text) ? $company->announcement_text : '' }}</textarea>
+                                                <div class="form-text">
+                                                    <i class="fas fa-info-circle text-info"></i> 
+                                                    This text will scroll across the top of your website as a marquee banner
+                                                    <br>
+                                                    <i class="fas fa-check text-success"></i> 
+                                                    <strong>Example:</strong> 🌿 Welcome to Green Valley Herbs – Fresh & Organic Products 🌿
+                                                    <br>
+                                                    <i class="fas fa-magic text-success"></i> 
+                                                    <strong>When entered:</strong> The text will appear at the top of your shop page
+                                                    <br>
+                                                    <span class="text-muted">Leave empty to hide the announcement banner</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card bg-light">
+                                                <div class="card-body text-center">
+                                                    <h6 class="card-title"><i class="fas fa-eye text-success"></i> Preview</h6>
+                                                    <div class="announcement-preview p-2 border rounded" style="background: #f8f9fa; overflow: hidden; white-space: nowrap;">
+                                                        <div class="marquee-demo" style="animation: marquee 10s linear infinite;">
+                                                            <span id="announcement-preview-text">{{ $company && isset($company->announcement_text) ? $company->announcement_text : '🌿 Welcome to Green Valley Herbs – Fresh & Organic Products 🌿' }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <small class="text-muted mt-2 d-block">Live preview of your announcement</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary" onclick="debugFormData()">
                                         <i class="fas fa-save"></i> Save Company Settings
                                     </button>
                                 </form>
@@ -3192,6 +3345,80 @@ Thank you for your payment!
             window.toggleMinOrderValidation = toggleMinOrderValidation;
             window.toggleThermalPrinterSettings = toggleThermalPrinterSettings;
             window.toggleA4SheetSettings = toggleA4SheetSettings;
+            
+            // Announcement preview functionality
+            function updateAnnouncementPreview() {
+                const textArea = document.getElementById('announcement_text');
+                const previewText = document.getElementById('announcement-preview-text');
+                
+                if (textArea && previewText) {
+                    const value = textArea.value.trim();
+                    previewText.textContent = value || '🌿 Welcome to Green Valley Herbs – Fresh & Organic Products 🌿';
+                }
+            }
+            
+            // Add event listener for announcement text changes
+            document.addEventListener('DOMContentLoaded', function() {
+                const announcementTextArea = document.getElementById('announcement_text');
+                if (announcementTextArea) {
+                    announcementTextArea.addEventListener('input', updateAnnouncementPreview);
+                    announcementTextArea.addEventListener('keyup', updateAnnouncementPreview);
+                    announcementTextArea.addEventListener('change', updateAnnouncementPreview);
+                }
+            });
+            
+            // Debug function to check form data before submission
+            function debugFormData() {
+                const gpayInput = document.getElementById('gpay_number');
+                const whatsappInput = document.getElementById('whatsapp_number');
+                const mobileInput = document.getElementById('mobile_number');
+                const alternateInput = document.getElementById('alternate_phone');
+                
+                console.log('=== FORM DEBUG INFO ===');
+                console.log('G Pay Number:', gpayInput ? gpayInput.value : 'Field not found');
+                console.log('WhatsApp Number:', whatsappInput ? whatsappInput.value : 'Field not found');
+                console.log('Mobile Number:', mobileInput ? mobileInput.value : 'Field not found');
+                console.log('Alternate Phone:', alternateInput ? alternateInput.value : 'Field not found');
+                console.log('======================');
+                
+                // Show alert with G Pay value
+                if (gpayInput && gpayInput.value.trim()) {
+                    alert('G Pay Number entered: ' + gpayInput.value);
+                } else {
+                    alert('No G Pay Number entered');
+                }
+            }
         </script>
+        
+        <style>
+            /* Marquee animation for announcement preview */
+            @keyframes marquee {
+                0% {
+                    transform: translateX(100%);
+                }
+                100% {
+                    transform: translateX(-100%);
+                }
+            }
+            
+            .marquee-demo {
+                display: inline-block;
+                white-space: nowrap;
+                animation: marquee 10s linear infinite;
+            }
+            
+            .announcement-preview {
+                position: relative;
+                overflow: hidden;
+                background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 50%, #f8f9fa 100%);
+                min-height: 40px;
+                display: flex;
+                align-items: center;
+            }
+            
+            .announcement-preview:hover .marquee-demo {
+                animation-play-state: paused;
+            }
+        </style>
     @endpush
 @endsection

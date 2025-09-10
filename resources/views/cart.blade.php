@@ -362,7 +362,7 @@
                                     $sgstAmount = 0;
                                 }
 
-                                $deliveryCharge = $subtotal >= 500 ? 0 : 50;
+                                $deliveryCharge = isset($deliveryInfo) && $deliveryInfo['enabled'] ? $deliveryInfo['charge'] : 0;
                                 $grandTotal = $subtotal + $totalTax + $deliveryCharge;
                             @endphp
 
@@ -425,16 +425,18 @@
                                 </div>
                             @endif
 
+                            @if(isset($deliveryInfo) && $deliveryInfo['enabled'])
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Delivery Charge:</span>
                                 <span id="delivery-charge">
-                                    @if ($subtotal >= 500)
+                                    @if ($deliveryInfo['is_free'])
                                         <span class="text-success">FREE</span>
                                     @else
-                                        ₹50.00
+                                        ₹{{ number_format($deliveryInfo['charge'], 2) }}
                                     @endif
                                 </span>
                             </div>
+                            @endif
 
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Payment Charge:</span>
@@ -513,8 +515,8 @@
                                         $sgstAmount = 0;
                                     }
 
-                                    $deliveryCharge = $subtotal >= 500 ? 0 : 50;
-                                    $grandTotal = $subtotal + $totalTax + $deliveryCharge;
+                                    $deliveryCharge = isset($deliveryInfo) && $deliveryInfo['enabled'] ? $deliveryInfo['charge'] : 0;
+                                    $grandTotal = $subtotal + $totalTax + $deliveryCharge - $couponDiscount;
                                 @endphp
 
                                 {{-- Debug output (remove in production) --}}
@@ -537,16 +539,18 @@
                                     <span id="total-tax">₹{{ number_format($totalTax, 2) }}</span>
                                 </div>
 
+                                @if(isset($deliveryInfo) && $deliveryInfo['enabled'])
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Delivery Charge:</span>
                                     <span id="delivery-charge">
-                                        @if ($subtotal >= 500)
+                                        @if ($deliveryInfo['is_free'])
                                             <span class="text-success">FREE</span>
                                         @else
-                                            ₹50.00
+                                            ₹{{ number_format($deliveryInfo['charge'], 2) }}
                                         @endif
                                     </span>
                                 </div>
+                                @endif
 
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Payment Charge:</span>
@@ -563,9 +567,9 @@
                                 </div>
                             </div>
 
-                            @if ($subtotal < 500)
+                            @if (isset($deliveryInfo) && $deliveryInfo['enabled'] && $deliveryInfo['free_delivery_enabled'] && $deliveryInfo['amount_needed_for_free'] > 0)
                                 <div class="alert alert-info py-2">
-                                    <small>Add ₹{{ number_format(500 - $subtotal, 2) }} more for FREE delivery!</small>
+                                    <small>Add ₹{{ number_format($deliveryInfo['amount_needed_for_free'], 2) }} more for FREE delivery!</small>
                                 </div>
                             @endif
 
@@ -782,13 +786,18 @@
                     console.log('Updated tax amounts - CGST:', cartData.cgst_amount, 'SGST:', cartData.sgst_amount, 'Total:',
                         cartData.total_tax);
 
-                    // Update delivery charge
-                    if (cartData.delivery_charge === 0) {
-                        $('#delivery-charge').html('<span class="text-success">FREE</span>');
+                    // Update delivery charge if delivery is enabled
+                    if (cartData.delivery_info && cartData.delivery_info.enabled) {
+                        if (cartData.delivery_charge === 0) {
+                            $('#delivery-charge').html('<span class="text-success">FREE</span>');
+                        } else {
+                            $('#delivery-charge').text('₹' + parseFloat(cartData.delivery_charge).toFixed(2));
+                        }
+                        console.log('Updated delivery charge:', cartData.delivery_charge);
                     } else {
-                        $('#delivery-charge').text('₹' + parseFloat(cartData.delivery_charge).toFixed(2));
+                        // Hide delivery charge row if delivery is disabled
+                        $('#delivery-charge').parent().parent().hide();
                     }
-                    console.log('Updated delivery charge:', cartData.delivery_charge);
 
                     // Update payment charge (if available)
                     const paymentCharge = cartData.payment_charge || 0;
@@ -974,12 +983,21 @@
                 // Update subtotal
                 $('#cart-subtotal').text('₹' + parseFloat(newSubtotal).toFixed(2));
 
-                // Calculate and update delivery charge
-                const deliveryCharge = newSubtotal >= 500 ? 0 : 50;
-                if (deliveryCharge === 0) {
-                    $('#delivery-charge').html('<span class="text-success">FREE</span>');
-                } else {
-                    $('#delivery-charge').text('₹50.00');
+                // Check if delivery is enabled
+                const deliveryEnabled = {{ isset($deliveryInfo) && $deliveryInfo['enabled'] ? 'true' : 'false' }};
+                let deliveryCharge = 0;
+                
+                if (deliveryEnabled) {
+                    // Calculate and update delivery charge
+                    const freeDeliveryThreshold = {{ isset($deliveryInfo) ? $deliveryInfo['free_delivery_threshold'] : 500 }};
+                    const baseDeliveryCharge = {{ isset($deliveryInfo) ? $deliveryInfo['charge'] : 50 }};
+                    deliveryCharge = newSubtotal >= freeDeliveryThreshold ? 0 : baseDeliveryCharge;
+                    
+                    if (deliveryCharge === 0) {
+                        $('#delivery-charge').html('<span class="text-success">FREE</span>');
+                    } else {
+                        $('#delivery-charge').text('₹' + deliveryCharge.toFixed(2));
+                    }
                 }
 
                 // Update free delivery message
@@ -1187,12 +1205,21 @@
                 // Update subtotal
                 $('#cart-subtotal').text('₹' + parseFloat(newSubtotal).toFixed(2));
 
-                // Calculate and update delivery charge
-                const deliveryCharge = newSubtotal >= 500 ? 0 : 50;
-                if (deliveryCharge === 0) {
-                    $('#delivery-charge').html('<span class="text-success">FREE</span>');
-                } else {
-                    $('#delivery-charge').text('₹50.00');
+                // Check if delivery is enabled
+                const deliveryEnabled = {{ isset($deliveryInfo) && $deliveryInfo['enabled'] ? 'true' : 'false' }};
+                let deliveryCharge = 0;
+                
+                if (deliveryEnabled) {
+                    // Calculate and update delivery charge
+                    const freeDeliveryThreshold = {{ isset($deliveryInfo) ? $deliveryInfo['free_delivery_threshold'] : 500 }};
+                    const baseDeliveryCharge = {{ isset($deliveryInfo) ? $deliveryInfo['charge'] : 50 }};
+                    deliveryCharge = newSubtotal >= freeDeliveryThreshold ? 0 : baseDeliveryCharge;
+                    
+                    if (deliveryCharge === 0) {
+                        $('#delivery-charge').html('<span class="text-success">FREE</span>');
+                    } else {
+                        $('#delivery-charge').text('₹' + deliveryCharge.toFixed(2));
+                    }
                 }
 
                 // Update free delivery message

@@ -249,21 +249,35 @@ class SettingsController extends Controller
         // Debug: Log all request data to identify any issues
         \Log::info('Company update request data', [
             'all_data' => $request->all(),
+            'gpay_number' => $request->gpay_number,
+            'gpay_number_exists' => $request->has('gpay_number'),
+            'gpay_number_filled' => $request->filled('gpay_number'),
             'user_id' => auth()->id(),
             'company_id' => $this->getCurrentTenantId()
         ]);
         
-        $request->validate([
+        $validatedData = $request->validate([
             'company_name' => 'required|string|max:255',
             'company_email' => 'required|email|max:255',
-            'company_phone' => 'nullable|string',
+            'company_phone' => 'nullable|string|max:30',
+            'whatsapp_number' => 'nullable|string|max:30',
+            'mobile_number' => 'nullable|string|max:30',
+            'alternate_phone' => 'nullable|string|max:30',
+            'gpay_number' => 'nullable|string|max:30',
             'company_address' => 'nullable|string|max:500',
             'company_city' => 'nullable|string|max:100',
             'company_state' => 'nullable|string|max:100',
             'company_postal_code' => 'nullable|string|max:20',
-            'gst_number' => 'nullable|string|max:15|regex:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[0-9A-Z]{1}Z[0-9A-Z]{1}$/',
+            'gst_number' => 'nullable|string|max:15|regex:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[0-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/',
             'company_logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'announcement_text' => 'nullable|string|max:500',
             'custom_tax_enabled' => 'nullable|boolean',
+        ]);
+        
+        // Additional debug: Log validated data
+        \Log::info('Validation passed for company update', [
+            'gpay_number_validated' => $validatedData['gpay_number'] ?? 'not present',
+            'gpay_from_request' => $request->input('gpay_number', 'not present')
         ]);
 
         // Get current company
@@ -288,12 +302,64 @@ class SettingsController extends Controller
         $company->name = $request->company_name;
         $company->email = $request->company_email;
         $company->phone = $request->company_phone;
+        $company->whatsapp_number = $request->whatsapp_number;
+        $company->mobile_number = $request->mobile_number;
+        $company->alternate_phone = $request->alternate_phone;
+        $company->gpay_number = $request->gpay_number;
         $company->address = $request->company_address;
         $company->city = $request->company_city;
         $company->state = $request->company_state;
         $company->postal_code = $request->company_postal_code;
         $company->gst_number = $request->gst_number;
-        $company->save();
+        $company->announcement_text = $request->announcement_text;
+        
+        // Debug: Log what we're trying to save
+        \Log::info('About to save company data', [
+            'company_id' => $company->id,
+            'gpay_number_before' => $company->getOriginal('gpay_number'),
+            'gpay_number_new' => $company->gpay_number,
+            'is_dirty' => $company->isDirty('gpay_number'),
+            'dirty_attributes' => $company->getDirty()
+        ]);
+        
+        try {
+            $saved = $company->save();
+            \Log::info('Company save result', ['success' => $saved]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to save company', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+
+        // Debug: Log saved company data
+        \Log::info('Company data saved', [
+            'company_id' => $company->id,
+            'gpay_number' => $company->gpay_number,
+            'whatsapp_number' => $company->whatsapp_number,
+            'mobile_number' => $company->mobile_number,
+            'alternate_phone' => $company->alternate_phone,
+        ]);
+        
+        // Reload from database to verify save
+        $company->refresh();
+        \Log::info('Company data after refresh', [
+            'gpay_number_after_refresh' => $company->gpay_number,
+        ]);
+        
+        // If G Pay number still not saved, try alternative method
+        if ($request->filled('gpay_number') && !$company->gpay_number) {
+            \Log::warning('G Pay number not saved, trying alternative method');
+            try {
+                $alternativeResult = $company->update(['gpay_number' => $request->gpay_number]);
+                \Log::info('Alternative save method result', ['success' => $alternativeResult]);
+                $company->refresh();
+                \Log::info('G Pay after alternative method', ['gpay_number' => $company->gpay_number]);
+            } catch (\Exception $e) {
+                \Log::error('Alternative save method failed', ['error' => $e->getMessage()]);
+            }
+        }
 
         // Clear cache
         \Artisan::call('view:clear');
@@ -966,5 +1032,91 @@ class SettingsController extends Controller
     {
         $companyId = $this->getCurrentTenantId();
         return $companyId ? Company::find($companyId) : null;
+    }
+    
+    /**
+     * Test method to debug G Pay field - REMOVE AFTER TESTING
+     */
+    public function testGPay()
+    {
+        $company = $this->getCurrentCompany();
+        
+        if (!$company) {
+            return response()->json([
+                'error' => 'No company found',
+                'tenant_id' => $this->getCurrentTenantId()
+            ]);
+        }
+        
+        return response()->json([
+            'company_id' => $company->id,
+            'company_name' => $company->name,
+            'gpay_number' => $company->gpay_number ?? 'NULL',
+            'whatsapp_number' => $company->whatsapp_number ?? 'NULL',
+            'mobile_number' => $company->mobile_number ?? 'NULL',
+            'alternate_phone' => $company->alternate_phone ?? 'NULL',
+            'fillable_fields' => $company->getFillable(),
+            'all_attributes' => $company->getAttributes()
+        ]);
+    }
+    
+    /**
+     * Show G Pay test page
+     */
+    public function showGPayTest()
+    {
+        $company = $this->getCurrentCompany();
+        return view('admin.settings.gpay-test', compact('company'));
+    }
+    
+    /**
+     * Test G Pay save functionality
+     */
+    public function testGPaySave(Request $request)
+    {
+        $company = $this->getCurrentCompany();
+        
+        if (!$company) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No company found'
+            ]);
+        }
+        
+        $gpayNumber = $request->input('gpay_number');
+        $originalValue = $company->gpay_number;
+        
+        try {
+            // Test direct assignment
+            $company->gpay_number = $gpayNumber;
+            $saved = $company->save();
+            
+            // Refresh from database
+            $company->refresh();
+            $dbValue = $company->gpay_number;
+            
+            // Restore original if this was just a test
+            if ($request->input('test_mode')) {
+                $company->gpay_number = $originalValue;
+                $company->save();
+            }
+            
+            return response()->json([
+                'success' => $saved && $dbValue === $gpayNumber,
+                'message' => $saved ? 'Save operation completed' : 'Save operation failed',
+                'saved_value' => $gpayNumber,
+                'db_value' => $dbValue,
+                'original_value' => $originalValue,
+                'save_result' => $saved
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+                'saved_value' => $gpayNumber,
+                'db_value' => null
+            ]);
+        }
     }
 }

@@ -79,7 +79,7 @@
         <p class="product-description">{{ Str::limit($product->short_description ?? '', 60) }}</p>
         
         {{-- Show offer details with priority information --}}
-        @if($hasOffer && $offerDetails)
+        {{-- @if($hasOffer && $offerDetails)
             <div class="offer-info">
                 @if($offerSource === 'offers_page')
                     <i class="fas fa-fire text-danger"></i> 
@@ -97,14 +97,14 @@
                     <br><small class="text-muted">💰 Regular Discount</small>
                 @endif
             </div>
-        @endif
+        @endif --}}
         
         <div class="product-footer">
             <div class="price-section">
                 @if($hasOffer)
                     <span class="current-price">₹{{ number_format($effectivePrice, 2) }}</span>
                     <span class="original-price">₹{{ number_format($product->price, 2) }}</span>
-                    <div class="savings-info">
+                    {{-- <div class="savings-info">
                         <small class="text-success">
                             <i class="fas fa-tags"></i> You save ₹{{ number_format($offerDetails['savings'], 2) }}
                             @if($offerSource === 'offers_page')
@@ -113,7 +113,7 @@
                                 <span class="badge badge-sm bg-info ms-1">Product Discount</span>
                             @endif
                         </small>
-                    </div>
+                    </div> --}}
                 @else
                     <span class="current-price">₹{{ number_format($product->price, 2) }}</span>
                 @endif

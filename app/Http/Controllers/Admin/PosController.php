@@ -337,7 +337,10 @@ class PosController extends Controller
     public function show(PosSale $sale)
     {
         $sale->load(['items.product', 'cashier', 'commission']);
-        return view('admin.pos.show', compact('sale'));
+         $companyId = session('selected_company_id');
+        $defaultBillFormat = AppSetting::getForTenant('default_bill_format', $companyId) ?? 'a4_sheet';
+
+        return view('admin.pos.show', compact('sale','defaultBillFormat'));
     }
 
     public function receipt(PosSale $sale)
@@ -1906,7 +1909,7 @@ class PosController extends Controller
             if (!view()->exists($viewName)) {
                 $viewName = 'admin.pos.receipt-a4-clean';
             }
-
+            // echo $viewName;exit;
             return view($viewName, [
                 'sale' => $sale,
                 'globalCompany' => $globalCompany

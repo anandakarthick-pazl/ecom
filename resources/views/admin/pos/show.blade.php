@@ -4,320 +4,341 @@
 @section('page_title', 'Sale Details - ' . $sale->invoice_number)
 
 @section('page_actions')
-<a href="{{ route('admin.pos.sales') }}" class="btn btn-secondary">
-    <i class="fas fa-arrow-left"></i> Back to Sales
-</a>
-<a href="{{ route('admin.pos.receipt', $sale) }}" class="btn btn-primary" target="_blank">
-    <i class="fas fa-receipt"></i> View Receipt
-</a>
+    <a href="{{ route('admin.pos.sales') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Sales
+    </a>
+    @if ($defaultBillFormat === 'thermal')
+        <!-- Show only thermal receipt option -->
+        <a href="{{ route('admin.pos.receipt', $sale) }}" class="btn btn-outline-secondary" title="View Receipt (Thermal)"
+            target="_blank">
+            <i class="fas fa-receipt"></i>
+        </a>
+    @else
+        <!-- Show only A4 invoice option -->
+        <a href="{{ route('admin.pos.preview-enhanced-invoice', $sale) }}" class="btn btn-outline-primary"
+            title="Preview A4 Invoice" target="_blank">
+            <i class="fas fa-file-pdf"></i>
+        </a>
+    @endif
 @endsection
 
 @push('scripts')
-<script>
-function markCommissionAsPaid(commissionId) {
-    if (confirm('Mark this commission as paid?')) {
-        $.ajax({
-            url: `/admin/commissions/${commissionId}/mark-paid`,
-            method: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}'
-            },
-            success: function(response) {
-                location.reload();
-            },
-            error: function(xhr) {
-                const response = xhr.responseJSON;
-                alert('Error: ' + (response ? response.message : 'Failed to update commission status'));
+    <script>
+        function markCommissionAsPaid(commissionId) {
+            if (confirm('Mark this commission as paid?')) {
+                $.ajax({
+                    url: `/admin/commissions/${commissionId}/mark-paid`,
+                    method: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        location.reload();
+                    },
+                    error: function(xhr) {
+                        const response = xhr.responseJSON;
+                        alert('Error: ' + (response ? response.message : 'Failed to update commission status'));
+                    }
+                });
             }
-        });
-    }
-}
+        }
 
-function cancelCommission(commissionId) {
-    const reason = prompt('Please provide a reason for cancelling this commission:');
-    if (reason && reason.trim()) {
-        $.ajax({
-            url: `/admin/commissions/${commissionId}/cancel`,
-            method: 'POST',
-            data: {
-                reason: reason.trim(),
-                _token: '{{ csrf_token() }}'
-            },
-            success: function(response) {
-                location.reload();
-            },
-            error: function(xhr) {
-                const response = xhr.responseJSON;
-                alert('Error: ' + (response ? response.message : 'Failed to cancel commission'));
+        function cancelCommission(commissionId) {
+            const reason = prompt('Please provide a reason for cancelling this commission:');
+            if (reason && reason.trim()) {
+                $.ajax({
+                    url: `/admin/commissions/${commissionId}/cancel`,
+                    method: 'POST',
+                    data: {
+                        reason: reason.trim(),
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        location.reload();
+                    },
+                    error: function(xhr) {
+                        const response = xhr.responseJSON;
+                        alert('Error: ' + (response ? response.message : 'Failed to cancel commission'));
+                    }
+                });
             }
-        });
-    }
-}
+        }
 
-function showRefundModal(saleId) {
-    // Refund functionality - to be implemented
-    alert('Refund functionality coming soon!');
-}
-</script>
+        function showRefundModal(saleId) {
+            // Refund functionality - to be implemented
+            alert('Refund functionality coming soon!');
+        }
+    </script>
 @endpush
 
 @section('content')
-<div class="row">
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Sale Information</h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <dl class="row">
-                            <dt class="col-sm-4">Invoice Number:</dt>
-                            <dd class="col-sm-8">{{ $sale->invoice_number }}</dd>
-                            
-                            <dt class="col-sm-4">Sale Date:</dt>
-                            <dd class="col-sm-8">{{ $sale->created_at->format('M d, Y h:i A') }}</dd>
-                            
-                            <dt class="col-sm-4">Cashier:</dt>
-                            <dd class="col-sm-8">{{ $sale->cashier->name }}</dd>
-                            
-                            <dt class="col-sm-4">Status:</dt>
-                            <dd class="col-sm-8">
-                                <span class="badge bg-{{ $sale->status_color }}">
-                                    {{ ucfirst($sale->status) }}
-                                </span>
-                            </dd>
-                        </dl>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <dl class="row">
-                            @if($sale->customer_name)
-                                <dt class="col-sm-4">Customer:</dt>
-                                <dd class="col-sm-8">{{ $sale->customer_name }}</dd>
-                            @endif
-                            
-                            @if($sale->customer_phone)
-                                <dt class="col-sm-4">Phone:</dt>
-                                <dd class="col-sm-8">{{ $sale->customer_phone }}</dd>
-                            @endif
-                            
-                            <dt class="col-sm-4">Payment Method:</dt>
-                            <dd class="col-sm-8">
-                                <span class="badge bg-secondary">
-                                    {{ ucfirst(str_replace('_', ' ', $sale->payment_method)) }}
-                                </span>
-                            </dd>
-                            
-                            <dt class="col-sm-4">Total Items:</dt>
-                            <dd class="col-sm-8">{{ $sale->total_items }}</dd>
-                        </dl>
-                    </div>
-                </div>
-                
-                @if($sale->notes)
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <strong>Notes:</strong>
-                            <p class="text-muted">{{ $sale->notes }}</p>
-                        </div>
-                    </div>
-                @endif
-            </div>
-        </div>
-        
-        <!-- Commission Information -->
-        @php
-            $commission = $sale->commission;
-        @endphp
-        
-        @if($commission)
-            <div class="card mt-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-percentage"></i> Commission Details
-                    </h5>
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Sale Information</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
                             <dl class="row">
-                                <dt class="col-sm-5">Reference Name:</dt>
-                                <dd class="col-sm-7">{{ $commission->reference_name }}</dd>
-                                
-                                <dt class="col-sm-5">Commission %:</dt>
-                                <dd class="col-sm-7">{{ $commission->formatted_commission_percentage }}</dd>
-                                
-                                <dt class="col-sm-5">Base Amount:</dt>
-                                <dd class="col-sm-7">{{ $commission->formatted_base_amount }}</dd>
-                            </dl>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <dl class="row">
-                                <dt class="col-sm-5">Commission Amount:</dt>
-                                <dd class="col-sm-7"><strong class="text-success">{{ $commission->formatted_commission_amount }}</strong></dd>
-                                
-                                <dt class="col-sm-5">Status:</dt>
-                                <dd class="col-sm-7">
-                                    <span class="badge bg-{{ $commission->status_color }}">
-                                        {{ $commission->status_text }}
+                                <dt class="col-sm-4">Invoice Number:</dt>
+                                <dd class="col-sm-8">{{ $sale->invoice_number }}</dd>
+
+                                <dt class="col-sm-4">Sale Date:</dt>
+                                <dd class="col-sm-8">{{ $sale->created_at->format('M d, Y h:i A') }}</dd>
+
+                                <dt class="col-sm-4">Cashier:</dt>
+                                <dd class="col-sm-8">{{ $sale->cashier->name }}</dd>
+
+                                <dt class="col-sm-4">Status:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-{{ $sale->status_color }}">
+                                        {{ ucfirst($sale->status) }}
                                     </span>
                                 </dd>
-                                
-                                <dt class="col-sm-5">Created:</dt>
-                                <dd class="col-sm-7">{{ $commission->created_at->format('M d, Y h:i A') }}</dd>
+                            </dl>
+                        </div>
+
+                        <div class="col-md-6">
+                            <dl class="row">
+                                @if ($sale->customer_name)
+                                    <dt class="col-sm-4">Customer:</dt>
+                                    <dd class="col-sm-8">{{ $sale->customer_name }}</dd>
+                                @endif
+
+                                @if ($sale->customer_phone)
+                                    <dt class="col-sm-4">Phone:</dt>
+                                    <dd class="col-sm-8">{{ $sale->customer_phone }}</dd>
+                                @endif
+
+                                <dt class="col-sm-4">Payment Method:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-secondary">
+                                        {{ ucfirst(str_replace('_', ' ', $sale->payment_method)) }}
+                                    </span>
+                                </dd>
+
+                                <dt class="col-sm-4">Total Items:</dt>
+                                <dd class="col-sm-8">{{ $sale->total_items }}</dd>
                             </dl>
                         </div>
                     </div>
-                    
-                    @if($commission->notes)
+
+                    @if ($sale->notes)
                         <div class="row mt-3">
                             <div class="col-12">
-                                <strong>Commission Notes:</strong>
-                                <p class="text-muted">{{ $commission->notes }}</p>
+                                <strong>Notes:</strong>
+                                <p class="text-muted">{{ $sale->notes }}</p>
                             </div>
                         </div>
                     @endif
-                    
-                    @if($commission->status === 'pending' && auth()->user()->can('manage-commissions'))
-                        <div class="row mt-3">
-                            <div class="col-12">
-                                <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-success btn-sm" 
-                                            onclick="markCommissionAsPaid({{ $commission->id }})">
-                                        <i class="fas fa-check"></i> Mark as Paid
-                                    </button>
-                                    <button type="button" class="btn btn-danger btn-sm" 
-                                            onclick="cancelCommission({{ $commission->id }})">
-                                        <i class="fas fa-times"></i> Cancel
-                                    </button>
+                </div>
+            </div>
+
+            <!-- Commission Information -->
+            @php
+                $commission = $sale->commission;
+            @endphp
+
+            @if ($commission)
+                <div class="card mt-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-percentage"></i> Commission Details
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <dl class="row">
+                                    <dt class="col-sm-5">Reference Name:</dt>
+                                    <dd class="col-sm-7">{{ $commission->reference_name }}</dd>
+
+                                    <dt class="col-sm-5">Commission %:</dt>
+                                    <dd class="col-sm-7">{{ $commission->formatted_commission_percentage }}</dd>
+
+                                    <dt class="col-sm-5">Base Amount:</dt>
+                                    <dd class="col-sm-7">{{ $commission->formatted_base_amount }}</dd>
+                                </dl>
+                            </div>
+
+                            <div class="col-md-6">
+                                <dl class="row">
+                                    <dt class="col-sm-5">Commission Amount:</dt>
+                                    <dd class="col-sm-7"><strong
+                                            class="text-success">{{ $commission->formatted_commission_amount }}</strong>
+                                    </dd>
+
+                                    <dt class="col-sm-5">Status:</dt>
+                                    <dd class="col-sm-7">
+                                        <span class="badge bg-{{ $commission->status_color }}">
+                                            {{ $commission->status_text }}
+                                        </span>
+                                    </dd>
+
+                                    <dt class="col-sm-5">Created:</dt>
+                                    <dd class="col-sm-7">{{ $commission->created_at->format('M d, Y h:i A') }}</dd>
+                                </dl>
+                            </div>
+                        </div>
+
+                        @if ($commission->notes)
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <strong>Commission Notes:</strong>
+                                    <p class="text-muted">{{ $commission->notes }}</p>
                                 </div>
                             </div>
-                        </div>
-                    @endif
-                    
-                    @if($commission->status === 'paid' && $commission->paid_at)
-                        <div class="alert alert-success mt-3">
-                            <i class="fas fa-check-circle"></i>
-                            <strong>Commission Paid:</strong> {{ $commission->paid_at->format('M d, Y h:i A') }}
-                            @if($commission->paidBy)
-                                by {{ $commission->paidBy->name }}
-                            @endif
-                        </div>
-                    @endif
-                </div>
-            </div>
-        @endif
-        
-        <!-- Sale Items -->
-        <div class="card mt-4">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Sale Items</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th class="text-center">Quantity</th>
-                                <th class="text-end">Unit Price</th>
-                                <th class="text-end">Tax %</th>
-                                <th class="text-end">Tax Amount</th>
-                                <th class="text-end">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($sale->items as $item)
-                                <tr>
-                                    <td>
-                                        <strong>{{ $item->product->name }}</strong>
-                                        @if($item->product->category)
-                                            <br><small class="text-muted">{{ $item->product->category->name }}</small>
-                                        @endif
-                                    </td>
-                                    <td class="text-center">{{ $item->quantity }}</td>
-                                    <td class="text-end">₹{{ number_format($item->unit_price, 2) }}</td>
-                                    <td class="text-end">{{ $item->tax_percentage }}%</td>
-                                    <td class="text-end">₹{{ number_format($item->tax_amount, 2) }}</td>
-                                    <td class="text-end">₹{{ number_format($item->total_amount, 2) }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Payment Summary -->
-    <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Payment Summary</h5>
-            </div>
-            <div class="card-body">
-                <dl class="row">
-                    <dt class="col-sm-6">Subtotal:</dt>
-                    <dd class="col-sm-6 text-end">₹{{ number_format($sale->subtotal, 2) }}</dd>
-                    
-                    @if($sale->tax_amount > 0)
-                        <dt class="col-sm-6">CGST:</dt>
-                        <dd class="col-sm-6 text-end">₹{{ number_format($sale->cgst_amount, 2) }}</dd>
-                        
-                        <dt class="col-sm-6">SGST:</dt>
-                        <dd class="col-sm-6 text-end">₹{{ number_format($sale->sgst_amount, 2) }}</dd>
-                    @endif
-                    
-                    @if($sale->discount_amount > 0)
-                        <dt class="col-sm-6">Discount:</dt>
-                        <dd class="col-sm-6 text-end text-success">-₹{{ number_format($sale->discount_amount, 2) }}</dd>
-                    @endif
-                    
-                    <hr>
-                    
-                    <dt class="col-sm-6"><strong>Total:</strong></dt>
-                    <dd class="col-sm-6 text-end"><strong>₹{{ number_format($sale->total_amount, 2) }}</strong></dd>
-                    
-                    <hr>
-                    
-                    <dt class="col-sm-6">Paid Amount:</dt>
-                    <dd class="col-sm-6 text-end">₹{{ number_format($sale->paid_amount, 2) }}</dd>
-                    
-                    @if($sale->change_amount > 0)
-                        <dt class="col-sm-6">Change:</dt>
-                        <dd class="col-sm-6 text-end text-info">₹{{ number_format($sale->change_amount, 2) }}</dd>
-                    @endif
-                </dl>
-                
-                <div class="text-center mt-3">
-                    <div class="alert alert-success">
-                        <i class="fas fa-check-circle"></i>
-                        <strong>Payment Status: {{ ucfirst($sale->payment_status) }}</strong>
+                        @endif
+
+                        @if ($commission->status === 'pending' && auth()->user()->can('manage-commissions'))
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-success btn-sm"
+                                            onclick="markCommissionAsPaid({{ $commission->id }})">
+                                            <i class="fas fa-check"></i> Mark as Paid
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm"
+                                            onclick="cancelCommission({{ $commission->id }})">
+                                            <i class="fas fa-times"></i> Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if ($commission->status === 'paid' && $commission->paid_at)
+                            <div class="alert alert-success mt-3">
+                                <i class="fas fa-check-circle"></i>
+                                <strong>Commission Paid:</strong> {{ $commission->paid_at->format('M d, Y h:i A') }}
+                                @if ($commission->paidBy)
+                                    by {{ $commission->paidBy->name }}
+                                @endif
+                            </div>
+                        @endif
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        @if($sale->status === 'completed')
-            <div class="card mt-3">
+            @endif
+
+            <!-- Sale Items -->
+            <div class="card mt-4">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Actions</h5>
+                    <h5 class="card-title mb-0">Sale Items</h5>
                 </div>
                 <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{{ route('admin.pos.receipt', $sale) }}" class="btn btn-primary" target="_blank">
-                            <i class="fas fa-print"></i> Print Receipt
-                        </a>
-                        
-                        <button type="button" class="btn btn-warning" onclick="showRefundModal({{ $sale->id }})">
-                            <i class="fas fa-undo"></i> Process Refund
-                        </button>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th class="text-center">Quantity</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-end">Tax %</th>
+                                    <th class="text-end">Tax Amount</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($sale->items as $item)
+                                    <tr>
+                                        <td>
+                                            <strong>{{ $item->product->name }}</strong>
+                                            @if ($item->product->category)
+                                                <br><small class="text-muted">{{ $item->product->category->name }}</small>
+                                            @endif
+                                        </td>
+                                        <td class="text-center">{{ $item->quantity }}</td>
+                                        <td class="text-end">₹{{ number_format($item->unit_price, 2) }}</td>
+                                        <td class="text-end">{{ $item->tax_percentage }}%</td>
+                                        <td class="text-end">₹{{ number_format($item->tax_amount, 2) }}</td>
+                                        <td class="text-end">₹{{ number_format($item->total_amount, 2) }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-        @endif
+        </div>
+
+        <!-- Payment Summary -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Payment Summary</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-6">Subtotal:</dt>
+                        <dd class="col-sm-6 text-end">₹{{ number_format($sale->subtotal, 2) }}</dd>
+
+                        @if ($sale->tax_amount > 0)
+                            <dt class="col-sm-6">CGST:</dt>
+                            <dd class="col-sm-6 text-end">₹{{ number_format($sale->cgst_amount, 2) }}</dd>
+
+                            <dt class="col-sm-6">SGST:</dt>
+                            <dd class="col-sm-6 text-end">₹{{ number_format($sale->sgst_amount, 2) }}</dd>
+                        @endif
+
+                        @if ($sale->discount_amount > 0)
+                            <dt class="col-sm-6">Discount:</dt>
+                            <dd class="col-sm-6 text-end text-success">-₹{{ number_format($sale->discount_amount, 2) }}
+                            </dd>
+                        @endif
+
+                        <hr>
+
+                        <dt class="col-sm-6"><strong>Total:</strong></dt>
+                        <dd class="col-sm-6 text-end"><strong>₹{{ number_format($sale->total_amount, 2) }}</strong></dd>
+
+                        <hr>
+
+                        <dt class="col-sm-6">Paid Amount:</dt>
+                        <dd class="col-sm-6 text-end">₹{{ number_format($sale->paid_amount, 2) }}</dd>
+
+                        @if ($sale->change_amount > 0)
+                            <dt class="col-sm-6">Change:</dt>
+                            <dd class="col-sm-6 text-end text-info">₹{{ number_format($sale->change_amount, 2) }}</dd>
+                        @endif
+                    </dl>
+
+                    <div class="text-center mt-3">
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            <strong>Payment Status: {{ ucfirst($sale->payment_status) }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if ($sale->status === 'completed')
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            @if($defaultBillFormat === 'thermal')
+                                    <!-- Show only thermal receipt option -->
+                                    <a href="{{ route('admin.pos.receipt', $sale) }}" class="btn btn-outline-secondary" title="View Receipt (Thermal)" target="_blank">
+                                        <i class="fas fa-receipt"></i>
+                                    </a>
+                                @else
+                                    <!-- Show only A4 invoice option -->
+                                    <a href="{{ route('admin.pos.preview-enhanced-invoice', $sale) }}" class="btn btn-outline-primary" title="Preview A4 Invoice" target="_blank">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </a>
+                                @endif
+                            <button type="button" class="btn btn-warning"
+                                onclick="showRefundModal({{ $sale->id }})">
+                                <i class="fas fa-undo"></i> Process Refund
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
     </div>
-</div>
 @endsection

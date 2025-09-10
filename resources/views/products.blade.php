@@ -299,10 +299,36 @@
             <p class="loading-text">Loading products...</p>
         </div>
 
+        <!-- View Toggle and Sort Options -->
+        <div class="view-controls-section">
+            <div class="view-controls">
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="grid" title="Grid View">
+                        <i class="fas fa-th"></i>
+                        <span>Grid</span>
+                    </button>
+                    <button class="view-btn" data-view="list" title="List View">
+                        <i class="fas fa-list"></i>
+                        <span>List</span>
+                    </button>
+                </div>
+                <div class="sort-controls">
+                    <select class="sort-select" id="sortProducts">
+                        <option value="default">Sort by: Default</option>
+                        <option value="name_asc">Name: A to Z</option>
+                        <option value="name_desc">Name: Z to A</option>
+                        <option value="price_asc">Price: Low to High</option>
+                        <option value="price_desc">Price: High to Low</option>
+                        <option value="newest">Newest First</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <!-- Products Grid -->
         <div class="products-container" id="products-container">
             @if($products->count() > 0)
-                <div class="products-grid-compact">
+                <div class="products-grid-compact" id="products-grid">
                     @foreach($products as $product)
                         @include('partials.product-card-modern', ['product' => $product])
                     @endforeach
@@ -503,6 +529,78 @@
     font-weight: 500;
 }
 
+/* View Controls */
+.view-controls-section {
+    margin-bottom: 2rem;
+}
+
+.view-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.view-toggle {
+    display: flex;
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 4px;
+    gap: 4px;
+}
+
+.view-btn {
+    background: transparent;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6b7280;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.view-btn:hover {
+    background: rgba(37, 99, 235, 0.1);
+    color: {{ $globalCompany->primary_color ?? '#2563eb' }};
+}
+
+.view-btn.active {
+    background: {{ $globalCompany->primary_color ?? '#2563eb' }};
+    color: white;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+}
+
+.sort-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sort-select {
+    background: #ffffff;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 180px;
+}
+
+.sort-select:focus {
+    outline: none;
+    border-color: {{ $globalCompany->primary_color ?? '#2563eb' }};
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
 /* Products Grid */
 .products-container {
     margin-bottom: 3rem;
@@ -513,6 +611,382 @@
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
+}
+
+/* List View Styles - Table Format like Price List */
+.products-list {
+    display: block;
+    margin-bottom: 2rem;
+}
+
+.products-list .products-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.products-list .products-table thead {
+    background: linear-gradient(135deg, {{ $globalCompany->primary_color ?? '#2563eb' }} 0%, {{ $globalCompany->secondary_color ?? '#10b981' }} 100%);
+    color: white;
+}
+
+.products-list .products-table th {
+    padding: 1rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+}
+
+.products-list .products-table td {
+    padding: 1rem 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+    font-size: 0.875rem;
+}
+
+.products-list .products-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.products-list .products-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.products-list .products-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Table Column Styles */
+.products-list .sno-col {
+    width: 8%;
+    text-align: center;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.products-list .product-col {
+    width: 35%;
+    min-width: 200px;
+}
+
+.products-list .product-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.products-list .product-image-small {
+    width: 35px;
+    height: 35px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.products-list .product-placeholder-small {
+    width: 35px;
+    height: 35px;
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.products-list .product-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.products-list .product-name {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+}
+
+.products-list .product-category {
+    font-size: 0.75rem;
+    color: {{ $globalCompany->primary_color ?? '#2563eb' }};
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.products-list .mrp-col,
+.products-list .offer-col,
+.products-list .amount-col {
+    width: 12%;
+    text-align: right;
+}
+
+.products-list .unit-col,
+.products-list .qty-col {
+    width: 10%;
+    text-align: center;
+}
+
+.products-list .price {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.products-list .mrp-price {
+    color: #6b7280;
+}
+
+.products-list .offer-price {
+    color: #ef4444;
+}
+
+.products-list .current-price {
+    color: {{ $globalCompany->primary_color ?? '#2563eb' }};
+}
+
+.products-list .original-price {
+    text-decoration: line-through;
+    color: #9ca3af;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.products-list .unit-text {
+    background: #f3f4f6;
+    color: #6b7280;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.products-list .quantity-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.products-list .qty-btn-small {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border: 2px solid #e2e8f0;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 0.875rem;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.products-list .qty-btn-small::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    transition: all 0.3s ease;
+    border-radius: 50%;
+}
+
+.products-list .qty-btn-small:hover {
+    background: linear-gradient(135deg, {{ $globalCompany->primary_color ?? '#3b82f6' }} 0%, {{ $globalCompany->secondary_color ?? '#1d4ed8' }} 100%);
+    color: white;
+    border-color: {{ $globalCompany->primary_color ?? '#3b82f6' }};
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+.products-list .qty-btn-small:hover::before {
+    width: 40px;
+    height: 40px;
+}
+
+.products-list .qty-btn-small:active {
+    transform: translateY(0) scale(0.95);
+    transition: all 0.1s ease;
+}
+
+.products-list .qty-input-small {
+    width: 45px;
+    height: 32px;
+    text-align: center;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.875rem;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    color: #1e293b;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.products-list .qty-input-small:focus {
+    outline: none;
+    border-color: {{ $globalCompany->primary_color ?? '#3b82f6' }};
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+}
+
+.products-list .btn-add-cart-small {
+    background: linear-gradient(135deg, {{ $globalCompany->primary_color ?? '#3b82f6' }} 0%, {{ $globalCompany->secondary_color ?? '#1d4ed8' }} 100%);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.products-list .btn-add-cart-small::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.products-list .btn-add-cart-small:hover {
+    background: linear-gradient(135deg, {{ $globalCompany->secondary_color ?? '#1d4ed8' }} 0%, {{ $globalCompany->primary_color ?? '#3b82f6' }} 100%);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+.products-list .btn-add-cart-small:hover::before {
+    left: 100%;
+}
+
+.products-list .btn-add-cart-small:active {
+    transform: translateY(-1px) scale(0.98);
+    transition: all 0.1s ease;
+}
+
+.products-list .btn-add-cart-small.offer {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+    animation: offerPulse 2s infinite;
+}
+
+.products-list .btn-add-cart-small.offer::before {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+}
+
+.products-list .btn-add-cart-small.offer:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.5);
+    animation: none;
+}
+
+@keyframes offerPulse {
+    0%, 100% {
+        box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+    }
+    50% {
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+    }
+}
+
+.products-list .btn-out-stock-small {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    opacity: 0.7;
+    cursor: not-allowed;
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+.products-list .stock-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.products-list .stock-badge {
+    background: #f59e0b;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.products-list .stock-badge.in-stock {
+    background: #10b981;
+}
+
+.products-list .offer-badge {
+    background: linear-gradient(45deg, #ef4444, #dc2626);
+    color: white;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 0.5rem;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+/* Action buttons in amount column */
+.products-list .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-end;
+}
+
+/* Hide product card styles when in list view */
+.products-list .product-card {
+    display: none;
 }
 
 /* Product Card Styles */
@@ -859,9 +1333,46 @@
         font-size: 2rem;
     }
     
+    .view-controls {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .view-toggle {
+        justify-content: center;
+    }
+    
+    .sort-controls {
+        width: 100%;
+    }
+    
+    .sort-select {
+        width: 100%;
+        min-width: unset;
+    }
+    
     .products-grid {
         grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
         gap: 1rem;
+    }
+    
+    .products-list .product-card {
+        flex-direction: column;
+    }
+    
+    .products-list .product-image-container {
+        width: 100%;
+        height: 200px;
+    }
+    
+    .products-list .product-footer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .products-list .product-actions {
+        justify-content: center;
     }
     
     .filters-container {
@@ -927,6 +1438,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize product filtering
     let isLoading = false;
     const enablePagination = {{ ($frontendPaginationSettings['enabled'] ?? true) ? 'true' : 'false' }};
+    let currentView = 'grid';
+    let currentSort = 'default';
+    
+    // Initialize view controls
+    initializeViewControls();
     
     // Category filter functionality
     document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -981,6 +1497,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (enablePagination && page && page > 1) {
             requestData.append('page', page);
         }
+        if (currentSort && currentSort !== 'default') {
+            requestData.append('sort', currentSort);
+        }
+        requestData.append('view', currentView);
         
         // Make AJAX request
         fetch('{{ route("products") }}?' + requestData.toString(), {
@@ -994,6 +1514,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.html) {
                 document.getElementById('products-container').innerHTML = data.html;
                 document.getElementById('products-container').style.display = 'block';
+                
+                // Reapply current view
+                setTimeout(() => {
+                    switchView(currentView);
+                }, 50);
                 
                 if (enablePagination && data.pagination) {
                     const paginationContainer = document.getElementById('pagination-container');
@@ -1054,6 +1579,77 @@ document.addEventListener('DOMContentLoaded', function() {
         
         loadProducts(category, page);
     });
+    
+    // View switching functionality
+    function initializeViewControls() {
+        // View toggle buttons
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const view = this.dataset.view;
+                switchView(view);
+            });
+        });
+        
+        // Sort functionality
+        const sortSelect = document.getElementById('sortProducts');
+        if (sortSelect) {
+            sortSelect.addEventListener('change', function() {
+                currentSort = this.value;
+                const category = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
+                loadProducts(category, 1);
+            });
+        }
+        
+        // Load saved view preference
+        const savedView = localStorage.getItem('product-view') || 'grid';
+        switchView(savedView);
+    }
+    
+    function switchView(view) {
+        currentView = view;
+        
+        // Update active button
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.view === view);
+        });
+        
+        // Update grid class
+        const productsGrid = document.getElementById('products-grid');
+        if (productsGrid) {
+            if (view === 'list') {
+                productsGrid.classList.remove('products-grid-compact');
+                productsGrid.classList.add('products-list');
+                
+                // If we're switching to list view and don't have table format, reload
+                if (!productsGrid.querySelector('.products-table')) {
+                    const category = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
+                    loadProducts(category, 1);
+                    return;
+                }
+            } else {
+                productsGrid.classList.remove('products-list');
+                productsGrid.classList.add('products-grid-compact');
+                
+                // If we're switching to grid view and have table format, reload
+                if (productsGrid.querySelector('.products-table')) {
+                    const category = document.querySelector('.filter-btn.active')?.dataset.category || 'all';
+                    loadProducts(category, 1);
+                    return;
+                }
+            }
+        }
+        
+        // Save preference
+        localStorage.setItem('product-view', view);
+        
+        // Add animation
+        if (productsGrid) {
+            productsGrid.style.opacity = '0';
+            setTimeout(() => {
+                productsGrid.style.opacity = '1';
+            }, 150);
+        }
+    }
     
     // Add fade-in animation to existing products
     document.querySelectorAll('.product-card').forEach((card, index) => {

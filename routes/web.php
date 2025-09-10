@@ -168,6 +168,13 @@ Route::middleware(['tenant'])->group(function () {
     // Order Success
     Route::get('/order/success/{orderNumber}', [CheckoutController::class, 'success'])->name('order.success');
     
+    // Customer Invoice Downloads
+    Route::prefix('invoice')->name('invoice.')->group(function () {
+        Route::get('/download/{orderNumber}', [\App\Http\Controllers\CustomerInvoiceController::class, 'downloadInvoice'])->name('download');
+        Route::post('/download-tracked', [\App\Http\Controllers\CustomerInvoiceController::class, 'downloadTrackedInvoice'])->name('download.tracked');
+        Route::get('/formats', [\App\Http\Controllers\CustomerInvoiceController::class, 'getAvailableFormats'])->name('formats');
+    });
+    
     // Razorpay Payment Routes
     Route::prefix('razorpay')->name('razorpay.')->group(function () {
         Route::post('/create-order', [\App\Http\Controllers\RazorpayController::class, 'createOrder'])->name('create-order');
@@ -310,6 +317,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
         Route::get('/sales/{sale}/download-bill-debug', [PosController::class, 'downloadBillDebug'])->name('download-bill-debug');
         Route::get('/sales/{sale}/view-bill-debug', [PosController::class, 'viewBillDebug'])->name('view-bill-debug');
         Route::get('/sales/{sale}/bill-formats', [PosController::class, 'getBillFormats'])->name('bill-formats');
+        Route::get('/sales/{sale}/preview-enhanced-invoice', [PosController::class, 'previewEnhancedInvoice'])->name('preview-enhanced-invoice');
         Route::post('/sales/{sale}/refund', [PosController::class, 'refund'])->name('refund');
         Route::post('/download-multiple-receipts', [PosController::class, 'downloadMultipleReceipts'])->name('download-multiple-receipts');
         Route::post('/download-receipts-by-date', [PosController::class, 'downloadReceiptsByDateRange'])->name('download-receipts-by-date');

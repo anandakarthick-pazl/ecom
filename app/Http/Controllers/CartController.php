@@ -36,6 +36,9 @@ class CartController extends Controller
         $minOrderValidationSettings = \App\Services\DeliveryService::getMinOrderValidationSettings();
         $minOrderValidation = \App\Services\DeliveryService::validateMinimumOrderAmount($subtotal);
         
+        // Get delivery info
+        $deliveryInfo = \App\Services\DeliveryService::getDeliveryInfo($subtotal);
+        
         // If cart is empty and no order success data, show helpful message
         if ($cartItems->isEmpty()) {
             // Check if there's a recent order for this session
@@ -59,7 +62,8 @@ class CartController extends Controller
             'couponDiscount',
             'appliedCoupon',
             'minOrderValidationSettings', 
-            'minOrderValidation'
+            'minOrderValidation',
+            'deliveryInfo'
         ));
     }
 
@@ -137,7 +141,8 @@ class CartController extends Controller
         }
         
         // Calculate delivery charge using DeliveryService
-        $deliveryCharge = \App\Services\DeliveryService::calculateDeliveryCharge($subtotal);
+        $deliveryInfo = \App\Services\DeliveryService::getDeliveryInfo($subtotal);
+        $deliveryCharge = $deliveryInfo['charge'];
         $grandTotal = $subtotal + $totalTax + $deliveryCharge - $couponDiscount;
         
         // Get minimum order validation
@@ -153,6 +158,7 @@ class CartController extends Controller
                 'cgst_amount' => $cgstAmount,
                 'sgst_amount' => $sgstAmount,
                 'delivery_charge' => $deliveryCharge,
+                'delivery_info' => $deliveryInfo,
                 'coupon_discount' => $couponDiscount,
                 'grand_total' => $grandTotal,
                 'cart_count' => $cartCount,
@@ -207,7 +213,8 @@ class CartController extends Controller
         }
         
         // Calculate delivery charge using DeliveryService
-        $deliveryCharge = \App\Services\DeliveryService::calculateDeliveryCharge($subtotal);
+        $deliveryInfo = \App\Services\DeliveryService::getDeliveryInfo($subtotal);
+        $deliveryCharge = $deliveryInfo['charge'];
         $grandTotal = $subtotal + $totalTax + $deliveryCharge - $couponDiscount;
         
         // Get minimum order validation
@@ -223,6 +230,7 @@ class CartController extends Controller
                 'cgst_amount' => $cgstAmount,
                 'sgst_amount' => $sgstAmount,
                 'delivery_charge' => $deliveryCharge,
+                'delivery_info' => $deliveryInfo,
                 'coupon_discount' => $couponDiscount,
                 'grand_total' => $grandTotal,
                 'cart_count' => $cartCount,
@@ -313,7 +321,8 @@ class CartController extends Controller
         }
         
         // Calculate delivery charge using DeliveryService
-        $deliveryCharge = \App\Services\DeliveryService::calculateDeliveryCharge($subtotal);
+        $deliveryInfo = \App\Services\DeliveryService::getDeliveryInfo($subtotal);
+        $deliveryCharge = $deliveryInfo['charge'];
         $grandTotal = $subtotal + $totalTax + $deliveryCharge - $couponDiscount;
         
         // Get minimum order validation
@@ -330,6 +339,7 @@ class CartController extends Controller
                 'cgst_amount' => $cgstAmount,
                 'sgst_amount' => $sgstAmount,
                 'delivery_charge' => $deliveryCharge,
+                'delivery_info' => $deliveryInfo,
                 'coupon_discount' => $couponDiscount,
                 'payment_charge' => 0, // Default payment charge
                 'grand_total' => $grandTotal,

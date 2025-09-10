@@ -720,6 +720,9 @@
         <span class="floating-cart-count" id="floating-cart-count">0</span>
     </a>
     
+    <!-- Floating Contact Widget -->
+    @include('components.floating-contact-widget')
+    
     {{-- Animation Demo Component --}}
     @include('components.animation-demo')
 
@@ -777,7 +780,33 @@
                     <h5>Contact Info</h5>
                     @if($globalCompany->company_phone)
                         <p class="mb-2 text-light opacity-75">
-                            <i class="fas fa-phone me-2"></i>{{ $globalCompany->company_phone }}
+                            <i class="fas fa-phone me-2"></i>
+                            <strong>Office:</strong> {{ $globalCompany->company_phone }}
+                        </p>
+                    @endif
+                    @if($globalCompany->whatsapp_number)
+                        <p class="mb-2 text-light opacity-75">
+                            <i class="fab fa-whatsapp me-2 text-success"></i>
+                            <strong>WhatsApp:</strong> 
+                            <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $globalCompany->whatsapp_number) }}" 
+                               target="_blank" class="text-light text-decoration-none">
+                                {{ $globalCompany->whatsapp_number }}
+                            </a>
+                        </p>
+                    @endif
+                    @if($globalCompany->mobile_number)
+                        <p class="mb-2 text-light opacity-75">
+                            <i class="fas fa-mobile-alt me-2 text-primary"></i>
+                            <strong>Mobile:</strong> 
+                            <a href="tel:{{ $globalCompany->mobile_number }}" class="text-light text-decoration-none">
+                                {{ $globalCompany->mobile_number }}
+                            </a>
+                        </p>
+                    @endif
+                    @if($globalCompany->alternate_phone)
+                        <p class="mb-2 text-light opacity-75">
+                            <i class="fas fa-phone-alt me-2 text-info"></i>
+                            <strong>Alternate:</strong> {{ $globalCompany->alternate_phone }}
                         </p>
                     @endif
                     <p class="mb-2 text-light opacity-75">

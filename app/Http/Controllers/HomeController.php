@@ -24,6 +24,36 @@ class HomeController extends Controller
         $this->offerService = $offerService;
     }
     
+    /**
+     * Apply sorting to the query based on request parameters
+     */
+    private function applySorting($query, $request)
+    {
+        $sort = $request->get('sort', 'default');
+        switch ($sort) {
+            case 'name_asc':
+                $query->orderBy('name', 'asc');
+                break;
+            case 'name_desc':
+                $query->orderBy('name', 'desc');
+                break;
+            case 'price_asc':
+                $query->orderBy('price', 'asc');
+                break;
+            case 'price_desc':
+                $query->orderBy('price', 'desc');
+                break;
+            case 'newest':
+                $query->orderBy('created_at', 'desc');
+                break;
+            default:
+                // Order by stock status (in-stock first) then by sort order
+                $query->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END')
+                      ->orderBy('sort_order');
+                break;
+        }
+    }
+    
     public function index(Request $request)
     {
         $banners = Banner::active()
@@ -102,9 +132,10 @@ class HomeController extends Controller
         if ($activeMenu === 'all') {
             // All Products - include out of stock but prioritize in-stock
             $query = Product::active()
-                ->with('category')
-                ->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END') // In-stock first
-                ->orderBy('sort_order');
+                ->with('category');
+            
+            // Apply sorting
+            $this->applySorting($query, $request);
 
             $products = $this->applyFrontendPagination($query, $request, '50');
         } elseif ($activeMenu === 'offers') {
@@ -112,9 +143,10 @@ class HomeController extends Controller
             $query = Product::active()
                 ->whereNotNull('discount_price')
                 ->where('discount_price', '>', 0)
-                ->with('category')
-                ->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END') // In-stock first
-                ->orderBy('sort_order');
+                ->with('category');
+            
+            // Apply sorting
+            $this->applySorting($query, $request);
 
             $products = $this->applyFrontendPagination($query, $request, '50');
         }
@@ -148,9 +180,8 @@ class HomeController extends Controller
             });
         }
 
-        // Order by stock status (in-stock first) then by sort order
-        $query->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END')
-              ->orderBy('sort_order');
+        // Apply sorting
+        $this->applySorting($query, $request);
 
         // Apply frontend pagination using the trait
         $products = $this->applyFrontendPagination($query, $request, '50');
@@ -196,13 +227,20 @@ class HomeController extends Controller
 
             $productsHtml = '';
             $productsCount = method_exists($products, 'count') ? $products->count() : count($products);
+            $view = $request->get('view', 'grid');
+            $gridClass = $view === 'list' ? 'products-list' : 'products-grid-compact';
 
             if ($productsCount > 0) {
-                $productsHtml = '<div class="products-grid-compact">';
-                foreach ($products as $product) {
-                    $productsHtml .= view('partials.product-card-modern', compact('product'))->render();
+                if ($view === 'list') {
+                    $productsHtml = view('partials.products-list-table', compact('products'))->render();
+                    $productsHtml = '<div class="' . $gridClass . '" id="products-grid">' . $productsHtml . '</div>';
+                } else {
+                    $productsHtml = '<div class="' . $gridClass . '" id="products-grid">';
+                    foreach ($products as $product) {
+                        $productsHtml .= view('partials.product-card-modern', compact('product'))->render();
+                    }
+                    $productsHtml .= '</div>';
                 }
-                $productsHtml .= '</div>';
 
                 if ($frontendPaginationSettings['enabled'] && method_exists($products, 'appends')) {
                     $productsHtml .= '<div class="pagination-container" id="pagination-container">' . $paginationHtml . '</div>';

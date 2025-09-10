@@ -17,6 +17,10 @@ class Company extends Model
         'domain',
         'email',
         'phone',
+        'whatsapp_number',
+        'mobile_number',
+        'alternate_phone',
+        'gpay_number',
         'address',
         'city',
         'state',
@@ -31,6 +35,7 @@ class Company extends Model
         'trial_ends_at',
         'subscription_ends_at',
         'settings',
+        'announcement_text',
         'created_by'
     ];
 

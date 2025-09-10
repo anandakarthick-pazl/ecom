@@ -324,7 +324,9 @@
                             $sgstAmount += ($itemTax / 2);
                         }
                         
-                        $grandTotal = $subtotal + $totalTax + $deliveryCharge - $discount;
+                        // Only include delivery charge if delivery is enabled
+                        $actualDeliveryCharge = ($deliveryInfo['enabled'] ?? false) ? $deliveryCharge : 0;
+                        $grandTotal = $subtotal + $totalTax + $actualDeliveryCharge - $discount;
                     @endphp
                     
                     <div class="d-flex justify-content-between mb-2">
@@ -342,6 +344,7 @@
                         <span>₹{{ number_format($totalTax, 2) }}</span>
                     </div>
                     
+                    @if($deliveryInfo['enabled'])
                     <div class="d-flex justify-content-between mb-2">
                         <span>Delivery Charge:</span>
                         <span>
@@ -352,6 +355,7 @@
                             @endif
                         </span>
                     </div>
+                    @endif
                     
                     @if($deliveryInfo['enabled'] && $deliveryInfo['free_delivery_enabled'] && $deliveryInfo['amount_needed_for_free'] > 0)
                         <div class="alert alert-info py-2 small">
@@ -379,7 +383,7 @@
                         <strong id="grand-total">₹{{ number_format($grandTotal, 2) }}</strong>
                     </div>
                     
-                    @if($deliveryCharge == 0 && $subtotal >= 500)
+                    @if($deliveryInfo['enabled'] && $deliveryCharge == 0 && $deliveryInfo['free_delivery_enabled'])
                         <div class="alert alert-success py-2">
                             <small><i class="fas fa-check"></i> You're getting FREE delivery!</small>
                         </div>

@@ -273,6 +273,38 @@
                 </div>
             </div>
             
+            <!-- Invoice Download Section -->
+            <div class="card bg-light border-0 shadow-sm mt-4">
+                <div class="card-body text-center">
+                    <h5 class="mb-3"><i class="fas fa-download text-primary"></i> Download Your Invoice</h5>
+                    <div class="d-flex justify-content-center gap-3">
+                        @php
+                            $companyId = $order->company_id ?? session('selected_company_id');
+                            $defaultFormat = \App\Models\AppSetting::getForTenant('default_bill_format', $companyId) ?? 'a4_sheet';
+                            $thermalEnabled = \App\Models\AppSetting::getForTenant('thermal_printer_enabled', $companyId) ?? false;
+                            $a4Enabled = \App\Models\AppSetting::getForTenant('a4_sheet_enabled', $companyId) ?? true;
+                        @endphp
+                        
+                        @if($defaultFormat === 'thermal' || $thermalEnabled)
+                            <a href="{{ route('invoice.download', ['orderNumber' => $order->order_number, 'format' => 'thermal']) }}" 
+                               class="btn btn-success btn-lg" target="_blank">
+                                <i class="fas fa-receipt"></i> Thermal Invoice
+                            </a>
+                        @endif
+                        
+                        @if($defaultFormat === 'a4_sheet' || $a4Enabled)
+                            <a href="{{ route('invoice.download', ['orderNumber' => $order->order_number, 'format' => 'a4_sheet']) }}" 
+                               class="btn btn-info btn-lg" target="_blank">
+                                <i class="fas fa-file-pdf"></i> PDF Invoice
+                            </a>
+                        @endif
+                    </div>
+                    <p class="text-muted small mt-2 mb-0">
+                        <i class="fas fa-info-circle"></i> Keep this invoice for your records and warranty claims
+                    </p>
+                </div>
+            </div>
+            
             <div class="text-center mt-4">
                 <a href="{{ route('track.order') }}" class="btn btn-primary btn-lg me-2">
                     <i class="fas fa-search"></i> Track Your Order

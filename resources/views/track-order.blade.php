@@ -11,6 +11,20 @@
                     <h4 class="mb-0">Track Your Order</h4>
                 </div>
                 <div class="card-body">
+                    @if(session('error'))
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
+                    
+                    @if(session('success'))
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle"></i> {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
+                    
                     @if(!isset($orders))
                     <form method="POST" action="{{ route('track.order') }}">
                         @csrf
@@ -125,6 +139,33 @@
                             <div class="delivery-address mt-3">
                                 <h6>Delivery Address:</h6>
                                 <p class="mb-0">{{ $order->delivery_address }}, {{ $order->city }}, {{ $order->state }} {{ $order->pincode }}</p>
+                            </div>
+                            
+                            <!-- Invoice Download Buttons -->
+                            <div class="invoice-actions mt-3 pt-3 border-top">
+                                <h6>Download Invoice:</h6>
+                                <div class="btn-group" role="group">
+                                    @php
+                                        $companyId = $order->company_id ?? session('selected_company_id');
+                                        $defaultFormat = \App\Models\AppSetting::getForTenant('default_bill_format', $companyId) ?? 'a4_sheet';
+                                        $thermalEnabled = \App\Models\AppSetting::getForTenant('thermal_printer_enabled', $companyId) ?? false;
+                                        $a4Enabled = \App\Models\AppSetting::getForTenant('a4_sheet_enabled', $companyId) ?? true;
+                                    @endphp
+                                    
+                                    @if($defaultFormat === 'thermal' || $thermalEnabled)
+                                        <a href="{{ route('invoice.download', ['orderNumber' => $order->order_number, 'format' => 'thermal', 'mobile' => request('mobile_number')]) }}" 
+                                           class="btn btn-sm btn-success" target="_blank">
+                                            <i class="fas fa-receipt"></i> Thermal Invoice
+                                        </a>
+                                    @endif
+                                    
+                                    @if($defaultFormat === 'a4_sheet' || $a4Enabled)
+                                        <a href="{{ route('invoice.download', ['orderNumber' => $order->order_number, 'format' => 'a4_sheet', 'mobile' => request('mobile_number')]) }}" 
+                                           class="btn btn-sm btn-info" target="_blank">
+                                            <i class="fas fa-file-pdf"></i> PDF Invoice
+                                        </a>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                         @endforeach

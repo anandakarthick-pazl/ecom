@@ -880,6 +880,7 @@ class OrderController extends Controller
     public function printInvoice(Order $order)
     {
         try {
+            
             $companyId = $this->getCurrentTenantId();
             if (!$companyId) {
                 return redirect()->back()->with('error', 'Company context not found');
