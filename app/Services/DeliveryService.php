@@ -114,7 +114,7 @@ class DeliveryService
         return [
             'min_order_validation_enabled' => AppSetting::get('min_order_validation_enabled', false),
             'min_order_amount' => AppSetting::get('min_order_amount', 1000.00),
-            'min_order_message' => AppSetting::get('min_order_message', 'Minimum order amount is ₹1000 for online orders.')
+            'min_order_message' => AppSetting::get('min_order_message', 'Minimum order amount is ₹'.AppSetting::get('min_order_amount', 1000.00).' for online orders.')
         ];
     }
     
