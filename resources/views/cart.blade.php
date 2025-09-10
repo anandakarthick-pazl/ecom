@@ -580,7 +580,7 @@
                             )
                                 <div class="alert alert-warning py-3 mb-3" id="min-order-alert">
                                     <i class="fas fa-exclamation-triangle me-2"></i>
-                                    <strong>{{ $minOrderValidation['message'] }}</strong>
+                                    {{-- <strong>{{ $minOrderValidation['message'] }}</strong> --}}
                                     <br>
                                     <small class="text-muted">
                                         Current total: ₹{{ number_format($minOrderValidation['current_amount'], 2) }} |
