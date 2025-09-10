@@ -17,14 +17,17 @@ return new class extends Migration
             $table->string('whatsapp_number', 30)->nullable()->change();
             $table->string('mobile_number', 30)->nullable()->change();
             $table->string('alternate_phone', 30)->nullable()->change();
-            
+
             // Add gpay_number field if it doesn't exist, or modify if it does
             if (!Schema::hasColumn('companies', 'gpay_number')) {
                 $table->string('gpay_number', 30)->nullable()->after('alternate_phone')
-                      ->comment('Google Pay number for digital payments');
+                    ->comment('Google Pay number for digital payments');
             } else {
                 $table->string('gpay_number', 30)->nullable()->change();
             }
+            Schema::table('companies', function (Blueprint $table) {
+                $table->string('phone', 50)->nullable()->change();
+            });
         });
     }
 
