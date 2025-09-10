@@ -920,7 +920,7 @@
                     if (minOrderAlert.length > 0) {
                         minOrderAlert.html(`
                 <i class="fas fa-exclamation-triangle me-2"></i>
-                <strong>${message}</strong>
+               
                 <br>
                 <small class="text-muted">
                     Current total: ₹${currentAmount.toFixed(2)} | 
@@ -932,7 +932,7 @@
                         const alertHtml = `
                 <div class="alert alert-warning py-3 mb-3" id="min-order-alert">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>${message}</strong>
+                  
                     <br>
                     <small class="text-muted">
                         Current total: ₹${currentAmount.toFixed(2)} | 
@@ -1070,7 +1070,7 @@
                     if (minOrderAlert.length > 0) {
                         minOrderAlert.html(`
                 <i class="fas fa-exclamation-triangle me-2"></i>
-                <strong>${minOrderMessage}</strong>
+              
                 <br>
                 <small class="text-muted">
                     Current total: ₹${cartTotal.toFixed(2)} | 
@@ -1082,7 +1082,7 @@
                         const alertHtml = `
                 <div class="alert alert-warning py-3 mb-3" id="min-order-alert">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>${minOrderMessage}</strong>
+                  
                     <br>
                     <small class="text-muted">
                         Current total: ₹${cartTotal.toFixed(2)} | 
@@ -1287,7 +1287,7 @@
                     if (minOrderAlert.length > 0) {
                         minOrderAlert.html(`
                 <i class="fas fa-exclamation-triangle me-2"></i>
-                <strong>${minOrderMessage}</strong>
+              
                 <br>
                 <small class="text-muted">
                     Current total: ₹${cartTotal.toFixed(2)} | 
@@ -1299,7 +1299,7 @@
                         const alertHtml = `
                 <div class="alert alert-warning py-3 mb-3" id="min-order-alert">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>${minOrderMessage}</strong>
+                    
                     <br>
                     <small class="text-muted">
                         Current total: ₹${cartTotal.toFixed(2)} | 
