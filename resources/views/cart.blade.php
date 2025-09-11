@@ -425,7 +425,7 @@
                                 </div>
                             @endif
 
-                            <div class="d-flex justify-content-between mb-2">
+                            {{-- <div class="d-flex justify-content-between mb-2">
                                 <span>Delivery Charge:</span>
                                 <span id="delivery-charge">
                                     @if ($subtotal >= 500)
@@ -434,7 +434,7 @@
                                         ₹50.00
                                     @endif
                                 </span>
-                            </div>
+                            </div> --}}
 
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Payment Charge:</span>
@@ -537,7 +537,7 @@
                                     <span id="total-tax">₹{{ number_format($totalTax, 2) }}</span>
                                 </div>
 
-                                <div class="d-flex justify-content-between mb-2">
+                                {{-- <div class="d-flex justify-content-between mb-2">
                                     <span>Delivery Charge:</span>
                                     <span id="delivery-charge">
                                         @if ($subtotal >= 500)
@@ -546,7 +546,7 @@
                                             ₹50.00
                                         @endif
                                     </span>
-                                </div>
+                                </div> --}}
 
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Payment Charge:</span>

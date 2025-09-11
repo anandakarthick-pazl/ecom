@@ -372,10 +372,10 @@
             </tr>
             @endif
             @if($order->delivery_charge > 0)
-            <tr>
+            {{-- <tr>
                 <td><strong>Delivery Charge:</strong></td>
                 <td class="text-right">{{ $company['currency'] }}{{ number_format($order->delivery_charge, 2) }}</td>
-            </tr>
+            </tr> --}}
             @endif
             @if($order->cgst_amount > 0)
             <tr>

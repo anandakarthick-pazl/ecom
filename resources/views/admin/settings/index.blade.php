@@ -516,7 +516,7 @@
                                         <span class="badge bg-secondary">Disabled</span>
                                         @endif
                                         </div>
-                                            <div class="mb-1">
+                                            {{-- <div class="mb-1">
                                                         <strong>Delivery Charge:</strong> ₹{{ $deliverySettings['delivery_charge'] ?? '50' }}
                                                     </div>
                                                     <div class="mb-1">
@@ -536,7 +536,7 @@
                                                         </div>
                                                     @endif
                                                 </div>
-                                            </div>
+                                            </div> --}}
                                         </div>
                             </div>
                         </div>

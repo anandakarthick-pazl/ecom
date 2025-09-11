@@ -186,7 +186,7 @@
                                     <span><i class="fas fa-rupee-sign"></i>{{ number_format($order->sgst_amount, 2) }}</span>
                                 </div>
                                 
-                                <div class="d-flex justify-content-between mb-2">
+                                {{-- <div class="d-flex justify-content-between mb-2">
                                     <span><i class="fas fa-shipping-fast"></i> Delivery:</span>
                                     <span>
                                         @if($order->delivery_charge == 0)
@@ -195,7 +195,7 @@
                                             <i class="fas fa-rupee-sign"></i>{{ number_format($order->delivery_charge, 2) }}
                                         @endif
                                     </span>
-                                </div>
+                                </div> --}}
                                 
                                 <hr class="my-2">
                                 

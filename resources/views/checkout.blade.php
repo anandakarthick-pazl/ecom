@@ -342,7 +342,7 @@
                         <span>₹{{ number_format($totalTax, 2) }}</span>
                     </div>
                     
-                    <div class="d-flex justify-content-between mb-2">
+                    {{-- <div class="d-flex justify-content-between mb-2">
                         <span>Delivery Charge:</span>
                         <span>
                             @if($deliveryCharge == 0)
@@ -351,7 +351,7 @@
                                 ₹{{ number_format($deliveryCharge, 2) }}
                             @endif
                         </span>
-                    </div>
+                    </div> --}}
                     
                     @if($deliveryInfo['enabled'] && $deliveryInfo['free_delivery_enabled'] && $deliveryInfo['amount_needed_for_free'] > 0)
                         <div class="alert alert-info py-2 small">

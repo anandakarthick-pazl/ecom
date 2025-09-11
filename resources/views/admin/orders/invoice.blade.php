@@ -173,7 +173,7 @@
                 <td><strong>SGST:</strong></td>
                 <td style="text-align: right;"><strong>₹{{ number_format($order->sgst_amount, 2) }}</strong></td>
             </tr>
-            <tr>
+            {{-- <tr>
                 <td><strong>Delivery Charge:</strong></td>
                 <td style="text-align: right;">
                     <strong>
@@ -184,7 +184,7 @@
                         @endif
                     </strong>
                 </td>
-            </tr>
+            </tr> --}}
             <tr class="total-row" style="border-top: 2px solid #2d5016;">
                 <td><strong>Total:</strong></td>
                 <td style="text-align: right;"><strong>₹{{ number_format($order->total, 2) }}</strong></td>
