@@ -265,6 +265,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
     Route::patch('estimates/{estimate}/update-status', [EstimateController::class, 'updateStatus'])->name('estimates.update-status');
     Route::post('estimates/{estimate}/duplicate', [EstimateController::class, 'duplicate'])->name('estimates.duplicate');
     Route::get('estimates/{estimate}/download', [EstimateController::class, 'download'])->name('estimates.download');
+    Route::post('estimates/{estimate}/convert-to-sale', [EstimateController::class, 'convertToSale'])->name('estimates.convert-to-sale');
     
     // Goods Receipt Notes (GRN)
     Route::resource('grns', GrnController::class);

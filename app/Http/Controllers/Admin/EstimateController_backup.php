@@ -322,7 +322,7 @@ class EstimateController extends Controller
             // Get company data
             $companyId = session('selected_company_id');
             $globalCompany = $this->getCompanyData($companyId);
-
+            
             // Create PDF
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.estimates.pdf', [
                 'estimate' => $estimate,

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Estimate;
 use App\Models\EstimateItem;
 use App\Models\Product;
+use App\Models\PosSale;
+use App\Models\PosSaleItem;
 use App\Services\OfferService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -411,7 +413,7 @@ class EstimateController extends Controller
 
             // Get company from database
             $company = \App\Models\SuperAdmin\Company::find($companyId);
-
+            // echo "<pre>";print_r($company);exit;
             if (!$company) {
                 return $this->getFallbackCompanyData();
             }
@@ -440,6 +442,7 @@ class EstimateController extends Controller
             $contactInfo = !empty($contactParts) ? implode(' | ', $contactParts) : 'Contact info not configured';
 
             // Return properly structured object with all required properties
+            
             return (object) [
                 'company_name' => $company->name ?? 'Your Company',
                 'company_address' => $company->address ?? '',
@@ -498,6 +501,86 @@ class EstimateController extends Controller
         }
 
         return implode(' | ', $contactParts);
+    }
+
+    /**
+     * Convert accepted estimate to POS sale
+     */
+    public function convertToSale(Estimate $estimate)
+    {
+        // Check if estimate is accepted
+        if ($estimate->status !== 'accepted') {
+            return redirect()->back()
+                           ->with('error', 'Only accepted estimates can be converted to sales!');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Create POS sale from estimate
+            $posSale = PosSale::create([
+                'company_id' => $estimate->company_id,
+                'sale_date' => now(),
+                'customer_name' => $estimate->customer_name,
+                'customer_phone' => $estimate->customer_phone,
+                'subtotal' => $estimate->subtotal,
+                'tax_amount' => $estimate->tax_amount,
+                'discount_amount' => $estimate->discount ?? 0,
+                'total_amount' => $estimate->total_amount,
+                'paid_amount' => $estimate->total_amount, // Assume full payment
+                'change_amount' => 0,
+                'payment_method' => 'cash', // Default to cash, can be changed later
+                'status' => 'completed',
+                'notes' => 'Converted from Estimate #' . $estimate->estimate_number . ($estimate->notes ? "\n" . $estimate->notes : ''),
+                'cashier_id' => Auth::id()
+            ]);
+
+            // Create POS sale items from estimate items
+            foreach ($estimate->items as $item) {
+                PosSaleItem::create([
+                    'pos_sale_id' => $posSale->id,
+                    'product_id' => $item->product_id,
+                    'product_name' => $item->product ? $item->product->name : 'Product',
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'original_price' => $item->unit_price,
+                    'discount_amount' => 0,
+                    'discount_percentage' => 0,
+                    'tax_percentage' => 0,
+                    'tax_amount' => 0,
+                    'total_amount' => $item->quantity * $item->unit_price,
+                    'offer_applied' => false,
+                    'offer_savings' => 0,
+                    'notes' => $item->description,
+                    'company_id' => $estimate->company_id
+                ]);
+
+                // Update product stock if needed
+                if ($item->product) {
+                    $product = $item->product;
+                    $product->stock -= $item->quantity;
+                    $product->save();
+                }
+            }
+
+            // Mark estimate as converted
+            $estimate->update([
+                'status' => 'converted',
+                'converted_at' => now(),
+                'converted_to_sale_id' => $posSale->id
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('admin.pos.show', $posSale)
+                           ->with('success', 'Estimate successfully converted to sale! Invoice #' . $posSale->invoice_number);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error converting estimate to sale: ' . $e->getMessage());
+            return redirect()->back()
+                           ->with('error', 'Error converting estimate to sale: ' . $e->getMessage());
+        }
     }
 
     /**

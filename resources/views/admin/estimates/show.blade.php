@@ -239,9 +239,21 @@
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         @if($estimate->status === 'accepted')
-                            <a href="{{ route('admin.purchase-orders.create', ['estimate' => $estimate->id]) }}" class="btn btn-primary btn-sm">
+                            <button onclick="convertToSale()" class="btn btn-primary btn-sm">
+                                <i class="fas fa-cash-register me-2"></i>Convert to POS Sale
+                            </button>
+                            <a href="{{ route('admin.purchase-orders.create', ['estimate' => $estimate->id]) }}" class="btn btn-info btn-sm">
                                 <i class="fas fa-shopping-cart me-2"></i>Create Purchase Order
                             </a>
+                        @elseif($estimate->status === 'converted')
+                            <div class="alert alert-info mb-2">
+                                <i class="fas fa-info-circle me-2"></i>This estimate has been converted to a sale.
+                            </div>
+                            @if($estimate->convertedSale)
+                                <a href="{{ route('admin.pos.show', $estimate->converted_to_sale_id) }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-receipt me-2"></i>View POS Sale
+                                </a>
+                            @endif
                         @endif
                         <button onclick="duplicateEstimate()" class="btn btn-secondary btn-sm">
                             <i class="fas fa-copy me-2"></i>Duplicate Estimate
@@ -408,6 +420,23 @@
 
         const modal = bootstrap.Modal.getInstance(document.getElementById('statusModal'));
         modal.hide();
+    }
+
+    function convertToSale() {
+        if (confirm('Are you sure you want to convert this estimate to a POS sale? This action cannot be undone.')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `{{ route('admin.estimates.convert-to-sale', $estimate) }}`;
+            
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = '_token';
+            csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            form.appendChild(csrfToken);
+            document.body.appendChild(form);
+            form.submit();
+        }
     }
 
     function duplicateEstimate() {

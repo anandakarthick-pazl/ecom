@@ -43,6 +43,14 @@
         font-size: 11px;
         font-weight: bold;
     }
+    .items-count-badge {
+        background: #007bff;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+    }
 </style>
 @endpush
 
@@ -131,17 +139,19 @@
             <div class="card mt-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">Estimate Items</h5>
-                    <button type="button" class="btn btn-sm btn-primary" id="addItem">
-                        <i class="fas fa-plus"></i> Add Item
-                    </button>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="items-count-badge">
+                            <i class="fas fa-shopping-cart"></i> <span id="itemsCount">0</span> Items
+                        </span>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div id="itemsContainer">
                         <!-- Items will be added here dynamically -->
                     </div>
                     
-                    <div class="alert alert-info d-none" id="noItemsAlert">
-                        <i class="fas fa-info-circle"></i> No items added yet. Click "Add Item" to start.
+                    <div class="alert alert-info" id="noItemsAlert">
+                        <i class="fas fa-info-circle"></i> Start by selecting a product from the dropdown below.
                     </div>
                 </div>
             </div>
@@ -251,9 +261,9 @@
 <template id="itemRowTemplate">
     <div class="product-row border rounded p-3 mb-3" data-index="__INDEX__">
         <div class="row align-items-end">
-            <div class="col-md-4">
+            <div class="col-md-5">
                 <label class="form-label">Product <span class="text-danger">*</span></label>
-                <select class="form-select product-select" name="items[__INDEX__][product_id]" required>
+                <select class="form-select product-select" name="items[__INDEX__][product_id]">
                     <option value="">Search and Select Product</option>
                     @foreach($products as $product)
                         <option value="{{ $product->id }}" 
@@ -281,13 +291,13 @@
             <div class="col-md-2">
                 <label class="form-label">Quantity <span class="text-danger">*</span></label>
                 <input type="number" class="form-control quantity-input" 
-                       name="items[__INDEX__][quantity]" min="1" required>
+                       name="items[__INDEX__][quantity]" min="1" value="1">
             </div>
             
             <div class="col-md-2">
                 <label class="form-label">Unit Price <span class="text-danger">*</span></label>
                 <input type="number" class="form-control price-input" 
-                       name="items[__INDEX__][unit_price]" min="0" step="0.01" required>
+                       name="items[__INDEX__][unit_price]" min="0" step="0.01">
             </div>
             
             <div class="col-md-2">
@@ -295,18 +305,10 @@
                 <input type="text" class="form-control total-input" readonly>
             </div>
             
-            <div class="col-md-2 text-end">
+            <div class="col-md-1 text-end">
                 <button type="button" class="btn btn-outline-danger remove-item" title="Remove Item">
                     <i class="fas fa-trash"></i>
                 </button>
-            </div>
-        </div>
-        
-        <div class="row mt-2">
-            <div class="col-12">
-                <label class="form-label">Description (Optional)</label>
-                <input type="text" class="form-control" name="items[__INDEX__][description]" 
-                       placeholder="Additional description for this item">
             </div>
         </div>
     </div>
@@ -320,15 +322,11 @@
 $(document).ready(function() {
     let itemIndex = 0;
     
-    // Add new item
-    $('#addItem').click(function() {
-        addNewItem();
-    });
-    
     // Remove item
     $(document).on('click', '.remove-item', function() {
         $(this).closest('.product-row').remove();
         updateCalculations();
+        updateItemsCount();
         checkEmptyItems();
     });
     
@@ -338,7 +336,7 @@ $(document).ready(function() {
         updateCalculations();
     });
     
-    // Auto-fill price when product is selected
+    // Auto-fill price when product is selected and add new row
     $(document).on('change', '.product-select', function() {
         const selectedOption = $(this).find(':selected');
         const price = selectedOption.data('price');
@@ -352,7 +350,6 @@ $(document).ready(function() {
             
             // Show offer information if applicable
             if (hasOffer && price < originalPrice) {
-                // You can add visual indicators here if needed
                 row.find('.price-input').attr('title', `Original Price: ₹${originalPrice} (${discountPercentage}% OFF)`);
             } else {
                 row.find('.price-input').removeAttr('title');
@@ -360,6 +357,16 @@ $(document).ready(function() {
             
             updateRowTotal(row);
             updateCalculations();
+            updateItemsCount();
+            
+            // Check if this is the last row and if a product is selected
+            const isLastRow = row.is('#itemsContainer .product-row:last');
+            const hasValue = $(this).val() !== '';
+            
+            if (isLastRow && hasValue) {
+                // Automatically add a new empty row
+                addNewItem();
+            }
         }
     });
     
@@ -438,36 +445,77 @@ $(document).ready(function() {
         $('#totalDisplay').val(total.toFixed(2));
     }
     
+    function updateItemsCount() {
+        // Count only rows with selected products
+        let count = 0;
+        $('.product-row').each(function() {
+            if ($(this).find('.product-select').val()) {
+                count++;
+            }
+        });
+        $('#itemsCount').text(count);
+    }
+    
     function checkEmptyItems() {
         if ($('.product-row').length === 0) {
             $('#noItemsAlert').removeClass('d-none');
+        } else {
+            $('#noItemsAlert').addClass('d-none');
         }
     }
     
     // Form validation
     $('#estimateForm').submit(function(e) {
-        if ($('.product-row').length === 0) {
+        // First, remove all empty rows (rows without selected products)
+        $('.product-row').each(function() {
+            let productId = $(this).find('.product-select').val();
+            if (!productId || productId === '') {
+                $(this).remove();
+            }
+        });
+        
+        // Re-index the remaining rows to ensure proper array indexing
+        let newIndex = 0;
+        $('.product-row').each(function() {
+            $(this).find('select, input').each(function() {
+                let name = $(this).attr('name');
+                if (name) {
+                    name = name.replace(/items\[\d+\]/g, 'items[' + newIndex + ']');
+                    $(this).attr('name', name);
+                }
+            });
+            newIndex++;
+        });
+        
+        // Now count valid rows
+        let validRows = $('.product-row').length;
+        
+        if (validRows === 0) {
             e.preventDefault();
             alert('Please add at least one item to the estimate.');
+            // Add back an empty row for user to continue
+            addNewItem();
             return false;
         }
         
-        // Check if all required fields in items are filled
+        // Check if all required fields in remaining items are filled
         let isValid = true;
-        $('.product-row').each(function() {
+        let errorMessage = '';
+        $('.product-row').each(function(index) {
             let productId = $(this).find('.product-select').val();
             let quantity = $(this).find('.quantity-input').val();
             let price = $(this).find('.price-input').val();
             
             if (!productId || !quantity || !price) {
                 isValid = false;
+                errorMessage = 'Please fill all required fields for item #' + (index + 1);
                 return false;
             }
         });
         
         if (!isValid) {
             e.preventDefault();
-            alert('Please fill all required fields for each item.');
+            alert(errorMessage);
             return false;
         }
     });

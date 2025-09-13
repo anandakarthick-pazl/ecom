@@ -13,7 +13,8 @@ class Estimate extends Model
         'estimate_number', 'customer_name', 'customer_email', 'customer_phone',
         'customer_address', 'estimate_date', 'valid_until', 'subtotal',
         'tax_amount', 'discount', 'total_amount', 'status', 'notes',
-        'terms_conditions', 'created_by', 'sent_at', 'accepted_at'
+        'terms_conditions', 'created_by', 'sent_at', 'accepted_at',
+        'converted_at', 'converted_to_sale_id', 'company_id'
     ];
 
     protected $casts = [
@@ -25,6 +26,7 @@ class Estimate extends Model
         'total_amount' => 'decimal:2',
         'sent_at' => 'datetime',
         'accepted_at' => 'datetime',
+        'converted_at' => 'datetime',
     ];
 
     public static function boot()
@@ -61,8 +63,19 @@ class Estimate extends Model
             'accepted' => 'success',
             'rejected' => 'danger',
             'expired' => 'warning',
+            'converted' => 'primary',
             default => 'secondary'
         };
+    }
+
+    public function convertedSale()
+    {
+        return $this->belongsTo(PosSale::class, 'converted_to_sale_id');
+    }
+
+    public function company()
+    {
+        return $this->belongsTo(\App\Models\SuperAdmin\Company::class, 'company_id');
     }
 
     public function getIsExpiredAttribute()

@@ -196,8 +196,12 @@
                             </small>
                         </td>
                         <td>
-                            {{ $sale->cashier->name }}
-                            <br><small class="text-muted">{{ $sale->created_at->diffForHumans() }}</small>
+                            @if(isset($sale->commission))
+                                <strong class="text-success">{{ $sale->commission->reference_name ?? 'N/A' }}</strong>
+                                <br><small class="text-muted">{{ $sale->commission->commission_percentage ?? 0 }}% - ₹{{ number_format($sale->commission->commission_amount ?? 0, 2) }}</small>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
                         </td>
                         <td>
                             <span class="badge bg-{{ $sale->status_color }}">
@@ -217,7 +221,7 @@
                                     </a>
                                 @else
                                     <!-- Show only A4 invoice option -->
-                                    <a href="{{ route('admin.pos.preview-enhanced-invoice', $sale) }}" class="btn btn-outline-primary" title="Preview A4 Invoice" target="_blank">
+                                    <a href="{{ route('admin.pos.download-bill', $sale) }}" class="btn btn-outline-primary" title="Download A4 Invoice" target="_blank">
                                         <i class="fas fa-file-pdf"></i>
                                     </a>
                                 @endif

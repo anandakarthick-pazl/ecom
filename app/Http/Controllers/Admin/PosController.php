@@ -275,7 +275,7 @@ class PosController extends Controller
 
     public function sales(Request $request)
     {
-        $query = PosSale::with(['items.product', 'cashier', 'commission'])
+        $query = PosSale::with(['items.product', 'cashier'])
             ->currentTenant(); // Filter by current company
 
         if ($request->status) {
@@ -302,27 +302,27 @@ class PosController extends Controller
             $query->whereDate('sale_date', '<=', $request->date_to);
         }
 
-        // Add commission filter
-        if ($request->commission_status) {
-            switch ($request->commission_status) {
-                case 'with_commission':
-                    $query->whereHas('commission');
-                    break;
-                case 'without_commission':
-                    $query->whereDoesntHave('commission');
-                    break;
-                case 'pending':
-                    $query->whereHas('commission', function($q) {
-                        $q->where('status', 'pending');
-                    });
-                    break;
-                case 'paid':
-                    $query->whereHas('commission', function($q) {
-                        $q->where('status', 'paid');
-                    });
-                    break;
-            }
-        }
+        // Add commission filter (commented out as Commission model doesn't exist)
+        // if ($request->commission_status) {
+        //     switch ($request->commission_status) {
+        //         case 'with_commission':
+        //             $query->whereHas('commission');
+        //             break;
+        //         case 'without_commission':
+        //             $query->whereDoesntHave('commission');
+        //             break;
+        //         case 'pending':
+        //             $query->whereHas('commission', function($q) {
+        //                 $q->where('status', 'pending');
+        //             });
+        //             break;
+        //         case 'paid':
+        //             $query->whereHas('commission', function($q) {
+        //                 $q->where('status', 'paid');
+        //             });
+        //             break;
+        //     }
+        // }
 
         $sales = $query->latest()->paginate(20);
         
@@ -335,7 +335,7 @@ class PosController extends Controller
 
     public function show(PosSale $sale)
     {
-        $sale->load(['items.product', 'cashier', 'commission']);
+        $sale->load(['items.product', 'cashier']);
         return view('admin.pos.show', compact('sale'));
     }
 
