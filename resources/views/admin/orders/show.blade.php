@@ -1,5 +1,8 @@
 @extends('admin.layouts.app')
+<?php
 
+echo"<pre>";print_R($order->items);exit;
+?>
 @section('page_actions')
     <div class="btn-group invoice-actions-group">
         @php
@@ -428,8 +431,8 @@
                                     <th>Product</th>
                                     <th>Price</th>
                                     <th>Quantity</th>
-                                    <th>Tax</th>
-                                    <th>Tax Amount</th>
+                                    {{-- <th>Tax</th> --}}
+                                    {{-- <th>Tax Amount</th> --}}
                                     <th class="text-end">Total</th>
                                 </tr>
                             </thead>
@@ -464,8 +467,8 @@
                                         <td>
                                             <span class="badge bg-primary">{{ $item->quantity }}</span>
                                         </td>
-                                        <td>{{ $item->tax_percentage }}%</td>
-                                        <td>₹{{ number_format($item->tax_amount, 2) }}</td>
+                                        {{-- <td>{{ $item->tax_percentage }}%</td>
+                                        <td>₹{{ number_format($item->tax_amount, 2) }}</td> --}}
                                         <td class="text-end">
                                             <strong class="text-success">₹{{ number_format($item->total, 2) }}</strong>
                                         </td>
@@ -498,7 +501,7 @@
                                         <td class="text-end fw-semibold">SGST:</td>
                                         <td class="text-end">₹{{ number_format($order->sgst_amount, 2) }}</td>
                                     </tr>
-                                    <tr>
+                                    {{-- <tr>
                                         <td class="text-end fw-semibold">Delivery:</td>
                                         <td class="text-end">
                                             @if ($order->delivery_charge == 0)
@@ -507,10 +510,10 @@
                                                 ₹{{ number_format($order->delivery_charge, 2) }}
                                             @endif
                                         </td>
-                                    </tr>
+                                    </tr> --}}
                                     <tr class="table-success">
                                         <td class="text-end fw-bold">Total:</td>
-                                        <td class="text-end fw-bold fs-5">₹{{ number_format($order->total, 2) }}</td>
+                                        <td class="text-end fw-bold fs-5">₹{{ number_format($order->total-($order->cgst_amount+$order->sgst_amount), 2) }}</td>
                                     </tr>
                                 </table>
                             </div>
@@ -644,7 +647,7 @@
                         <div class="payment-status-display text-warning">
                             <i class="fas fa-exclamation-circle fa-3x mb-3"></i>
                             <h5>Payment Pending</h5>
-                            <p class="text-muted">₹{{ number_format($order->total, 2) }}</p>
+                            <p class="text-muted">₹{{ number_format($order->subtotal, 2) }}</p>
                         </div>
                     @endif
                 </div>
