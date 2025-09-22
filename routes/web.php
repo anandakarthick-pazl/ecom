@@ -144,6 +144,19 @@ Route::middleware(['tenant'])->group(function () {
     
     // Order Success
     Route::get('/order/success/{orderNumber}', [CheckoutController::class, 'success'])->name('order.success');
+      Route::prefix('invoice')->name('invoice.')->group(function () {
+        
+        Route::get('/downloads/{orderNumber}', [\App\Http\Controllers\CustomerInvoiceController::class, 'downloadInvoice'])->name('download');
+        Route::post('/download-tracked', [\App\Http\Controllers\CustomerInvoiceController::class, 'downloadTrackedInvoice'])->name('download.tracked');
+        Route::get('/formats', [\App\Http\Controllers\CustomerInvoiceController::class, 'getAvailableFormats'])->name('formats');
+    });
+    // Order Invoice Routes
+    Route::prefix('order')->name('order.')->group(function () {
+        Route::get('/{order}/invoice/download', [\App\Http\Controllers\OrderInvoiceController::class, 'download'])->name('invoice.download');
+        Route::get('/{order}/invoice/print', [\App\Http\Controllers\OrderInvoiceController::class, 'print'])->name('invoice.print');
+        Route::get('/{order}/invoice/stream', [\App\Http\Controllers\OrderInvoiceController::class, 'stream'])->name('invoice.stream');
+        Route::post('/{order}/invoice/email', [\App\Http\Controllers\OrderInvoiceController::class, 'sendEmail'])->name('invoice.email');
+    });
     
     // Razorpay Payment Routes
     Route::prefix('razorpay')->name('razorpay.')->group(function () {
@@ -209,6 +222,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'company.context'])-
     Route::resource('customers', CustomerController::class)->only(['index', 'show']);
     Route::get('customers/export', [CustomerController::class, 'export'])->name('customers.export');
     
+       Route::prefix('invoice')->name('invoice.')->group(function () {
+        Route::get('/downloads/{orderNumber}', [\App\Http\Controllers\CustomerInvoiceController::class, 'downloadInvoice'])->name('download');
+        Route::post('/download-tracked', [\App\Http\Controllers\CustomerInvoiceController::class, 'downloadTrackedInvoice'])->name('download.tracked');
+        Route::get('/formats', [\App\Http\Controllers\CustomerInvoiceController::class, 'getAvailableFormats'])->name('formats');
+    });
     // Branch Management
     Route::resource('branches', BranchController::class);
     Route::patch('branches/{branch}/toggle-status', [BranchController::class, 'toggleStatus'])->name('branches.toggle-status');

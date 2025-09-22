@@ -121,7 +121,7 @@
                                 @endif
                                 <tr class="table-dark">
                                     <td colspan="6" class="text-end fw-bold">Total Amount:</td>
-                                    <td class="text-end fw-bold">₹{{ number_format($sale->total_amount, 2) }}</td>
+                                    <td class="text-end fw-bold">₹{{ number_format($sale->total_amount-$sale->tax_amount, 2) }}</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -164,7 +164,7 @@
                     
                     <div class="mb-3">
                         <label class="fw-bold text-muted">Total Amount:</label>
-                        <p class="h5 text-primary">₹{{ number_format($sale->total_amount, 2) }}</p>
+                        <p class="h5 text-primary">₹{{ number_format($sale->total_amount-$sale->tax_amount, 2) }}</p>
                     </div>
                     
                     <div class="mb-3">

@@ -54,56 +54,18 @@
                         </div>
                     </div>
                     
-                    <h2 class="text-success mb-3 fw-bold">🎉 Order Placed Successfully!</h2>
-                    <p class="lead mb-4">Thank you for your order! We'll start preparing it right away and will notify you once it's shipped.</p>
+                    <h2 class="text-success mb-3 fw-bold">🎉 Estimate Placed Successfully!</h2>
+                    <p class="lead mb-4">Thank you for your Estimate!</p>
                     
                     <div class="alert alert-success border-0 shadow-sm">
                         <div class="row align-items-center">
                             <div class="col-md-6 text-md-start">
-                                <strong class="text-success">📋 Order Number:</strong><br>
+                                <strong class="text-success">📋 Estimate Number:</strong><br>
                                 <span class="h4 text-primary fw-bold">{{ $order->order_number }}</span>
                             </div>
                             <div class="col-md-6 text-md-end">
-                                <strong class="text-success">📅 Order Date:</strong><br>
+                                <strong class="text-success">📅 Estimate Date:</strong><br>
                                 <span class="h6">{{ $order->created_at->format('M d, Y h:i A') }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Order Status Timeline -->
-                    <div class="mt-4">
-                        <div class="row">
-                            <div class="col-3 text-center">
-                                <div class="timeline-step active">
-                                    <div class="timeline-icon bg-success text-white">
-                                        <i class="fas fa-check"></i>
-                                    </div>
-                                    <small class="text-success fw-bold">Order Placed</small>
-                                </div>
-                            </div>
-                            <div class="col-3 text-center">
-                                <div class="timeline-step">
-                                    <div class="timeline-icon bg-light text-muted">
-                                        <i class="fas fa-box"></i>
-                                    </div>
-                                    <small class="text-muted">Processing</small>
-                                </div>
-                            </div>
-                            <div class="col-3 text-center">
-                                <div class="timeline-step">
-                                    <div class="timeline-icon bg-light text-muted">
-                                        <i class="fas fa-truck"></i>
-                                    </div>
-                                    <small class="text-muted">Shipped</small>
-                                </div>
-                            </div>
-                            <div class="col-3 text-center">
-                                <div class="timeline-step">
-                                    <div class="timeline-icon bg-light text-muted">
-                                        <i class="fas fa-home"></i>
-                                    </div>
-                                    <small class="text-muted">Delivered</small>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -113,7 +75,7 @@
             <!-- Order Details Card -->
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-receipt"></i> Order Details</h5>
+                    <h5 class="mb-0"><i class="fas fa-receipt"></i> Estimate Details</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -131,7 +93,7 @@
                             
                             @if($order->notes)
                             <div class="mt-3">
-                                <h6 class="text-primary"><i class="fas fa-sticky-note"></i> Order Notes</h6>
+                                <h6 class="text-primary"><i class="fas fa-sticky-note"></i> Estimate Notes</h6>
                                 <div class="alert alert-info">
                                     <small>{{ $order->notes }}</small>
                                 </div>
@@ -140,23 +102,126 @@
                         </div>
                         
                         <div class="col-md-6">
-                            <h6 class="text-primary"><i class="fas fa-shopping-bag"></i> Order Items</h6>
+                            <h6 class="text-primary"><i class="fas fa-shopping-bag"></i> Estimate Items</h6>
                             <div class="order-items">
+                                @php
+                                    $totalOriginalPrice = 0;
+                                    $totalDiscountedPrice = 0;
+                                    $totalSavings = 0;
+                                @endphp
+                                
                                 @foreach($order->items as $item)
-                                <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
+                                @php
+                                    // Get product for offer details (SAME LOGIC AS product-card-modern)
+                                    $product = $item->product;
+                                    $offerDetails = null;
+                                    $hasOffer = false;
+                                    $effectivePrice = $item->price;
+                                    $originalPrice = $item->price;
+                                    $discountPercentage = 0;
+                                    $offerSource = null;
+                                    $savings = 0;
+                                    
+                                    // If product exists, get offer details
+                                    if($product) {
+                                        $offerDetails = $product->getOfferDetails();
+                                        $hasOffer = $offerDetails !== null;
+                                        $originalPrice = $product->price;
+                                        
+                                        if($hasOffer) {
+                                            $effectivePrice = $offerDetails['discounted_price'];
+                                            $discountPercentage = $offerDetails['discount_percentage'];
+                                            $offerSource = $offerDetails['source'];
+                                            $savings = $offerDetails['savings'];
+                                        } else {
+                                            // Check if item price is different from product price (indicating a discount was applied)
+                                            if($item->price < $product->price) {
+                                                $hasOffer = true;
+                                                $effectivePrice = $item->price;
+                                                $originalPrice = $product->price;
+                                                $savings = $originalPrice - $effectivePrice;
+                                                $discountPercentage = ($savings / $originalPrice) * 100;
+                                            }
+                                        }
+                                    } else {
+                                        // If no product found, check for discount info in item
+                                        if(isset($item->original_price) && $item->original_price > $item->price) {
+                                            $hasOffer = true;
+                                            $originalPrice = $item->original_price;
+                                            $effectivePrice = $item->price;
+                                            $savings = $originalPrice - $effectivePrice;
+                                            $discountPercentage = ($savings / $originalPrice) * 100;
+                                        }
+                                    }
+                                    
+                                    $totalOriginalPrice += $originalPrice * $item->quantity;
+                                    $totalDiscountedPrice += $effectivePrice * $item->quantity;
+                                    $totalSavings += $savings * $item->quantity;
+                                @endphp
+                                
+                                <div class="d-flex justify-content-between align-items-start mb-3 p-2 bg-light rounded">
                                     <div class="flex-grow-1">
-                                        <strong class="text-dark">{{ $item->product_name }}</strong><br>
-                                        <small class="text-muted">
+                                        <div class="d-flex align-items-center">
+                                            <strong class="text-dark me-2">{{ $item->product_name }}</strong>
+                                            @if($hasOffer && $discountPercentage > 0)
+                                                <span class="badge bg-danger">{{ round($discountPercentage) }}% OFF</span>
+                                            @endif
+                                        </div>
+                                        
+                                        {{-- Show offer details with priority information (SAME AS product-card-modern) --}}
+                                        @if($hasOffer && $offerDetails)
+                                            <div class="offer-info-order mt-1">
+                                                @if($offerSource === 'offers_page')
+                                                    <small class="text-success">
+                                                        <i class="fas fa-fire text-danger"></i> 
+                                                        {{ $offerDetails['offer_name'] }} - Special Offer
+                                                    </small>
+                                                @elseif($offerSource === 'product_onboarding')
+                                                    <small class="text-info">
+                                                        <i class="fas fa-tag"></i> 
+                                                        Product Discount
+                                                    </small>
+                                                @endif
+                                            </div>
+                                        @endif
+                                        
+                                        <small class="text-muted d-block mt-1">
                                             <i class="fas fa-boxes"></i> Qty: {{ $item->quantity }} × 
-                                            <i class="fas fa-rupee-sign"></i>{{ number_format($item->price, 2) }}
+                                            @if($hasOffer)
+                                                <span class="text-success fw-bold">₹{{ number_format($effectivePrice, 2) }}</span>
+                                                <span class="text-decoration-line-through ms-1">₹{{ number_format($originalPrice, 2) }}</span>
+                                            @else
+                                                ₹{{ number_format($item->price, 2) }}
+                                            @endif
+                                            
+                                            {{-- GST is already included in the price, just show info --}}
                                             @if($item->tax_percentage > 0)
-                                                <br><i class="fas fa-percent"></i> Tax: {{ $item->tax_percentage }}% = 
-                                                <i class="fas fa-rupee-sign"></i>{{ number_format($item->tax_amount, 2) }}
+                                                <br><small class="text-muted"><i class="fas fa-info-circle"></i> (Incl. GST {{ $item->tax_percentage }}%)</small>
                                             @endif
                                         </small>
+                                        
+                                        @if($hasOffer && $savings > 0)
+                                            <small class="text-success d-block mt-1">
+                                                <i class="fas fa-tags"></i> You saved ₹{{ number_format($savings * $item->quantity, 2) }}
+                                                @if($offerSource === 'offers_page')
+                                                    <span class="badge badge-sm bg-success ms-1">Special</span>
+                                                @elseif($offerSource === 'product_onboarding')
+                                                    <span class="badge badge-sm bg-info ms-1">Regular</span>
+                                                @endif
+                                            </small>
+                                        @endif
                                     </div>
                                     <div class="text-end">
-                                        <strong class="text-success"><i class="fas fa-rupee-sign"></i>{{ number_format($item->total, 2) }}</strong>
+                                        @if($hasOffer)
+                                            <strong class="text-success d-block">₹{{ number_format($effectivePrice * $item->quantity, 2) }}</strong>
+                                            <small class="text-decoration-line-through text-muted">
+                                                ₹{{ number_format($originalPrice * $item->quantity, 2) }}
+                                            </small>
+                                        @else
+                                            <strong class="text-success">₹{{ number_format($item->total, 2) }}</strong>
+                                        @endif
+                                        <br>
+                                        <small class="text-muted">(Incl. GST)</small>
                                     </div>
                                 </div>
                                 @endforeach
@@ -165,51 +230,73 @@
                             <!-- Order Summary -->
                             <div class="border-top pt-3">
                                 <div class="d-flex justify-content-between mb-2">
-                                    <span><i class="fas fa-calculator"></i> Subtotal:</span>
-                                    <span><i class="fas fa-rupee-sign"></i>{{ number_format($order->subtotal, 2) }}</span>
+                                    <span><i class="fas fa-calculator"></i> Total Amount (Incl. GST):</span>
+                                    <span>
+                                        @if($totalSavings > 0)
+                                            <span class="text-decoration-line-through text-muted me-2">₹{{ number_format($totalOriginalPrice, 2) }}</span>
+                                        @endif
+                                        ₹{{ number_format($order->subtotal, 2) }}
+                                    </span>
                                 </div>
+                                
+                                {{-- @if($totalSavings > 0)
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-success">
+                                        <i class="fas fa-tag"></i> Total Savings:
+                                    </span>
+                                    <span class="text-success fw-bold">₹{{ number_format($totalSavings, 2) }}</span>
+                                </div>
+                                @endif --}}
                                 
                                 @if($order->discount > 0)
                                 <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-success"><i class="fas fa-percent"></i> Discount:</span>
-                                    <span class="text-success">-<i class="fas fa-rupee-sign"></i>{{ number_format($order->discount, 2) }}</span>
+                                    <span class="text-success"><i class="fas fa-percent"></i> Coupon Discount:</span>
+                                    <span class="text-success">-₹{{ number_format($order->discount, 2) }}</span>
                                 </div>
                                 @endif
                                 
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span><i class="fas fa-receipt"></i> CGST:</span>
-                                    <span><i class="fas fa-rupee-sign"></i>{{ number_format($order->cgst_amount, 2) }}</span>
+                                {{-- Show GST breakdown just for information (not adding to total) --}}
+                                 {{-- @if($order->cgst_amount > 0 || $order->sgst_amount > 0)
+                                <div class="text-muted small mt-2 p-2 bg-light rounded">
+                                    <strong>GST Breakdown (Already Included):</strong>
+                                    <div class="d-flex justify-content-between">
+                                        <span>CGST:</span>
+                                        <span>₹{{ number_format($order->cgst_amount, 2) }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>SGST:</span>
+                                        <span>₹{{ number_format($order->sgst_amount, 2) }}</span>
+                                    </div>
                                 </div>
-                                
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span><i class="fas fa-receipt"></i> SGST:</span>
-                                    <span><i class="fas fa-rupee-sign"></i>{{ number_format($order->sgst_amount, 2) }}</span>
-                                </div>
-                                
-                                {{-- <div class="d-flex justify-content-between mb-2">
-                                    <span><i class="fas fa-shipping-fast"></i> Delivery:</span>
-                                    <span>
-                                        @if($order->delivery_charge == 0)
-                                            <span class="text-success fw-bold">FREE</span>
-                                        @else
-                                            <i class="fas fa-rupee-sign"></i>{{ number_format($order->delivery_charge, 2) }}
-                                        @endif
-                                    </span>
-                                </div> --}}
+                                @endif --}}
                                 
                                 <hr class="my-2">
                                 
-                                <div class="d-flex justify-content-between">
-                                    <strong class="text-primary"><i class="fas fa-receipt"></i> Total:</strong>
-                                    <strong class="text-primary fs-5"><i class="fas fa-rupee-sign"></i>{{ number_format($order->total, 2) }}</strong>
+                                {{-- <div class="d-flex justify-content-between">
+                                    <strong class="text-primary"><i class="fas fa-receipt"></i> Total Amount:</strong>
+                                    <div class="text-end">
+                                        <strong class="text-primary fs-5">₹{{ number_format($order->total, 2) }}</strong>
+                                        <br>
+                                        <small class="text-muted">(Inclusive of all taxes)</small>
+                                    </div>
+                                </div> --}}
+                                
+                                @if($totalSavings > 0)
+                                <div class="alert alert-success mt-3 p-2">
+                                    <small>
+                                        <i class="fas fa-piggy-bank"></i> 
+                                        <strong>Congratulations!</strong> You saved a total of 
+                                        <strong>₹{{ number_format($totalSavings, 2) }}</strong> on this Estimate!
+                                    </small>
                                 </div>
+                                @endif
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="row mt-4">
+            {{-- <div class="row mt-4">
                 <div class="col-md-4">
                     <div class="card text-center">
                         <div class="card-body">
@@ -271,11 +358,33 @@
                         </div>
                     </div>
                 </div>
+            </div> --}}
+            <div class="card bg-light border-0 shadow-sm mt-4">
+                <div class="card-body text-center">
+                    <h5 class="mb-3"><i class="fas fa-download text-primary"></i> Download Your Estimate</h5>
+                    <div class="d-flex justify-content-center gap-3">
+                        @php
+                            $companyId = $order->company_id ?? session('selected_company_id');
+                            $defaultFormat = \App\Models\AppSetting::getForTenant('default_bill_format', $companyId) ?? 'a4_sheet';
+                            $thermalEnabled = \App\Models\AppSetting::getForTenant('thermal_printer_enabled', $companyId) ?? false;
+                            $a4Enabled = \App\Models\AppSetting::getForTenant('a4_sheet_enabled', $companyId) ?? true;
+                        @endphp
+                       
+                       
+                            <a href="{{ route('invoice.download', ['orderNumber' => $order->order_number]) }}?format=a4_sheet" 
+                               class="btn btn-info btn-lg" target="_blank">
+                                <i class="fas fa-file-pdf"></i> Estimate
+                            </a>
+                      
+                    </div>
+                    <p class="text-muted small mt-2 mb-0">
+                        <i class="fas fa-info-circle"></i> Keep this Estimate for your records and warranty claims
+                    </p>
+                </div>
             </div>
-            
             <div class="text-center mt-4">
                 <a href="{{ route('track.order') }}" class="btn btn-primary btn-lg me-2">
-                    <i class="fas fa-search"></i> Track Your Order
+                    <i class="fas fa-search"></i> Track Your Estimate
                 </a>
                 <a href="{{ route('shop') }}" class="btn btn-outline-primary btn-lg">
                     <i class="fas fa-home"></i> Continue Shopping
@@ -347,6 +456,26 @@
         opacity: 1;
         transform: translate3d(0, 0, 0);
     }
+}
+
+/* Offer info styles */
+.offer-info-order {
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+/* Text decoration for strikethrough */
+.text-decoration-line-through {
+    text-decoration: line-through !important;
+    opacity: 0.7;
+}
+
+/* Badge styles */
+.badge-sm {
+    font-size: 0.65rem !important;
+    padding: 2px 6px !important;
 }
 
 /* Timeline Styles */
@@ -594,9 +723,9 @@ console.log('%cTimestamp: {{ date("Y-m-d H:i:s") }}', 'color: gray;');
                     'POST',
                     orderData,
                     function(response) {
-                        console.log('✅ Razorpay order creation response received');
+                        console.log('✅ Razorpay Estimate creation response received');
                         if (response.success) {
-                            console.log('✅ Razorpay order created successfully, opening payment gateway...');
+                            console.log('✅ Razorpay Estimate created successfully, opening payment gateway...');
                             
                             const razorpayOptions = {
                                 key: response.key_id,
@@ -632,7 +761,7 @@ console.log('%cTimestamp: {{ date("Y-m-d H:i:s") }}', 'color: gray;');
                             
                         } else {
                             console.error('❌ Order creation failed:', response.message);
-                            alert('Failed to create payment order: ' + (response.message || 'Unknown error'));
+                            alert('Failed to create payment Estimate: ' + (response.message || 'Unknown error'));
                             utils.updateButton('pay-now-btn', false, '<i class="fas fa-credit-card"></i> Pay Now');
                         }
                     },
@@ -666,4 +795,3 @@ console.log('%cPure JS Payment System Loaded Successfully!', 'color: green; font
 </script>
 @endpush
 @endif
-

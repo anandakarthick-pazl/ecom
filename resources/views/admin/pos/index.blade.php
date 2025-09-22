@@ -530,14 +530,14 @@
                                        value="0" min="0" step="0.01">
                             </div>
                         </div>
-                        <div class="col-6">
+                        {{-- <div class="col-6">
                             <label class="form-label small">Tax</label>
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text">₹</span>
                                 <input type="number" class="form-control" id="taxAmount" 
                                        value="0" min="0" step="0.01" readonly>
                             </div>
-                        </div>
+                        </div> --}}
                     </div>
                     
                     <!-- Summary Rows -->
@@ -546,7 +546,7 @@
                         <span id="totalItems">0</span>
                     </div>
                     
-                    <div class="summary-row">
+                    {{-- <div class="summary-row">
                         <span>Subtotal:</span>
                         <span>₹<span id="subtotal">0.00</span></span>
                     </div>
@@ -554,17 +554,17 @@
                     <div class="summary-row" id="offerSavingsRow" style="display: none;">
                         <span class="text-success"><i class="fas fa-tag"></i> Savings:</span>
                         <span class="text-success">-₹<span id="offerSavings">0.00</span></span>
-                    </div>
+                    </div> --}}
                     
                     <div class="summary-row">
                         <span>Discount:</span>
                         <span class="text-success">-₹<span id="discountDisplay">0.00</span></span>
                     </div>
                     
-                    <div class="summary-row">
+                    {{-- <div class="summary-row">
                         <span>Tax:</span>
                         <span>₹<span id="taxDisplay">0.00</span></span>
-                    </div>
+                    </div> --}}
                     
                     <div class="summary-row total">
                         <span>Total:</span>
@@ -960,9 +960,9 @@ $(document).ready(function() {
         $('#totalItems').text(totalItems);
         $('#subtotal').text(subtotal.toFixed(2));
         $('#discountDisplay').text(discount.toFixed(2));
-        $('#taxAmount').val(totalTax.toFixed(2));
+        // $('#taxAmount').val(totalTax.toFixed(2));
         $('#taxDisplay').text(totalTax.toFixed(2));
-        $('#totalAmount').text(total.toFixed(2));
+        $('#totalAmount').text(subtotal.toFixed(2));
         
         if (totalOfferSavings > 0) {
             $('#offerSavings').text(totalOfferSavings.toFixed(2));
@@ -1012,7 +1012,7 @@ $(document).ready(function() {
             })),
             customer_name: $('#customerName').val(),
             customer_phone: $('#customerPhone').val(),
-            tax_amount: parseFloat($('#taxAmount').val()) || 0,
+            // tax_amount: parseFloat($('#taxAmount').val()) || 0,
             discount_amount: parseFloat($('#discountAmount').val()) || 0,
             paid_amount: parseFloat($('#paidAmount').val()) || 0,
             payment_method: $('input[name="paymentMethod"]:checked').val(),

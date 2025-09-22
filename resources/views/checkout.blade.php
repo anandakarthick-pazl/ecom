@@ -60,7 +60,7 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                             <small class="text-muted">
-                                <i class="fas fa-envelope"></i> Receive order updates and invoice PDF via email
+                                <i class="fas fa-envelope"></i> Receive order updates and Estimate PDF via email
                             </small>
                         </div>
                         
@@ -104,7 +104,7 @@
                         </div>
                         
                         <div class="mb-3">
-                            <label for="notes" class="form-label">Order Notes (Optional)</label>
+                            <label for="notes" class="form-label">Estimate Notes (Optional)</label>
                             <textarea class="form-control @error('notes') is-invalid @enderror" 
                                       id="notes" name="notes" rows="2" 
                                       placeholder="Please provide contact details here or Any special instructions for delivery...">{{ old('notes') }}</textarea>
@@ -231,52 +231,81 @@
         <div class="col-md-4">
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Order Summary</h5>
+                    <h5 class="mb-0">Estimate Summary</h5>
                 </div>
                 <div class="card-body">
                     @foreach($cartItems as $item)
                     @php
-                        $hasDiscount = $item->product->discount_price && $item->product->discount_price > 0;
-                        $offerPrice = $hasDiscount ? $item->product->discount_price : $item->product->price;
+                        // Get offer details using the new priority system (SAME LOGIC AS product-card-modern)
+                        $offerDetails = $item->product->getOfferDetails();
+                        $hasOffer = $offerDetails !== null;
+                        $effectivePrice = $hasOffer ? $offerDetails['discounted_price'] : $item->product->price;
+                        $discountPercentage = $hasOffer ? $offerDetails['discount_percentage'] : 0;
+                        $offerSource = $hasOffer ? $offerDetails['source'] : null;
+                        $savings = $hasOffer ? $offerDetails['savings'] : 0;
                         $originalPrice = $item->product->price;
                     @endphp
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="flex-grow-1">
                             <div class="d-flex align-items-center">
                                 <h6 class="mb-0 me-2">{{ $item->product->name }}</h6>
-                                @if($hasDiscount)
-                                    <span class="badge bg-success text-white small">OFFER</span>
+                                @if($hasOffer && $discountPercentage > 0)
+                                    <span class="badge bg-danger text-white small">{{ round($discountPercentage) }}% OFF</span>
                                 @endif
                             </div>
+                            
+                            {{-- Show offer details with priority information (SAME AS product-card-modern) --}}
+                            @if($hasOffer && $offerDetails)
+                                <div class="offer-info-checkout mt-1">
+                                    @if($offerSource === 'offers_page')
+                                        <small class="text-success">
+                                            <i class="fas fa-fire text-danger"></i> 
+                                            <strong>{{ $offerDetails['offer_name'] }}</strong> - Special Offer
+                                        </small>
+                                    @elseif($offerSource === 'product_onboarding')
+                                        <small class="text-info">
+                                            <i class="fas fa-tag"></i> 
+                                            Product Discount
+                                        </small>
+                                    @endif
+                                </div>
+                            @endif
+                            
                             <div class="product-pricing-info">
-                                @if($hasDiscount)
+                                @if($hasOffer)
                                     <small class="text-muted">Qty: {{ $item->quantity }} × 
-                                        <span class="text-success fw-bold">₹{{ number_format($offerPrice, 2) }}</span>
+                                        <span class="text-success fw-bold">₹{{ number_format($effectivePrice, 2) }}</span>
                                         <span class="text-decoration-line-through text-muted ms-1">₹{{ number_format($originalPrice, 2) }}</span>
                                     </small>
                                     <br>
                                     <small class="text-success">
-                                        <i class="fas fa-tag"></i> You save ₹{{ number_format(($originalPrice - $offerPrice) * $item->quantity, 2) }}
+                                        <i class="fas fa-tags"></i> You save ₹{{ number_format($savings * $item->quantity, 2) }}
+                                        @if($offerSource === 'offers_page')
+                                            <span class="badge badge-sm bg-success ms-1">Special</span>
+                                        @elseif($offerSource === 'product_onboarding')
+                                            <span class="badge badge-sm bg-info ms-1">Regular</span>
+                                        @endif
                                     </small>
                                 @else
-                                    <small class="text-muted">Qty: {{ $item->quantity }} × ₹{{ number_format($item->price, 2) }}</small>
+                                    <small class="text-muted">Qty: {{ $item->quantity }} × ₹{{ number_format($item->product->price, 2) }}</small>
                                 @endif
                             </div>
-                            @if($item->product->tax_percentage > 0)
-                                <br><small class="text-muted">GST: {{ $item->product->tax_percentage }}% = ₹{{ number_format($item->product->getTaxAmount($item->price) * $item->quantity, 2) }}</small>
-                            @endif
+                            
+                            {{-- @if($item->product->tax_percentage > 0)
+                                <br><small class="text-muted">GST: {{ $item->product->tax_percentage }}% = ₹{{ number_format($item->product->getTaxAmount($effectivePrice) * $item->quantity, 2) }}</small>
+                            @endif --}}
                         </div>
                         <div class="text-end">
-                            @if($hasDiscount)
+                            @if($hasOffer)
                                 <div class="offer-pricing">
-                                    <strong class="text-success">₹{{ number_format($item->total, 2) }}</strong>
+                                    <strong class="text-success">₹{{ number_format($effectivePrice * $item->quantity, 2) }}</strong>
                                     <br>
                                     <small class="text-decoration-line-through text-muted">
                                         ₹{{ number_format($originalPrice * $item->quantity, 2) }}
                                     </small>
                                 </div>
                             @else
-                                <strong>₹{{ number_format($item->total, 2) }}</strong>
+                                <strong>₹{{ number_format($item->product->price * $item->quantity, 2) }}</strong>
                             @endif
                             @if($item->product->tax_percentage > 0)
                                 <br><small class="text-muted">+Tax</small>
@@ -288,21 +317,32 @@
                     <hr>
                     
                     @php
-                        // Calculate total savings from discounts
+                        // Calculate total savings from offers (UPDATED LOGIC)
                         $totalSavings = 0;
+                        $recalculatedSubtotal = 0;
+                        
                         foreach($cartItems as $item) {
-                            if($item->product->discount_price && $item->product->discount_price > 0) {
+                            $offerDetails = $item->product->getOfferDetails();
+                            if($offerDetails) {
+                                $effectivePrice = $offerDetails['discounted_price'];
                                 $originalPrice = $item->product->price;
-                                $offerPrice = $item->product->discount_price;
-                                $totalSavings += ($originalPrice - $offerPrice) * $item->quantity;
+                                $totalSavings += ($originalPrice - $effectivePrice) * $item->quantity;
+                                $recalculatedSubtotal += $effectivePrice * $item->quantity;
+                            } else {
+                                $recalculatedSubtotal += $item->product->price * $item->quantity;
                             }
+                        }
+                        
+                        // Use recalculated subtotal if different from original
+                        if($recalculatedSubtotal > 0) {
+                            $subtotal = $recalculatedSubtotal;
                         }
                     @endphp
                     
-                    <div class="d-flex justify-content-between mb-2">
+                    {{-- <div class="d-flex justify-content-between mb-2">
                         <span>Subtotal:</span>
                         <span>₹{{ number_format($subtotal, 2) }}</span>
-                    </div>
+                    </div> --}}
                     
                     @if($totalSavings > 0)
                     <div class="d-flex justify-content-between mb-2">
@@ -311,23 +351,25 @@
                     </div>
                     @endif
                     
-                    @php
-                        // Calculate tax amounts
+                    {{-- @php
+                        // Calculate tax amounts with effective prices
                         $totalTax = 0;
                         $cgstAmount = 0;
                         $sgstAmount = 0;
                         
                         foreach($cartItems as $item) {
-                            $itemTax = $item->product->getTaxAmount($item->price) * $item->quantity;
+                            $offerDetails = $item->product->getOfferDetails();
+                            $effectivePrice = $offerDetails ? $offerDetails['discounted_price'] : $item->product->price;
+                            $itemTax = $item->product->getTaxAmount($effectivePrice) * $item->quantity;
                             $totalTax += $itemTax;
                             $cgstAmount += ($itemTax / 2);
                             $sgstAmount += ($itemTax / 2);
                         }
                         
                         $grandTotal = $subtotal + $totalTax + $deliveryCharge - $discount;
-                    @endphp
+                    @endphp --}}
                     
-                    <div class="d-flex justify-content-between mb-2">
+                    {{-- <div class="d-flex justify-content-between mb-2">
                         <span>CGST:</span>
                         <span>₹{{ number_format($cgstAmount, 2) }}</span>
                     </div>
@@ -335,30 +377,19 @@
                     <div class="d-flex justify-content-between mb-2">
                         <span>SGST:</span>
                         <span>₹{{ number_format($sgstAmount, 2) }}</span>
-                    </div>
-                    
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Total Tax:</span>
-                        <span>₹{{ number_format($totalTax, 2) }}</span>
-                    </div>
-                    
-                    {{-- <div class="d-flex justify-content-between mb-2">
-                        <span>Delivery Charge:</span>
-                        <span>
-                            @if($deliveryCharge == 0)
-                                <span class="text-success">FREE</span>
-                            @else
-                                ₹{{ number_format($deliveryCharge, 2) }}
-                            @endif
-                        </span>
                     </div> --}}
                     
-                    @if($deliveryInfo['enabled'] && $deliveryInfo['free_delivery_enabled'] && $deliveryInfo['amount_needed_for_free'] > 0)
+                    {{-- <div class="d-flex justify-content-between mb-2">
+                        <span>Total Tax:</span>
+                        <span>₹{{ number_format($totalTax, 2) }}</span>
+                    </div> --}}
+                    
+                    {{-- @if($deliveryInfo['enabled'] && $deliveryInfo['free_delivery_enabled'] && $deliveryInfo['amount_needed_for_free'] > 0)
                         <div class="alert alert-info py-2 small">
                             <i class="fas fa-gift"></i> 
                             Add ₹{{ number_format($deliveryInfo['amount_needed_for_free'], 2) }} more for <strong>FREE delivery!</strong>
                         </div>
-                    @endif
+                    @endif --}}
                     
                     @if($discount > 0)
                     <div class="d-flex justify-content-between mb-2">
@@ -367,23 +398,17 @@
                     </div>
                     @endif
                     
-                    <div class="d-flex justify-content-between mb-2" id="payment-charge-row" style="display: none;">
+                    {{-- <div class="d-flex justify-content-between mb-2" id="payment-charge-row" style="display: none;">
                         <span>Payment Charge:</span>
                         <span id="payment-charge">+₹0.00</span>
-                    </div>
+                    </div> --}}
                     
                     <hr>
                     
                     <div class="d-flex justify-content-between mb-3">
                         <strong>Total:</strong>
-                        <strong id="grand-total">₹{{ number_format($grandTotal, 2) }}</strong>
+                        <strong id="grand-total">₹{{ number_format($subtotal, 2) }}</strong>
                     </div>
-                    
-                    @if($deliveryCharge == 0 && $subtotal >= 500)
-                        <div class="alert alert-success py-2">
-                            <small><i class="fas fa-check"></i> You're getting FREE delivery!</small>
-                        </div>
-                    @endif
                     
                     @if($deliveryInfo['enabled'] && $deliveryInfo['time_estimate'])
                         <div class="alert alert-light py-2">
@@ -404,26 +429,8 @@
                     @endif
                     
                     <button type="submit" form="checkoutForm" class="btn btn-primary btn-lg w-100">
-                        <i class="fas fa-lock"></i> Place Order
+                        <i class="fas fa-lock"></i> Place Estimate
                     </button>
-                    
-                    <div class="text-center mt-3">
-                        <small class="text-muted">
-                            <i class="fas fa-shield-alt"></i> Secure checkout with 256-bit SSL encryption
-                        </small>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-body text-center">
-                    <h6>Need Help?</h6>
-                    <p class="mb-2">
-                        <i class="fas fa-phone text-primary"></i> +91 9876543210
-                    </p>
-                    <p class="mb-0">
-                        <i class="fas fa-envelope text-primary"></i> support@herbalbliss.com
-                    </p>
                 </div>
             </div>
         </div>
@@ -457,6 +464,20 @@
 /* Enhanced savings highlight */
 .text-success i {
     color: #28a745 !important;
+}
+
+/* Offer info in checkout */
+.offer-info-checkout {
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+/* Badge styles */
+.badge-sm {
+    font-size: 0.65rem !important;
+    padding: 2px 6px !important;
 }
 
 /* Google Pay QR Code Display Styles */
@@ -592,13 +613,10 @@ $(document).ready(function() {
         const selectedMethod = initiallySelected.closest('.payment-method-option');
         selectedMethod.find('.bank-details, .upi-details, .gpay-details').show();
     }
-    
-    // Initialize commission functionality
-    initializeCommission();
 });
 
 // Store base total
-const baseTotal = {{ $grandTotal }};
+const baseTotal = {{ $subtotal }};
 
 // Handle payment method change
 $('input[name="payment_method"]').on('change', function() {
@@ -677,9 +695,6 @@ $('#checkoutForm').on('submit', function(e) {
         return false;
     }
     
-    // Validate commission fields if enabled
-    // Commission functionality removed for online orders
-    
     // AUTO-ADD +91 TO MOBILE NUMBER FOR WHATSAPP
     const mobileWithCountryCode = '+91' + mobile;
     
@@ -705,16 +720,11 @@ $('#checkoutForm').on('submit', function(e) {
     $(this).off('submit');
 });
 
-// Initialize on page load
-initializePage();
-
 // Show toast message
 function showToast(message, type = 'success') {
     // Simple alert for now - you can enhance this with proper toast library
     alert(message);
 }
-
-
 </script>
 @endpush
 @endsection

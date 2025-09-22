@@ -178,13 +178,11 @@
                             <br><small class="text-muted">{{ $sale->items->count() }} different products</small>
                         </td>
                         <td>
-                            <strong>₹{{ number_format($sale->total_amount, 2) }}</strong>
+                            <strong>₹{{ number_format($sale->total_amount-$sale->tax_amount, 2) }}</strong>
                             @if($sale->discount_amount > 0)
                                 <br><small class="text-success">-₹{{ number_format($sale->discount_amount, 2) }} discount</small>
                             @endif
-                            @if($sale->tax_amount > 0)
-                                <br><small class="text-info">+₹{{ number_format($sale->tax_amount, 2) }} tax</small>
-                            @endif
+                           
                         </td>
                         <td>
                             <span class="badge bg-secondary">{{ ucfirst(str_replace('_', ' ', $sale->payment_method)) }}</span>

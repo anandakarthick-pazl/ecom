@@ -13,7 +13,7 @@ use App\Traits\HasPagination;
 class ProductController extends BaseAdminController
 {
     use DynamicStorage, HasPagination;
-    
+
     /**
      * Validate that the user owns the resource (tenant isolation)
      */
@@ -23,7 +23,7 @@ class ProductController extends BaseAdminController
             abort(403, 'You do not have access to this resource.');
         }
     }
-    
+
     /**
      * Get tenant-specific unique validation rule
      */
@@ -36,7 +36,7 @@ class ProductController extends BaseAdminController
         $rule .= ",id,company_id,{$this->getCurrentCompanyId()}";
         return $rule;
     }
-    
+
     /**
      * Get tenant-specific exists validation rule
      */
@@ -44,7 +44,7 @@ class ProductController extends BaseAdminController
     {
         return "exists:{$table},{$column},company_id,{$this->getCurrentCompanyId()}";
     }
-    
+
     /**
      * Store file content to a path
      */
@@ -53,12 +53,12 @@ class ProductController extends BaseAdminController
         try {
             $fullPath = storage_path('app/public/' . $path);
             $directory = dirname($fullPath);
-            
+
             // Ensure directory exists
             if (!is_dir($directory)) {
                 mkdir($directory, 0755, true);
             }
-            
+
             // Store the file
             return file_put_contents($fullPath, $content) !== false;
         } catch (\Exception $e) {
@@ -75,10 +75,10 @@ class ProductController extends BaseAdminController
 
         // Search filter
         if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('name', 'LIKE', "%{$request->search}%")
-                  ->orWhere('sku', 'LIKE', "%{$request->search}%")
-                  ->orWhere('description', 'LIKE', "%{$request->search}%");
+                    ->orWhere('sku', 'LIKE', "%{$request->search}%")
+                    ->orWhere('description', 'LIKE', "%{$request->search}%");
             });
         }
 
@@ -114,13 +114,13 @@ class ProductController extends BaseAdminController
         if ($request->filled('export') && $request->export === 'csv') {
             return $this->exportProducts($query->get());
         }
-        
+
         // Get paginated results using dynamic pagination settings
         $products = $this->applyAdminPagination($query->latest(), $request, '20');
-        
+
         // Get pagination controls data for the view
         $paginationControls = $this->getPaginationControlsData($request, 'admin');
-                  
+
         $categories = Category::active()->orderBy('name')->get();
 
         return view('admin.products.index', compact('products', 'categories', 'paginationControls'));
@@ -163,7 +163,7 @@ class ProductController extends BaseAdminController
             'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'weight' => 'nullable|numeric|min:0',
-            'weight_unit' => 'string|in:gm,kg,ml,ltr,box,pack',
+            'weight_unit' => 'string|in:gm,kg,ml,ltr,box,pack,pcs',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'meta_keywords' => 'nullable|string|max:255',
@@ -172,13 +172,13 @@ class ProductController extends BaseAdminController
             'sort_order' => 'integer|min:0'
         ]);
 
-        
-       
-        
+
+
+
         // Handle checkbox values
         $data['is_active'] = $request->input('is_active', 0) == '1';
         $data['is_featured'] = $request->input('is_featured', 0) == '1';
-        
+
         // Handle discount calculation based on type
         $this->processDiscountData($data, $request);
 
@@ -188,16 +188,16 @@ class ProductController extends BaseAdminController
                 $file = $request->file('featured_image');
                 $filename = time() . '_featured_' . uniqid() . '.' . $file->getClientOriginalExtension();
                 $targetDir = storage_path('app/public/products');
-                
+
                 if (!is_dir($targetDir)) {
                     mkdir($targetDir, 0755, true);
                 }
-                
+
                 $targetPath = $targetDir . '/' . $filename;
-                
+
                 if ($file->move($targetDir, $filename)) {
                     $data['featured_image'] = 'products/' . $filename;
-                    
+
                     Log::info('Product featured image uploaded', [
                         'filename' => $filename,
                         'stored_path' => $data['featured_image']
@@ -205,7 +205,6 @@ class ProductController extends BaseAdminController
                 } else {
                     throw new \Exception('Failed to move featured image');
                 }
-                
             } catch (\Exception $e) {
                 return $this->handleError('Featured image upload failed: ' . $e->getMessage());
             }
@@ -215,19 +214,19 @@ class ProductController extends BaseAdminController
         $images = [];
         if ($request->hasFile('images')) {
             $targetDir = storage_path('app/public/products');
-            
+
             if (!is_dir($targetDir)) {
                 mkdir($targetDir, 0755, true);
             }
-            
+
             foreach ($request->file('images') as $index => $file) {
                 try {
                     $filename = time() . '_img' . $index . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
                     $targetPath = $targetDir . '/' . $filename;
-                    
+
                     if ($file->move($targetDir, $filename)) {
                         $images[] = 'products/' . $filename;
-                        
+
                         Log::info('Product image uploaded', [
                             'filename' => $filename,
                             'index' => $index
@@ -257,7 +256,7 @@ class ProductController extends BaseAdminController
     public function update(Request $request, Product $product)
     {
         $this->validateTenantOwnership($product);
-        
+
         $request->validate([
             'name' => [
                 'required',
@@ -285,7 +284,7 @@ class ProductController extends BaseAdminController
             'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'weight' => 'nullable|numeric|min:0',
-            'weight_unit' => 'string|in:gm,kg,ml,ltr,box,pack',
+            'weight_unit' => 'string|in:gm,kg,ml,ltr,box,pack,pcs',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
             'meta_keywords' => 'nullable|string|max:255',
@@ -295,7 +294,7 @@ class ProductController extends BaseAdminController
         ]);
 
         $data = $request->all();
-        
+
         // Handle checkbox values
         $data['is_active'] = $request->input('is_active', 0) == '1';
         $data['is_featured'] = $request->input('is_featured', 0) == '1';
@@ -310,19 +309,18 @@ class ProductController extends BaseAdminController
                         unlink($oldPath);
                     }
                 }
-                
+
                 $file = $request->file('featured_image');
                 $filename = time() . '_featured_' . uniqid() . '.' . $file->getClientOriginalExtension();
                 $targetDir = storage_path('app/public/products');
-                
+
                 if (!is_dir($targetDir)) {
                     mkdir($targetDir, 0755, true);
                 }
-                
+
                 if ($file->move($targetDir, $filename)) {
                     $data['featured_image'] = 'products/' . $filename;
                 }
-                
             } catch (\Exception $e) {
                 return $this->handleError('Featured image upload failed: ' . $e->getMessage());
             }
@@ -332,15 +330,15 @@ class ProductController extends BaseAdminController
         $images = $product->images ?? [];
         if ($request->hasFile('images')) {
             $targetDir = storage_path('app/public/products');
-            
+
             if (!is_dir($targetDir)) {
                 mkdir($targetDir, 0755, true);
             }
-            
+
             foreach ($request->file('images') as $index => $file) {
                 try {
                     $filename = time() . '_img' . $index . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                    
+
                     if ($file->move($targetDir, $filename)) {
                         $images[] = 'products/' . $filename;
                     }
@@ -378,12 +376,12 @@ class ProductController extends BaseAdminController
         return view('admin.products.edit', compact('product', 'categories'));
     }
 
-    
+
 
     public function destroy(Product $product)
     {
         $this->validateTenantOwnership($product);
-        
+
         if ($product->orderItems()->count() > 0) {
             return $this->handleError(
                 'Cannot delete product with order history!',
@@ -417,16 +415,16 @@ class ProductController extends BaseAdminController
     {
         try {
             $this->validateTenantOwnership($product);
-            
+
             $product->update(['is_active' => !$product->is_active]);
-            
+
             $status = $product->is_active ? 'activated' : 'deactivated';
-            
+
             $this->logActivity("Product {$status}", $product, ['name' => $product->name]);
-            
+
             // Clean the message to ensure no newline characters
             $message = "Product {$status} successfully!";
-            
+
             // Return proper JSON response for AJAX calls
             if (request()->expectsJson() || request()->ajax()) {
                 return response()->json([
@@ -435,22 +433,21 @@ class ProductController extends BaseAdminController
                     'is_active' => $product->is_active
                 ]);
             }
-            
+
             return redirect()->back()->with('success', $message);
-            
         } catch (\Exception $e) {
             Log::error('Failed to toggle product status', [
                 'product_id' => $product->id,
                 'error' => $e->getMessage()
             ]);
-            
+
             if (request()->expectsJson() || request()->ajax()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Failed to update product status'
                 ], 500);
             }
-            
+
             return redirect()->back()->with('error', 'Failed to update product status!');
         }
     }
@@ -459,16 +456,16 @@ class ProductController extends BaseAdminController
     {
         try {
             $this->validateTenantOwnership($product);
-            
+
             $product->update(['is_featured' => !$product->is_featured]);
-            
+
             $status = $product->is_featured ? 'marked as featured' : 'removed from featured';
-            
+
             $this->logActivity("Product {$status}", $product, ['name' => $product->name]);
-            
+
             // Clean the message to ensure no newline characters
             $message = "Product {$status} successfully!";
-            
+
             // Return proper JSON response for AJAX calls
             if (request()->expectsJson() || request()->ajax()) {
                 return response()->json([
@@ -477,22 +474,21 @@ class ProductController extends BaseAdminController
                     'is_featured' => $product->is_featured
                 ]);
             }
-            
+
             return redirect()->back()->with('success', $message);
-            
         } catch (\Exception $e) {
             Log::error('Failed to toggle product featured status', [
                 'product_id' => $product->id,
                 'error' => $e->getMessage()
             ]);
-            
+
             if (request()->expectsJson() || request()->ajax()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Failed to update featured status'
                 ], 500);
             }
-            
+
             return redirect()->back()->with('error', 'Failed to update featured status!');
         }
     }
@@ -504,26 +500,26 @@ class ProductController extends BaseAdminController
     {
         try {
             $this->validateTenantOwnership($product);
-            
+
             $imageIndex = $request->input('image_index');
             $images = $product->images ?? [];
-            
+
             if (isset($images[$imageIndex])) {
                 // Delete the file using dynamic storage
                 $this->deleteFileDynamically($images[$imageIndex]);
-                
+
                 // Remove from array and reindex
                 unset($images[$imageIndex]);
                 $images = array_values($images);
-                
+
                 // Update product
                 $product->update(['images' => $images]);
-                
+
                 $this->logActivity('Product image removed', $product, [
                     'name' => $product->name,
                     'image_index' => $imageIndex
                 ]);
-                
+
                 // Return proper JSON response
                 if ($request->expectsJson() || $request->ajax()) {
                     return response()->json([
@@ -532,10 +528,10 @@ class ProductController extends BaseAdminController
                         'remaining_images' => count($images)
                     ]);
                 }
-                
+
                 return redirect()->back()->with('success', 'Image removed successfully!');
             }
-            
+
             // Image not found
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
@@ -543,23 +539,22 @@ class ProductController extends BaseAdminController
                     'message' => 'Image not found!'
                 ], 404);
             }
-            
+
             return redirect()->back()->with('error', 'Image not found!');
-            
         } catch (\Exception $e) {
             Log::error('Failed to remove product image', [
                 'product_id' => $product->id,
                 'error' => $e->getMessage(),
                 'image_index' => $request->input('image_index')
             ]);
-            
+
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Failed to remove image: ' . $e->getMessage()
                 ], 500);
             }
-            
+
             return redirect()->back()->with('error', 'Failed to remove image!');
         }
     }
@@ -576,7 +571,7 @@ class ProductController extends BaseAdminController
         ]);
 
         $products = Product::whereIn('id', $request->products)->get();
-        
+
         // Validate tenant ownership for all products
         foreach ($products as $product) {
             $this->validateTenantOwnership($product);
@@ -589,12 +584,12 @@ class ProductController extends BaseAdminController
                 Product::whereIn('id', $request->products)->update(['is_active' => true]);
                 $message = "{$count} products activated successfully!";
                 break;
-                
+
             case 'deactivate':
                 Product::whereIn('id', $request->products)->update(['is_active' => false]);
                 $message = "{$count} products deactivated successfully!";
                 break;
-                
+
             case 'delete':
                 // Check if any product has order history
                 $hasOrders = $products->filter(function ($product) {
@@ -637,7 +632,7 @@ class ProductController extends BaseAdminController
     private function exportProducts($products)
     {
         $filename = 'products_' . date('Y-m-d_H-i-s') . '.csv';
-        
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
@@ -646,9 +641,9 @@ class ProductController extends BaseAdminController
             'Expires' => '0'
         ];
 
-        $callback = function() use ($products) {
+        $callback = function () use ($products) {
             $file = fopen('php://output', 'w');
-            
+
             // Add CSV headers
             fputcsv($file, [
                 'ID',
@@ -670,7 +665,7 @@ class ProductController extends BaseAdminController
                 'Created At',
                 'Updated At'
             ]);
-            
+
             // Add product data
             foreach ($products as $product) {
                 fputcsv($file, [
@@ -694,7 +689,7 @@ class ProductController extends BaseAdminController
                     $product->updated_at->format('Y-m-d H:i:s')
                 ]);
             }
-            
+
             fclose($file);
         };
 
@@ -708,10 +703,10 @@ class ProductController extends BaseAdminController
     {
         $discountType = $request->input('discount_type');
         $price = (float) $request->input('price', 0);
-        
+
         // Reset discount_price initially
         $data['discount_price'] = null;
-        
+
         if ($discountType === 'percentage') {
             $discountPercentage = (float) $request->input('discount_percentage', 0);
             if ($discountPercentage > 0 && $price > 0) {
@@ -724,7 +719,7 @@ class ProductController extends BaseAdminController
                 $data['discount_price'] = $discountPrice;
             }
         }
-        
+
         // Remove temporary fields that shouldn't be saved to database
         unset($data['discount_type'], $data['discount_percentage']);
     }
@@ -744,7 +739,7 @@ class ProductController extends BaseAdminController
     public function downloadTemplate()
     {
         $filename = 'product_upload_template.csv';
-        
+
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
@@ -753,17 +748,15 @@ class ProductController extends BaseAdminController
             'Expires' => '0'
         ];
 
-        $callback = function() {
+        $callback = function () {
             $file = fopen('php://output', 'w');
-            
+
             // Add CSV headers with all product fields
             fputcsv($file, [
                 'name',                 // Required
                 'description',          // Required
                 'short_description',    // Optional
                 'price',               // Required
-                'discount_price',      // Optional
-                'cost_price',          // Optional
                 'stock',               // Required
                 'sku',                 // Optional but recommended
                 'barcode',             // Optional
@@ -782,22 +775,20 @@ class ProductController extends BaseAdminController
                 'featured_image_url',  // Optional (URL to image)
                 'additional_images'    // Optional (comma-separated URLs)
             ]);
-            
+
             // Add sample data row for reference
             fputcsv($file, [
                 'Sample Product Name',
                 'This is a detailed description of the product with all features and benefits.',
                 'Short product description for listings.',
                 '99.99',
-                '79.99',
-                '50.00',
                 '100',
                 'SKU001',
                 '1234567890123',
                 'PROD001',
                 'Electronics',
                 '1.5',
-                'kg',
+                'pcs',
                 '18',
                 '10',
                 '1',
@@ -809,7 +800,7 @@ class ProductController extends BaseAdminController
                 'https://example.com/product-image.jpg',
                 'https://example.com/image1.jpg,https://example.com/image2.jpg'
             ]);
-            
+
             fclose($file);
         };
 
@@ -837,10 +828,10 @@ class ProductController extends BaseAdminController
                         'application/vnd.msexcel',
                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
                     ];
-                    
+
                     $extension = strtolower($value->getClientOriginalExtension());
                     $mimeType = $value->getMimeType();
-                    
+
                     if (!in_array($extension, $allowedExtensions) && !in_array($mimeType, $allowedMimeTypes)) {
                         $fail('The file must be a CSV (.csv) or Excel (.xlsx, .xls) file.');
                     }
@@ -852,7 +843,7 @@ class ProductController extends BaseAdminController
         try {
             $file = $request->file('file');
             $updateExisting = $request->boolean('update_existing');
-            
+
             // Create temp directory with proper Windows path handling
             $tempDir = storage_path('app') . DIRECTORY_SEPARATOR . 'temp';
             if (!is_dir($tempDir)) {
@@ -860,21 +851,21 @@ class ProductController extends BaseAdminController
                     throw new \Exception('Failed to create temporary directory: ' . $tempDir);
                 }
             }
-            
+
             // Use direct file move instead of Laravel storage
             $tempFileName = 'bulk_upload_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
             $fullPath = $tempDir . DIRECTORY_SEPARATOR . $tempFileName;
-            
+
             // Move uploaded file directly to temp directory
             if (!$file->move($tempDir, $tempFileName)) {
                 throw new \Exception('Failed to move uploaded file to: ' . $fullPath);
             }
-            
+
             // Verify file was moved successfully
             if (!file_exists($fullPath)) {
                 throw new \Exception('File was not found after move operation: ' . $fullPath);
             }
-            
+
             \Log::info('File uploaded successfully for bulk processing', [
                 'original_name' => $file->getClientOriginalName(),
                 'temp_path' => $fullPath,
@@ -882,38 +873,37 @@ class ProductController extends BaseAdminController
                 'temp_dir_exists' => is_dir($tempDir),
                 'temp_dir_writable' => is_writable($tempDir)
             ]);
-            
+
             // Parse the file based on extension
             $data = $this->parseUploadFile($fullPath, $file->getClientOriginalExtension());
-            
+
             if (empty($data)) {
                 return redirect()->back()->with('error', 'No valid data found in the uploaded file.');
             }
 
             // Process the data
             $result = $this->processProductData($data, $updateExisting);
-            
+
             // Clean up temp file
             if (file_exists($fullPath)) {
                 unlink($fullPath);
                 \Log::info('Temporary file cleaned up', ['path' => $fullPath]);
             }
-            
+
             // Log the upload
             $this->logBulkUpload($file, $result);
-            
+
             $message = "Bulk upload completed! ";
             $message .= "Created: {$result['created']}, ";
             $message .= "Updated: {$result['updated']}, ";
             $message .= "Errors: {$result['errors']}";
-            
+
             if ($result['errors'] > 0) {
                 session()->flash('upload_errors', $result['error_details']);
                 return redirect()->back()->with('warning', $message);
             }
-            
+
             return redirect()->back()->with('success', $message);
-            
         } catch (\Exception $e) {
             // Enhanced error logging for debugging
             $debugInfo = [
@@ -931,15 +921,15 @@ class ProductController extends BaseAdminController
                 'php_tmp_dir' => sys_get_temp_dir(),
                 'trace' => $e->getTraceAsString()
             ];
-            
+
             // Clean up temp file if it exists
             if (isset($fullPath) && file_exists($fullPath)) {
                 unlink($fullPath);
                 $debugInfo['cleanup'] = 'temp file removed';
             }
-            
+
             \Log::error('Bulk upload failed with detailed debug info', $debugInfo);
-            
+
             return redirect()->back()->with('error', 'Upload failed: ' . $e->getMessage() . ' (Check logs for details)');
         }
     }
@@ -963,27 +953,27 @@ class ProductController extends BaseAdminController
     {
         $data = [];
         $headers = [];
-        
+
         // Verify file exists
         if (!file_exists($filePath)) {
             throw new \Exception('CSV file not found: ' . $filePath);
         }
-        
+
         // Check if file is readable
         if (!is_readable($filePath)) {
             throw new \Exception('CSV file is not readable: ' . $filePath);
         }
-        
+
         try {
             if (($handle = fopen($filePath, 'r')) !== FALSE) {
                 // Read header row
                 $headers = fgetcsv($handle);
-                
+
                 if ($headers === FALSE || empty($headers)) {
                     fclose($handle);
                     throw new \Exception('Could not read CSV headers or file is empty.');
                 }
-                
+
                 // Read data rows
                 $rowCount = 0;
                 while (($row = fgetcsv($handle)) !== FALSE) {
@@ -999,7 +989,7 @@ class ProductController extends BaseAdminController
                     }
                 }
                 fclose($handle);
-                
+
                 \Log::info('CSV file parsed successfully', [
                     'file' => $filePath,
                     'headers' => count($headers),
@@ -1015,7 +1005,7 @@ class ProductController extends BaseAdminController
             ]);
             throw new \Exception('Failed to parse CSV file: ' . $e->getMessage());
         }
-        
+
         return $data;
     }
 
@@ -1029,29 +1019,29 @@ class ProductController extends BaseAdminController
             if (!class_exists('\Maatwebsite\Excel\Facades\Excel')) {
                 throw new \Exception('Laravel Excel package is not installed. Please install maatwebsite/excel.');
             }
-            
+
             // Use Laravel Excel package which includes PhpSpreadsheet
             $collection = \Maatwebsite\Excel\Facades\Excel::toArray([], $filePath);
-            
+
             if (empty($collection) || empty($collection[0])) {
                 return [];
             }
-            
+
             $rows = $collection[0]; // Get first sheet
-            
+
             if (empty($rows)) {
                 return [];
             }
-            
+
             $headers = array_shift($rows); // Remove header row
             $data = [];
-            
+
             foreach ($rows as $row) {
                 if (count($row) === count($headers)) {
                     $data[] = array_combine($headers, $row);
                 }
             }
-            
+
             return $data;
         } catch (\Exception $e) {
             \Log::error('Excel parsing failed', [
@@ -1073,13 +1063,13 @@ class ProductController extends BaseAdminController
             'errors' => 0,
             'error_details' => []
         ];
-        
+
         // Cache categories for performance
         $categories = Category::active()->pluck('id', 'name')->toArray();
-        
+
         foreach ($data as $index => $row) {
             $rowNumber = $index + 2; // +2 because array is 0-indexed and we skip header
-            
+
             try {
                 // Validate required fields
                 if (empty($row['name']) || empty($row['description']) || empty($row['price']) || empty($row['category_name'])) {
@@ -1087,7 +1077,7 @@ class ProductController extends BaseAdminController
                     $result['error_details'][] = "Row $rowNumber: Missing required fields (name, description, price, category_name)";
                     continue;
                 }
-                
+
                 // Find category
                 $categoryId = $categories[$row['category_name']] ?? null;
                 if (!$categoryId) {
@@ -1095,15 +1085,13 @@ class ProductController extends BaseAdminController
                     $result['error_details'][] = "Row $rowNumber: Category '{$row['category_name']}' not found";
                     continue;
                 }
-                
+
                 // Prepare product data
                 $productData = [
                     'name' => trim($row['name']),
                     'description' => trim($row['description']),
                     'short_description' => trim($row['short_description'] ?? ''),
                     'price' => (float) $row['price'],
-                    'discount_price' => !empty($row['discount_price']) ? (float) $row['discount_price'] : null,
-                    'cost_price' => !empty($row['cost_price']) ? (float) $row['cost_price'] : null,
                     'stock' => (int) ($row['stock'] ?? 0),
                     'sku' => trim($row['sku'] ?? ''),
                     'barcode' => trim($row['barcode'] ?? ''),
@@ -1120,11 +1108,11 @@ class ProductController extends BaseAdminController
                     'meta_description' => trim($row['meta_description'] ?? ''),
                     'meta_keywords' => trim($row['meta_keywords'] ?? ''),
                 ];
-                
+
                 // Apply tenant scope data
                 $productData['company_id'] = $this->getCurrentCompanyId();
                 $productData['branch_id'] = session('selected_branch_id');
-                
+
                 // Check for existing product
                 $existingProduct = null;
                 if (!empty($productData['sku'])) {
@@ -1132,41 +1120,40 @@ class ProductController extends BaseAdminController
                         ->where('company_id', $productData['company_id'])
                         ->first();
                 }
-                
+
                 if (!$existingProduct) {
                     $existingProduct = Product::where('name', $productData['name'])
                         ->where('company_id', $productData['company_id'])
                         ->first();
                 }
-                
+
                 if ($existingProduct && $updateExisting) {
                     // Update existing product
                     $existingProduct->update($productData);
-                    
+
                     // Handle images if provided
                     $this->processProductImages($existingProduct, $row);
-                    
+
                     $result['updated']++;
                 } elseif (!$existingProduct) {
                     // Create new product
                     $product = Product::create($productData);
-                    
+
                     // Handle images if provided
                     $this->processProductImages($product, $row);
-                    
+
                     $result['created']++;
                 } else {
                     // Product exists but update is not enabled
                     $result['errors']++;
                     $result['error_details'][] = "Row $rowNumber: Product '{$productData['name']}' already exists (enable update to modify)";
                 }
-                
             } catch (\Exception $e) {
                 $result['errors']++;
                 $result['error_details'][] = "Row $rowNumber: {$e->getMessage()}";
             }
         }
-        
+
         return $result;
     }
 
@@ -1186,12 +1173,12 @@ class ProductController extends BaseAdminController
                 Log::warning("Failed to download featured image for product {$product->id}: {$e->getMessage()}");
             }
         }
-        
+
         // Handle additional images
         if (!empty($row['additional_images'])) {
             $imageUrls = explode(',', $row['additional_images']);
             $imagePaths = [];
-            
+
             foreach ($imageUrls as $url) {
                 $url = trim($url);
                 if (!empty($url)) {
@@ -1205,12 +1192,12 @@ class ProductController extends BaseAdminController
                     }
                 }
             }
-            
+
             if (!empty($imagePaths)) {
                 $product->images = $imagePaths;
             }
         }
-        
+
         if ($product->isDirty()) {
             $product->save();
         }
@@ -1226,19 +1213,19 @@ class ProductController extends BaseAdminController
             if ($contents === false) {
                 return null;
             }
-            
+
             $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
             if (empty($extension)) {
                 $extension = 'jpg';
             }
-            
+
             $filename = $type . '_' . time() . '_' . uniqid() . '.' . $extension;
             $path = 'products/' . $filename;
-            
+
             if ($this->storeFile($contents, $path)) {
                 return $path;
             }
-            
+
             return null;
         } catch (\Exception $e) {
             Log::error("Failed to download image from $url: {$e->getMessage()}");
@@ -1285,7 +1272,7 @@ class ProductController extends BaseAdminController
             \Log::warning('Upload history unavailable: ' . $e->getMessage());
             $uploads = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20);
         }
-            
+
         return view('admin.products.upload-history', compact('uploads'));
     }
 }

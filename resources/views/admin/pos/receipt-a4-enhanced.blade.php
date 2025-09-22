@@ -42,9 +42,10 @@
         }
         
         .header-right {
-            width: 35%;
+            /* width: 20%; */
             float: right;
-            text-align: right;
+            /* text-align: right; */
+            fon
         }
         
         .company-logo {
@@ -369,6 +370,44 @@
         .no-page-break {
             page-break-inside: avoid;
         }
+        .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 3px solid #2c3e50;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.header-left {
+    flex: 1; /* take remaining space */
+    padding-right: 15px;
+}
+
+.header-right {
+    flex: 0 0 40%; /* fixed max width for right block */
+    text-align: right;
+    word-break: break-word; /* ensure text wraps instead of overflowing */
+}
+.print-btn {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    z-index: 1000;
+}
+
+.print-btn:hover {
+    background: #219150;
+}
+
     </style>
 </head>
 <body>
@@ -465,16 +504,19 @@
             <thead>
                 <tr>
                     <th width="25%">Product Details</th>
-                    <th width="6%" class="text-center">Qty</th>
-                    <th width="12%" class="text-right">Selling Price</th>
-                    <th width="12%" class="text-right">Line Total</th>
-                    <th width="10%" class="text-right">Discount</th>
-                    <th width="10%" class="text-right">Tax</th>
-                    <th width="12%" class="text-right">Final Amount</th>
-                    <th width="13%" class="text-right">Net Amount</th>
+                    <th width="21%" class="text-center">Qty</th>
+                    <th width="18%" class="text-center">Offer Price</th>
+                    <th width="18%" class="text-center">MRP</th>
+                    {{-- <th width="10%" class="text-right">Discount</th> --}}
+                    {{-- <th width="10%" class="text-right">Tax%</th> --}}
+                    {{-- <th width="17%" class="text-center">Final Amount</th> --}}
+                    <th width="18%" class="text-center">Net Amount</th>
                 </tr>
             </thead>
             <tbody>
+                <?php
+            //echo "<pre>";print_R($sale->items);exit;
+                ?>
                 @foreach($sale->items as $item)
                 @php
                     $unitPrice = $item->unit_price ?? 0;
@@ -484,56 +526,34 @@
                     $itemDiscount = $item->discount_amount ?? 0;
                     $afterDiscount = $lineTotal - $itemDiscount;
                     $taxAmount = $item->tax_amount ?? 0;
-                    $finalAmount = $afterDiscount + $taxAmount;
+                    $finalAmount = $unitPrice;
                     $hasDiscount = $itemDiscount > 0;
                     $hasTax = $taxAmount > 0;
+                    
                     $hasOfferPrice = $originalPrice > $unitPrice && $originalPrice != $unitPrice;
                 @endphp
                 <tr>
                     <td>
                         <div class="item-name">{{ $item->product->name ?? $item->product_name }}</div>
-                        @if($item->product && $item->product->sku)
-                            <div class="item-sku">SKU: {{ $item->product->sku }}</div>
-                        @endif
+                       
                     </td>
                     <td class="text-center">{{ $quantity }}</td>
-                    <td class="text-right">
-                        @if($hasOfferPrice)
-                            <div class="selling-price">Offer ₹{{ number_format($unitPrice, 2) }}</div>
-                            <div class="price-breakdown">
-                                <span class="original-price">MRP: ₹{{ number_format($originalPrice, 2) }}</span>
-                            </div>
-                            @if($item->offer_applied)
-                                <div class="price-breakdown" style="color: #27ae60;">{{ $item->offer_applied }}</div>
-                            @endif
+                    <td class="text-center">
+                        @if($originalPrice)
+                            <div class="selling-price">₹{{ number_format($originalPrice, 2) }}</div>
+                           
                         @else
-                            <div class="selling-price">₹{{ number_format($unitPrice, 2) }}</div>
+                            <div class="selling-price">-</div>
                             {{-- <div class="price-breakdown">(Selling Price)</div> --}}
                         @endif
                     </td>
+                   
+                    
+                    
                     <td class="text-right amount-column">
-                        <strong>MRP ₹{{ number_format($lineTotal, 2) }}</strong>
+                        <strong>₹{{ number_format($item->product->price, 2) }}</strong>
                     </td>
-                    <td class="text-right">
-                        @if($hasDiscount)
-                            <div class="discount-highlight">-₹{{ number_format($itemDiscount, 2) }}</div>
-                            <div class="price-breakdown">({{ number_format($item->discount_percentage ?? 0, 1) }}%)</div>
-                        @else
-                            <span style="color: #999;">-</span>
-                        @endif
-                    </td>
-                    <td class="text-right">
-                        @if($hasTax)
-                            <div class="tax-highlight">₹{{ number_format($taxAmount, 2) }}</div>
-                            <div class="price-breakdown">({{ $item->tax_percentage ?? 0 }}%)</div>
-                        @else
-                            <span style="color: #999;">-</span>
-                        @endif
-                    </td>
-                    <td class="text-right amount-column">
-                        <strong>₹{{ number_format($afterDiscount, 2) }}</strong>
-                    </td>
-                    <td class="text-right amount-column" style="background-color: #f0f8f0;">
+                    <td class="text-center amount-column" style="background-color: #f0f8f0;">
                         <strong style="color: #27ae60;">₹{{ number_format($finalAmount, 2) }}</strong>
                     </td>
                 </tr>
@@ -588,14 +608,14 @@
                     
                     @if($sale->cgst_amount > 0)
                     <tr>
-                        <td class="total-label">CGST:</td>
+                        <td class="total-label">CGST:(Included in MRP)</td>
                         <td class="total-amount">₹{{ number_format($sale->cgst_amount, 2) }}</td>
                     </tr>
                     @endif
                     
                     @if($sale->sgst_amount > 0)
                     <tr>
-                        <td class="total-label">SGST:</td>
+                        <td class="total-label">SGST:(Included in MRP)</td>
                         <td class="total-amount">₹{{ number_format($sale->sgst_amount, 2) }}</td>
                     </tr>
                     @endif
@@ -609,7 +629,7 @@
                     
                     <tr class="grand-total">
                         <td class="total-label">FINAL AMOUNT:</td>
-                        <td class="total-amount">₹{{ number_format($sale->total_amount, 2) }}</td>
+                        <td class="total-amount">₹{{ number_format($sale->total_amount-($sale->sgst_amount+$sale->cgst_amount), 2) }}</td>
                     </tr>
                 </table>
             </div>
@@ -657,6 +677,7 @@
         <div class="notes-section" style="background-color: #fff3cd; border-color: #ffc107;">
             <div class="section-title">📋 Sale Notes</div>
             <div style="font-size: 10px;">{{ $sale->notes }}</div>
+            <div style="font-size: 10px;">TAX Amount Include in MRP</div>
         </div>
         @endif
         
@@ -678,6 +699,8 @@
             <p><em>This is a computer generated receipt and does not require signature.</em></p>
             <p style="margin-top: 10px; font-size: 9px;">Generated on {{ now()->format('d/m/Y h:i A') }}</p>
         </div>
+        <button class="no-print print-btn" onclick="window.print()">🖨️ Print Receipt</button>
+
     </div>
 </body>
 </html>

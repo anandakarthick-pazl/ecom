@@ -172,16 +172,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="price" class="form-label">Price (₹) *</label>
-                            <input type="number" class="form-control @error('price') is-invalid @enderror" 
-                                   id="price" name="price" value="{{ old('price', $product->price) }}" step="0.01" min="0" required>
-                            @error('price')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
                         
-                        <div class="col-md-4 mb-3">
+                        
+                        {{-- <div class="col-md-4 mb-3">
                             <label for="discount_type" class="form-label">Discount Type</label>
                             @php
                                 $currentDiscountType = old('discount_type');
@@ -205,10 +198,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             @error('discount_type')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                        </div>
+                        </div> --}}
                         
                         <div class="col-md-4 mb-3">
-                            <div id="discount_percentage_field" style="display: none;">
+                            
+                            {{-- <div id="discount_percentage_field" style="display: none;">
                                 <label for="discount_percentage" class="form-label">Discount Percentage (%)</label>
                                 <input type="number" class="form-control @error('discount_percentage') is-invalid @enderror" 
                                        id="discount_percentage" name="discount_percentage" 
@@ -230,16 +224,25 @@ document.addEventListener('DOMContentLoaded', function() {
                                 @enderror
                                 <small class="text-muted">Enter discounted price</small>
                             </div>
-                        </div>
+                        </div> --}}
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-4 mb-3">
+                        {{-- <div class="col-md-4 mb-3">
                             <label class="form-label">Calculated Discount Price</label>
                             <div class="form-control-plaintext bg-light p-2 rounded" id="calculated_price">
                                 <span class="text-muted">No discount applied</span>
                             </div>
                             <small class="text-muted">This will be the final selling price</small>
+                        </div> --}}
+
+                        <div class="col-md-4 mb-3">
+                            <label for="price" class="form-label">Price (₹) *</label>
+                            <input type="number" class="form-control @error('price') is-invalid @enderror" 
+                                   id="price" name="price" value="{{ old('price', $product->price) }}" step="0.01" min="0" required>
+                            @error('price')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
                         
                         <div class="col-md-4 mb-3">
@@ -250,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             @error('tax_percentage')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                            <small class="text-muted">Enter GST percentage (will split into CGST/SGST)</small>
+                            {{-- <small class="text-muted">Enter GST percentage (will split into CGST/SGST)</small> --}}
                         </div>
                         
                         <div class="col-md-4 mb-3">
@@ -285,10 +288,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="col-md-3 mb-3">
                             <label for="weight_unit" class="form-label">Weight Unit</label>
                             <select class="form-select @error('weight_unit') is-invalid @enderror" id="weight_unit" name="weight_unit">
-                                <option value="gm" {{ old('weight_unit', $product->weight_unit) == 'gm' ? 'selected' : '' }}>Grams</option>
-                                <option value="kg" {{ old('weight_unit', $product->weight_unit) == 'kg' ? 'selected' : '' }}>Kilograms</option>
-                                <option value="ml" {{ old('weight_unit', $product->weight_unit) == 'ml' ? 'selected' : '' }}>Milliliters</option>
-                                <option value="ltr" {{ old('weight_unit', $product->weight_unit) == 'ltr' ? 'selected' : '' }}>Liters</option>
+                                <option value="pcs" {{ old('weight_unit', $product->weight_unit) == 'pcs' ? 'selected' : '' }}>Pcs</option>
                                 <option value="box" {{ old('weight_unit', $product->weight_unit) == 'box' ? 'selected' : '' }}>Box</option>
                                 <option value="pack" {{ old('weight_unit', $product->weight_unit) == 'pack' ? 'selected' : '' }}>Pack</option>
                             </select>
@@ -413,34 +413,6 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
     
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h6>Product Info</h6>
-                <p><strong>Slug:</strong> {{ $product->slug }}</p>
-                <p><strong>Created:</strong> {{ $product->created_at->format('M d, Y') }}</p>
-                @if($product->orderItems()->count() > 0)
-                    <p><strong>Total Sales:</strong> {{ $product->orderItems()->sum('quantity') }} units</p>
-                @endif
-                
-                <hr>
-                
-                <h6>Current Status</h6>
-                <p><strong>Status:</strong> 
-                    <span class="badge bg-{{ $product->is_active ? 'success' : 'danger' }}">
-                        {{ $product->is_active ? 'Active' : 'Inactive' }}
-                    </span>
-                </p>
-                @if($product->is_featured)
-                    <p><span class="badge bg-warning">Featured Product</span></p>
-                @endif
-                <p><strong>Stock Level:</strong> 
-                    <span class="badge bg-{{ $product->stock > 10 ? 'success' : ($product->stock > 0 ? 'warning' : 'danger') }}">
-                        {{ $product->stock }} units
-                    </span>
-                </p>
-            </div>
-        </div>
-    </div>
+    
 </div>
 @endsection

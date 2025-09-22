@@ -53,14 +53,28 @@ class EstimateController extends Controller
     public function create()
     {
         $products = Product::active()
-            ->with(['category', 'offers' => function($query) {
-                $query->active()->current();
-            }])
+            ->with(['category'])
             ->orderBy('name')
             ->get();
         
-        // Apply offers to products to get effective prices
-        $products = $this->offerService->applyOffersToProducts($products);
+        // Apply offer details using Product model's getOfferDetails method
+        foreach ($products as $product) {
+            // Use the Product model's getOfferDetails() method which has the priority system
+            $offerDetails = $product->getOfferDetails();
+            
+            if ($offerDetails) {
+                $product->effective_price = $offerDetails['discounted_price'];
+                $product->has_offer = true;
+                $product->discount_percentage = $offerDetails['discount_percentage'];
+                $product->offer_details = $offerDetails;
+            } else {
+                // No offers, use regular price
+                $product->effective_price = $product->price;
+                $product->has_offer = false;
+                $product->discount_percentage = 0;
+                $product->offer_details = null;
+            }
+        }
         
         return view('admin.estimates.create', compact('products'));
     }
@@ -154,14 +168,28 @@ class EstimateController extends Controller
         }
 
         $products = Product::active()
-            ->with(['category', 'offers' => function($query) {
-                $query->active()->current();
-            }])
+            ->with(['category'])
             ->orderBy('name')
             ->get();
         
-        // Apply offers to products to get effective prices
-        $products = $this->offerService->applyOffersToProducts($products);
+        // Apply offer details using Product model's getOfferDetails method
+        foreach ($products as $product) {
+            // Use the Product model's getOfferDetails() method which has the priority system
+            $offerDetails = $product->getOfferDetails();
+            
+            if ($offerDetails) {
+                $product->effective_price = $offerDetails['discounted_price'];
+                $product->has_offer = true;
+                $product->discount_percentage = $offerDetails['discount_percentage'];
+                $product->offer_details = $offerDetails;
+            } else {
+                // No offers, use regular price
+                $product->effective_price = $product->price;
+                $product->has_offer = false;
+                $product->discount_percentage = 0;
+                $product->offer_details = null;
+            }
+        }
         
         $estimate->load(['items.product']);
         
@@ -330,8 +358,20 @@ class EstimateController extends Controller
             // Apply offers to each product in estimate items
             foreach ($estimate->items as $item) {
                 if ($item->product) {
-                    // Get offer details for this product
-                    $item->product = $this->offerService->applyOffersToProducts(collect([$item->product]))->first();
+                    // Get offer details using Product model's method
+                    $offerDetails = $item->product->getOfferDetails();
+                    
+                    if ($offerDetails) {
+                        $item->product->effective_price = $offerDetails['discounted_price'];
+                        $item->product->has_offer = true;
+                        $item->product->discount_percentage = $offerDetails['discount_percentage'];
+                        $item->product->offer_details = $offerDetails;
+                    } else {
+                        $item->product->effective_price = $item->product->price;
+                        $item->product->has_offer = false;
+                        $item->product->discount_percentage = 0;
+                        $item->product->offer_details = null;
+                    }
                     
                     // Calculate tax amounts
                     $item->product->item_tax_amount = $item->product->getTaxAmount($item->unit_price);

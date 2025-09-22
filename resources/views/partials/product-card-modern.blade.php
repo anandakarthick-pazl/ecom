@@ -28,11 +28,11 @@
             </div>
             {{-- Show offer source indicator --}}
             @if($offerSource === 'offers_page')
-                <div class="product-badge-special">
+                {{-- <div class="product-badge-special">
                     <span class="badge-special-offer">
                         <i class="fas fa-fire"></i> {{ $offerDetails['offer_name'] }}
                     </span>
-                </div>
+                </div> --}}
             @elseif($offerSource === 'product_onboarding')
                 <div class="product-badge-product">
                     <span class="badge-product-discount">

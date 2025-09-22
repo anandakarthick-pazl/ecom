@@ -125,7 +125,7 @@
                     $itemDiscount = $item->discount_amount ?? 0;
                     $afterDiscount = $lineTotal - $itemDiscount;
                     $taxAmount = $item->tax_amount ?? 0;
-                    $finalAmount = $afterDiscount + $taxAmount;
+                    $finalAmount = $afterDiscount ;
                     $hasOfferPrice = $originalPrice > $unitPrice && $originalPrice != $unitPrice;
                     $offerSavings = ($originalPrice - $unitPrice) * $quantity;
                 @endphp
@@ -172,7 +172,7 @@
                     @if($taxAmount > 0)
                         <div class="item-row" style="color: #666; font-size: 9px;">
                             <span>Tax ({{ $item->tax_percentage ?? 0 }}%)</span>
-                            <span>+₹{{ number_format($taxAmount, 2) }}</span>
+                            <span> Tax included in MRP</span>
                         </div>
                     @endif
                     
@@ -247,7 +247,7 @@
             <div class="final-total">
                 <div class="total-row">
                     <span>TOTAL:</span>
-                    <span>₹{{ number_format($sale->total_amount, 2) }}</span>
+                    <span>₹{{ number_format($sale->total_amount-($sale->cgst_amount+$sale->sgst_amount), 2) }}</span>
                 </div>
             </div>
             

@@ -719,6 +719,7 @@ class PosController extends Controller
      */
     public function downloadBill(PosSale $sale)
     {
+       
         try {
             Log::info('PDF download started', ['sale_id' => $sale->id]);
 
@@ -761,14 +762,14 @@ class PosController extends Controller
             // echo "<pre>"; print_r($globalCompany); exit;
 
             // Create PDF with basic settings
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, [
-                'sale' => $sale,
-                'globalCompany' => $globalCompany
-            ]);
-            // return view($viewName, [
+            // $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView($viewName, [
             //     'sale' => $sale,
             //     'globalCompany' => $globalCompany
             // ]);
+            return view($viewName, [
+                'sale' => $sale,
+                'globalCompany' => $globalCompany
+            ]);
             
 
             // Set paper size

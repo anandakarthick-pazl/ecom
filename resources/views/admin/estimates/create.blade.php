@@ -278,7 +278,7 @@
                             @if($product->has_offer && $product->effective_price < $product->price)
                                 - ₹{{ number_format($product->effective_price, 2) }}
                                 (MRP: ₹{{ number_format($product->price, 2) }})
-                                [{{ $product->discount_percentage }}% OFF]
+                                
                             @else
                                 - ₹{{ number_format($product->price, 2) }}
                             @endif
