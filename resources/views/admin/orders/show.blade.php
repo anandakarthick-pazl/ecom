@@ -1,7 +1,7 @@
 @extends('admin.layouts.app')
 <?php
 
-echo"<pre>";print_R($order->items);exit;
+//echo"<pre>";print_R($order->items);exit;
 ?>
 @section('page_actions')
     <div class="btn-group invoice-actions-group">
