@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\PriceListController;
 use App\Http\Controllers\CompanyRegistrationController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CategoryController;
@@ -119,6 +120,10 @@ Route::middleware(['tenant'])->group(function () {
     // Order Tracking
     Route::match(['get', 'post'], '/track-order', [HomeController::class, 'trackOrder'])->name('track.order');
     
+    Route::get('/price-list/download', [PriceListController::class, 'downloadPdf'])->name('price-list.download');
+    Route::get('/price-list/view', [PriceListController::class, 'viewPdf'])->name('price-list.view');
+    
+
     // Cart Routes
     Route::prefix('cart')->name('cart.')->group(function () {
         Route::get('/', [CartController::class, 'index'])->name('index');
