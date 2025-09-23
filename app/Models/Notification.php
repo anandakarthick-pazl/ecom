@@ -18,7 +18,8 @@ class Notification extends Model
         'data',
         'user_id',
         'is_read',
-        'read_at'
+        'read_at',
+        'message_hash'
     ];
 
     protected $casts = [
@@ -125,5 +126,16 @@ class Notification extends Model
             'payment_received' => 'success',
             default => 'secondary'
         };
+    }
+
+    public static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($notification) {
+            if (!empty($notification->message)) {
+                $notification->message_hash = sha1($notification->message);
+            }
+        });
     }
 }

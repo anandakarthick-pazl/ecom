@@ -41,27 +41,9 @@ class HandleOrderPlaced
             }
 
             // Create admin notification
-            $notification = Notification::create([
-                'company_id' => $order->company_id,
-                'type' => 'order_placed',
-                'title' => 'New Order Received',
-                'message' => "Order #{$order->order_number} placed by {$order->customer_name} for ₹{$order->total}",
-                'data' => [
-                    'order_id' => $order->id,
-                    'order_number' => $order->order_number,
-                    'customer_name' => $order->customer_name,
-                    'total' => $order->total,
-                    'status' => $order->status
-                ],
-                'user_id' => null,
-                'is_read' => false
-            ]);
+           
 
-            Log::info('Notification created', [
-                'notification_id' => $notification->id,
-                'company_id' => $notification->company_id
-            ]);
-
+          
             // Send invoice email to customer if email notifications are enabled and email is provided
             $customerEmail = $order->customer_email ?? $order->customer->email ?? null;
             

@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\PaymentMethod;
+use App\Models\Notification;
 use App\Models\Commission;
 use App\Services\PaymentMethodService;
 use App\Services\DeliveryService;
@@ -275,7 +276,23 @@ class CheckoutController extends Controller
 
             // Fire order placed event
             event(new OrderPlaced($order));
-
+             $notification = Notification::create([
+                'company_id' => $order->company_id,
+                'type' => 'order_placed',
+                'title' => 'New Order Received',
+                'message_hash' => sha1("order_placed_{$order->id}"), // Unique hash to prevent duplicates
+                'message' => "Order #{$order->order_number} placed by {$order->customer_name} for ₹{$order->total}",
+                'data' => [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'customer_name' => $order->customer_name,
+                    'total' => $order->total,
+                    'status' => $order->status
+                ],
+                'user_id' => null,
+                'is_read' => false
+            ]);
+            
             // Store order details in session for success page
             session()->flash('order_success', [
                 'order_number' => $order->order_number,

@@ -1384,9 +1384,7 @@
                 <div class="mb-1">
                     <i class="fas fa-user"></i> Customer: <strong>${orderData.customer_name || 'Guest'}</strong>
                 </div>
-                <div class="mb-1">
-                    <i class="fas fa-money-bill"></i> Total: <strong class="text-success">₹${orderData.total || '0.00'}</strong>
-                </div>
+                
                 <div class="mb-1">
                     <i class="fas fa-clock"></i> Time: ${notification.created_at || 'Just now'}
                 </div>
