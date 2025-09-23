@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <?php 
+
+// echo"<pre>";print_R($sale->items);exit;
+
+?>
     <title>Receipt - {{ $sale->invoice_number }}</title>
     <style>
         body {
@@ -119,7 +124,9 @@
             @foreach($sale->items as $index => $item)
                 @php
                     $unitPrice = $item->unit_price ?? 0;
-                    $originalPrice = $item->original_price ?? $item->product->price ?? $unitPrice;
+                    $offerAmount = $item->original_price ?? 0;
+                    $mrp = $item->product->price;
+                    $originalPrice = $item->product->price;
                     $quantity = $item->quantity ?? 1;
                     $lineTotal = $unitPrice * $quantity;
                     $itemDiscount = $item->discount_amount ?? 0;
@@ -127,6 +134,7 @@
                     $taxAmount = $item->tax_amount ?? 0;
                     $finalAmount = $afterDiscount ;
                     $hasOfferPrice = $originalPrice > $unitPrice && $originalPrice != $unitPrice;
+                  
                     $offerSavings = ($originalPrice - $unitPrice) * $quantity;
                 @endphp
                 
@@ -188,13 +196,14 @@
         <div class="totals">
             @php
                 $itemsGrossTotal = $sale->items->sum(function($item) {
-                    $originalPrice = $item->original_price ?? $item->product->price ?? $item->unit_price;
+                    $originalPrice = $item->product->price;
                     return $originalPrice * $item->quantity;
                 });
                 $itemsSellingTotal = $sale->items->sum(function($item) {
                     return $item->unit_price * $item->quantity;
                 });
                 $totalOfferSavings = $itemsGrossTotal - $itemsSellingTotal;
+                
                 $totalItemDiscounts = $sale->items->sum('discount_amount');
             @endphp
             

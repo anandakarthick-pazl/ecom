@@ -1,5 +1,10 @@
 <!DOCTYPE html>
 <html>
+    <?php
+//echo "<pre>";print_R($sale->items);exit;
+    ?>
+
+?>
 <head>
     <meta charset="utf-8">
     <title>Receipt - {{ $sale->invoice_number }}</title>
@@ -567,7 +572,7 @@
                 <table class="totals-table">
                     @php
                         $itemsGrossTotal = $sale->items->sum(function($item) {
-                            $originalPrice = $item->original_price ?? $item->product->price ?? $item->unit_price;
+                            $originalPrice =  $item->product->price;
                             return $originalPrice * $item->quantity;
                         });
                         $itemsSellingTotal = $sale->items->sum(function($item) {
@@ -584,15 +589,15 @@
                     </tr>
                     
                     <tr style="background-color: #e8f5e8;">
-                        <td class="total-label">Offer Savings:</td>
+                        <td class="total-label">Product Discounts</td>
                         <td class="total-amount" style="color: #27ae60;">-₹{{ number_format($totalOfferSavings, 2) }}</td>
                     </tr>
                     @endif
                     
-                    <tr>
+                    {{-- <tr>
                         <td class="total-label">Items Selling Total:</td>
                         <td class="total-amount">₹{{ number_format($itemsSellingTotal, 2) }}</td>
-                    </tr>
+                    </tr> --}}
                     
                     @if($totalItemDiscounts > 0)
                     <tr>

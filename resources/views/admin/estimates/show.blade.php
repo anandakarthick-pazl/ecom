@@ -1,5 +1,9 @@
 @extends('admin.layouts.app')
+<?php
+//echo "<pre>";print_R($estimate);exit;
 
+
+?>
 @section('title', 'Estimate Details - #' . $estimate->estimate_number)
 
 @section('content')
@@ -40,18 +44,18 @@
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <h5 class="text-primary">From:</h5>
-                            <p class="mb-1"><strong>{{ $estimate->company->company_name ?? 'Company Name' }}</strong></p>
+                            <p class="mb-1"><strong>{{ $estimate->customer_name ?? 'Company Name' }}</strong></p>
                             @if($estimate->company->company_address ?? null)
                                 <p class="mb-1">{{ $estimate->company->company_address }}</p>
                             @endif
-                            @if($estimate->company->company_phone ?? null)
-                                <p class="mb-1">Phone: {{ $estimate->company->company_phone }}</p>
+                            @if($estimate->customer_phone ?? null)
+                                <p class="mb-1">Phone: {{ $estimate->customer_phone }}</p>
                             @endif
-                            @if($estimate->company->company_email ?? null)
-                                <p class="mb-1">Email: {{ $estimate->company->company_email }}</p>
+                            @if($estimate->customer_email ?? null)
+                                <p class="mb-1">Email: {{ $estimate->customer_email }}</p>
                             @endif
                         </div>
-                        <div class="col-md-6">
+                        {{-- <div class="col-md-6">
                             <h5 class="text-primary">To:</h5>
                             @if($estimate->supplier ?? null)
                                 <p class="mb-1"><strong>{{ $estimate->supplier->name }}</strong></p>
@@ -67,7 +71,7 @@
                             @else
                                 <p class="text-muted">No supplier information</p>
                             @endif
-                        </div>
+                        </div> --}}
                     </div>
 
                     <div class="row mb-4">
@@ -392,7 +396,6 @@
     }
 
     function confirmStatusUpdate() {
-         console.log("Function triggered");
         if (!statusToUpdate) return;
 
         // You can implement AJAX call here to update status
@@ -411,11 +414,12 @@
             if (data.success) {
                 location.reload();
             } else {
-                //alert('Error updating status: ' + data.message);
+                alert('Error updating status: ' + data.message);
             }
         })
         .catch(error => {
-            
+            console.error('Error:', error);
+            alert('An error occurred while updating the status.');
         });
 
         const modal = bootstrap.Modal.getInstance(document.getElementById('statusModal'));

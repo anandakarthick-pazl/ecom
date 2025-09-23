@@ -115,7 +115,7 @@
                     </div>
                 </div>
                 
-                <div class="card mb-4">
+                {{-- <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">Payment Method</h5>
                     </div>
@@ -224,7 +224,7 @@
                             </div>
                         @endif
                     </div>
-                </div>
+                </div> --}}
             </form>
         </div>
         
@@ -689,11 +689,11 @@ $('#checkoutForm').on('submit', function(e) {
     }
     
     // Check if payment method is selected
-    if ($('input[name="payment_method"]:checked').length === 0) {
-        e.preventDefault();
-        showToast('Please select a payment method', 'error');
-        return false;
-    }
+    // if ($('input[name="payment_method"]:checked').length === 0) {
+    //     e.preventDefault();
+    //     showToast('Please select a payment methods', 'error');
+    //     return false;
+    // }
     
     // AUTO-ADD +91 TO MOBILE NUMBER FOR WHATSAPP
     const mobileWithCountryCode = '+91' + mobile;

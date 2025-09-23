@@ -8,7 +8,7 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
-                    <h4 class="mb-0">Track Your Order</h4>
+                    <h4 class="mb-0">Track Your Estimate</h4>
                 </div>
                 <div class="card-body">
                     @if(!isset($orders))
@@ -35,7 +35,7 @@
                         </div>
                         
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-search"></i> Track Order
+                            <i class="fas fa-search"></i> Track Estimate
                         </button>
                     </form>
                     @else

@@ -75,7 +75,7 @@
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('track.order') ? 'active' : '' }}" href="{{ route('track.order') }}">
                         <i class="fas fa-search me-1"></i>
-                        <span class="nav-text">Track Order</span>
+                        <span class="nav-text">Track Estimate</span>
                     </a>
                 </li>
             </ul>
