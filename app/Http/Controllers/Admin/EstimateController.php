@@ -276,24 +276,27 @@ class EstimateController extends Controller
     }
 
     public function updateStatus(Request $request, Estimate $estimate)
-    {
-        $request->validate([
-            'status' => 'required|in:draft,sent,accepted,rejected,expired'
-        ]);
+{
+    $request->validate([
+        'status' => 'required|in:draft,sent,accepted,rejected,expired'
+    ]);
 
-        $estimate->update(['status' => $request->status]);
+    $estimate->update(['status' => $request->status]);
 
-        if ($request->status === 'sent') {
-            $estimate->update(['sent_at' => now()]);
-        }
-
-        if ($request->status === 'accepted') {
-            $estimate->update(['accepted_at' => now()]);
-        }
-
-        return redirect()->back()
-                        ->with('success', 'Estimate status updated successfully!');
+    if ($request->status === 'sent') {
+        $estimate->update(['sent_at' => now()]);
     }
+
+    if ($request->status === 'accepted') {
+        $estimate->update(['accepted_at' => now()]);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Estimate status updated successfully!'
+    ]);
+}
+
 
     public function destroy(Estimate $estimate)
     {

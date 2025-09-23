@@ -392,6 +392,7 @@
     }
 
     function confirmStatusUpdate() {
+         console.log("Function triggered");
         if (!statusToUpdate) return;
 
         // You can implement AJAX call here to update status
@@ -410,12 +411,11 @@
             if (data.success) {
                 location.reload();
             } else {
-                alert('Error updating status: ' + data.message);
+                //alert('Error updating status: ' + data.message);
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while updating the status.');
+            
         });
 
         const modal = bootstrap.Modal.getInstance(document.getElementById('statusModal'));
