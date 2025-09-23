@@ -30,10 +30,10 @@ class EstimateController extends Controller
         }
 
         if ($request->search) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('estimate_number', 'like', '%' . $request->search . '%')
-                  ->orWhere('customer_name', 'like', '%' . $request->search . '%')
-                  ->orWhere('customer_email', 'like', '%' . $request->search . '%');
+                    ->orWhere('customer_name', 'like', '%' . $request->search . '%')
+                    ->orWhere('customer_email', 'like', '%' . $request->search . '%');
             });
         }
 
@@ -53,15 +53,15 @@ class EstimateController extends Controller
     public function create()
     {
         $products = Product::active()
-            ->with(['category', 'offers' => function($query) {
+            ->with(['category', 'offers' => function ($query) {
                 $query->active()->current();
             }])
             ->orderBy('name')
             ->get();
-        
+
         // Apply offers to products to get effective prices
         $products = $this->offerService->applyOffersToProducts($products);
-        
+
         return view('admin.estimates.create', compact('products'));
     }
 
@@ -130,13 +130,12 @@ class EstimateController extends Controller
             DB::commit();
 
             return redirect()->route('admin.estimates.show', $estimate)
-                           ->with('success', 'Estimate created successfully!');
-
+                ->with('success', 'Estimate created successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()
-                           ->with('error', 'Error creating estimate: ' . $e->getMessage())
-                           ->withInput();
+                ->with('error', 'Error creating estimate: ' . $e->getMessage())
+                ->withInput();
         }
     }
 
@@ -150,21 +149,21 @@ class EstimateController extends Controller
     {
         if ($estimate->status !== 'draft') {
             return redirect()->route('admin.estimates.show', $estimate)
-                           ->with('error', 'Only draft estimates can be edited!');
+                ->with('error', 'Only draft estimates can be edited!');
         }
 
         $products = Product::active()
-            ->with(['category', 'offers' => function($query) {
+            ->with(['category', 'offers' => function ($query) {
                 $query->active()->current();
             }])
             ->orderBy('name')
             ->get();
-        
+
         // Apply offers to products to get effective prices
         $products = $this->offerService->applyOffersToProducts($products);
-        
+
         $estimate->load(['items.product']);
-        
+
         return view('admin.estimates.edit', compact('estimate', 'products'));
     }
 
@@ -172,7 +171,7 @@ class EstimateController extends Controller
     {
         if ($estimate->status !== 'draft') {
             return redirect()->route('admin.estimates.show', $estimate)
-                           ->with('error', 'Only draft estimates can be updated!');
+                ->with('error', 'Only draft estimates can be updated!');
         }
 
         $request->validate([
@@ -237,13 +236,12 @@ class EstimateController extends Controller
             DB::commit();
 
             return redirect()->route('admin.estimates.show', $estimate)
-                           ->with('success', 'Estimate updated successfully!');
-
+                ->with('success', 'Estimate updated successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()
-                           ->with('error', 'Error updating estimate: ' . $e->getMessage())
-                           ->withInput();
+                ->with('error', 'Error updating estimate: ' . $e->getMessage())
+                ->withInput();
         }
     }
 
@@ -263,21 +261,23 @@ class EstimateController extends Controller
             $estimate->update(['accepted_at' => now()]);
         }
 
-        return redirect()->back()
-                        ->with('success', 'Estimate status updated successfully!');
+        return response()->json([
+            'success' => true,
+            'message' => 'Estimate status updated successfully!'
+        ]);
     }
 
     public function destroy(Estimate $estimate)
     {
         if ($estimate->status !== 'draft') {
             return redirect()->route('admin.estimates.index')
-                           ->with('error', 'Only draft estimates can be deleted!');
+                ->with('error', 'Only draft estimates can be deleted!');
         }
 
         $estimate->delete();
 
         return redirect()->route('admin.estimates.index')
-                        ->with('success', 'Estimate deleted successfully!');
+            ->with('success', 'Estimate deleted successfully!');
     }
 
     public function duplicate(Estimate $estimate)
@@ -303,12 +303,11 @@ class EstimateController extends Controller
             DB::commit();
 
             return redirect()->route('admin.estimates.edit', $newEstimate)
-                           ->with('success', 'Estimate duplicated successfully!');
-
+                ->with('success', 'Estimate duplicated successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()
-                           ->with('error', 'Error duplicating estimate: ' . $e->getMessage());
+                ->with('error', 'Error duplicating estimate: ' . $e->getMessage());
         }
     }
 
@@ -321,27 +320,27 @@ class EstimateController extends Controller
             // Load estimate with items, products, and their offer details
             $estimate->load([
                 'items.product.category',
-                'items.product.offers' => function($query) {
+                'items.product.offers' => function ($query) {
                     $query->active()->current();
                 },
                 'creator'
             ]);
-            
+
             // Apply offers to each product in estimate items
             foreach ($estimate->items as $item) {
                 if ($item->product) {
                     // Get offer details for this product
                     $item->product = $this->offerService->applyOffersToProducts(collect([$item->product]))->first();
-                    
+
                     // Calculate tax amounts
                     $item->product->item_tax_amount = $item->product->getTaxAmount($item->unit_price);
                     $item->product->item_tax_percentage = $item->product->tax_percentage ?? 0;
-                    
+
                     // Store pricing details for PDF
                     $item->mrp_price = $item->product->price; // Original MRP
                     $item->offer_price = $item->product->effective_price ?? $item->unit_price; // Discounted price
                     $item->discount_amount = max(0, $item->mrp_price - $item->offer_price);
-                    $item->discount_percentage = $item->discount_amount > 0 
+                    $item->discount_percentage = $item->discount_amount > 0
                         ? round(($item->discount_amount / $item->mrp_price) * 100, 1)
                         : 0;
                     $item->tax_amount = ($item->unit_price * $item->quantity * $item->product->item_tax_percentage) / 100;
@@ -352,7 +351,7 @@ class EstimateController extends Controller
             // Get company data with error handling
             $companyId = session('selected_company_id');
             $globalCompany = $this->getCompanyData($companyId);
-            
+
             // Log company data for debugging
             \Log::info('Company data for estimate PDF', [
                 'estimate_id' => $estimate->id,
@@ -383,7 +382,6 @@ class EstimateController extends Controller
             }, $filename, [
                 'Content-Type' => 'application/pdf'
             ]);
-
         } catch (\Exception $e) {
             \Log::error('Estimate PDF download failed', [
                 'estimate_id' => $estimate->id,
@@ -392,7 +390,7 @@ class EstimateController extends Controller
             ]);
 
             return redirect()->back()
-                           ->with('error', 'Error generating PDF: ' . $e->getMessage());
+                ->with('error', 'Error generating PDF: ' . $e->getMessage());
         }
     }
 
@@ -425,10 +423,10 @@ class EstimateController extends Controller
                 $company->state ?? '',
                 $company->postal_code ?? '',
                 $company->country ?? ''
-            ], function($value) {
+            ], function ($value) {
                 return !empty(trim((string)$value));
             });
-            
+
             $fullAddress = !empty($addressParts) ? implode(', ', $addressParts) : 'Address not configured';
 
             // Build contact info
@@ -442,7 +440,7 @@ class EstimateController extends Controller
             $contactInfo = !empty($contactParts) ? implode(' | ', $contactParts) : 'Contact info not configured';
 
             // Return properly structured object with all required properties
-            
+
             return (object) [
                 'company_name' => $company->name ?? 'Your Company',
                 'company_address' => $company->address ?? '',
@@ -511,7 +509,7 @@ class EstimateController extends Controller
         // Check if estimate is accepted
         if ($estimate->status !== 'accepted') {
             return redirect()->back()
-                           ->with('error', 'Only accepted estimates can be converted to sales!');
+                ->with('error', 'Only accepted estimates can be converted to sales!');
         }
 
         try {
@@ -573,13 +571,12 @@ class EstimateController extends Controller
             DB::commit();
 
             return redirect()->route('admin.pos.show', $posSale)
-                           ->with('success', 'Estimate successfully converted to sale! Invoice #' . $posSale->invoice_number);
-
+                ->with('success', 'Estimate successfully converted to sale! Invoice #' . $posSale->invoice_number);
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Error converting estimate to sale: ' . $e->getMessage());
             return redirect()->back()
-                           ->with('error', 'Error converting estimate to sale: ' . $e->getMessage());
+                ->with('error', 'Error converting estimate to sale: ' . $e->getMessage());
         }
     }
 
