@@ -255,10 +255,7 @@
                                     <div class="d-flex justify-content-between mb-2">
                                         <span><i class="fas fa-calculator"></i> Total Amount (Incl. GST):</span>
                                         <span>
-                                            @if ($totalSavings > 0)
-                                                <span
-                                                    class="text-decoration-line-through text-muted me-2">₹{{ number_format($amount, 2) }}</span>
-                                            @endif
+                                         
                                             ₹{{ number_format($amount, 2) }}
                                         </span>
                                     </div>

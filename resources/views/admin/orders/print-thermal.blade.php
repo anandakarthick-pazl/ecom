@@ -297,7 +297,7 @@
                         @endif
                     </div>
                     <div class="item-price">
-                        ₹{{ number_format($item->total, 2) }}
+                        ₹{{ number_format($item->price, 2) }}
                     </div>
                 </div>
             @endforeach
@@ -310,18 +310,9 @@
                 $totalSavings = $order->items->sum('savings');
             @endphp
             
-            @if($totalSavings > 0)
-                <div class="total-row">
-                    <span>Total MRP:</span>
-                    <span>₹{{ number_format($totalMrp, 2) }}</span>
-                </div>
-                <div class="total-row" style="color: #27ae60; font-weight: bold;">
-                    <span>You Saved:</span>
-                    <span>-₹{{ number_format($totalSavings, 2) }}</span>
-                </div>
-            @endif
+           
             
-            <div class="total-row">
+            {{-- <div class="total-row">
                 <span>Subtotal:</span>
                 <span>₹{{ number_format($order->subtotal, 2) }}</span>
             </div>
@@ -345,24 +336,14 @@
                     <span>Discount:</span>
                     <span>-₹{{ number_format($order->discount, 2) }}</span>
                 </div>
-            @endif
+            @endif --}}
             
-            @if($order->delivery_charge > 0)
-                <div class="total-row">
-                    <span>Delivery:</span>
-                    <span>₹{{ number_format($order->delivery_charge, 2) }}</span>
-                </div>
-            @elseif($order->delivery_charge == 0 && !empty($order->delivery_address))
-                <div class="total-row">
-                    <span>Delivery:</span>
-                    <span>FREE</span>
-                </div>
-            @endif
+            
             
             <div class="final-total">
                 <div class="total-row">
                     <span>TOTAL:</span>
-                    <span>₹{{ number_format($order->total, 2) }}</span>
+                    <span>₹{{ number_format($order->subtotal, 2) }}</span>
                 </div>
             </div>
         </div>
@@ -424,32 +405,14 @@
         </div>
     </div>
 
+
     <script>
-        // Auto-print when page loads (only if opened in new window)
-        window.addEventListener('load', function() {
-            // Check if this is a popup/new window
-            if (window.opener || window.history.length === 1) {
-                // Small delay to ensure page is fully rendered
-                setTimeout(function() {
-                    window.print();
-                }, 500);
-            }
-        });
-        
-        // Handle after print events
-        window.addEventListener('afterprint', function() {
-            // Close window after printing if it's a popup
-            if (window.opener) {
-                setTimeout(function() {
-                    window.close();
-                }, 1000);
-            }
-        });
-        
-        // Handle print cancellation
-        window.addEventListener('beforeprint', function() {
-            console.log('Print dialog opened');
-        });
-    </script>
+// window.addEventListener('load', function() {
+//     setTimeout(() => window.print(), 500);
+// });
+
+
+</script>
+
 </body>
 </html>

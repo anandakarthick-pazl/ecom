@@ -91,7 +91,7 @@
                             <span class="badge bg-info">{{ $order->items->count() }} items</span>
                         </td>
                         <td>
-                            <strong>₹{{ number_format($order->total, 2) }}</strong>
+                            <strong>₹{{ number_format($order->subtotal, 2) }}</strong>
                         </td>
                         <td>
                             <div class="payment-info">

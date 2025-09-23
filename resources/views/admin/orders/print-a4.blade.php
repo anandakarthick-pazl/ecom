@@ -422,10 +422,10 @@
                 <th style="width: 6%;" class="text-center">Qty</th>
                 <th style="width: 10%;" class="text-right">MRP</th>
                 <th style="width: 10%;" class="text-right">Offer Price</th>
-                <th style="width: 8%;" class="text-center">Discount %</th>
-                <th style="width: 8%;" class="text-center">Tax %</th>
+                {{-- <th style="width: 8%;" class="text-center">Discount %</th> --}}
+                {{-- <th style="width: 8%;" class="text-center">Tax %</th>
                 <th style="width: 10%;" class="text-right">Tax Amount</th>
-                <th style="width: 10%;" class="text-right">Savings</th>
+                <th style="width: 10%;" class="text-right">Savings</th> --}}
                 <th style="width: 13%;" class="text-right">Line Total</th>
             </tr>
         </thead>
@@ -444,7 +444,7 @@
                     $itemDiscount = $orderSubtotal > 0 ? ($itemSubtotal / $orderSubtotal) * $orderDiscount : 0;
                     
                     // Calculate line total
-                    $lineTotal = $itemSubtotal + $taxAmount - $itemDiscount;
+                    $lineTotal = $itemSubtotal -$itemDiscount;
                 @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
@@ -475,14 +475,14 @@
                             ₹{{ number_format($unitPrice, 2) }}
                         @endif
                     </td>
-                    <td class="text-center">
+                    {{-- <td class="text-center">
                         @if($item->effective_discount_percentage > 0)
                             <span style="color: #e74c3c; font-weight: bold;">{{ number_format($item->effective_discount_percentage, 1) }}%</span>
                         @else
                             -
                         @endif
-                    </td>
-                    <td class="text-center">{{ number_format($taxPercentage, 1) }}%</td>
+                    </td> --}}
+                    {{-- <td class="text-center">{{ number_format($taxPercentage, 1) }}%</td>
                     <td class="text-right">₹{{ number_format($taxAmount, 2) }}</td>
                     <td class="text-right">
                         @if($item->savings > 0)
@@ -490,8 +490,10 @@
                         @else
                             -
                         @endif
-                    </td>
-                    <td class="text-right">₹{{ number_format($lineTotal, 2) }}</td>
+                    </td> --}}
+                    <td class="text-right">
+                        
+                        ₹{{ number_format($lineTotal, 2) }}</td>
                 </tr>
             @endforeach
         </tbody>
@@ -512,7 +514,7 @@
                 $totalSavings = $order->items->sum('savings');
             @endphp
             
-            @if($totalSavings > 0)
+            {{-- @if($totalSavings > 0)
                 <tr>
                     <td class="label-col">Total MRP:</td>
                     <td class="amount-col">₹{{ number_format($totalMrp, 2) }}</td>
@@ -521,21 +523,21 @@
                     <td class="label-col">You Saved (Offers):</td>
                     <td class="amount-col">-₹{{ number_format($totalSavings, 2) }}</td>
                 </tr>
-            @endif
+            @endif --}}
             
             <tr class="subtotal-row">
-                <td class="label-col">Subtotal:</td>
+                <td class="label-col">Total Amount:</td>
                 <td class="amount-col">₹{{ number_format($subtotal, 2) }}</td>
             </tr>
             
-            @if($totalDiscount > 0)
+            {{-- @if($totalDiscount > 0)
                 <tr class="discount-row">
                     <td class="label-col">Additional Discount:</td>
                     <td class="amount-col">-₹{{ number_format($totalDiscount, 2) }}</td>
                 </tr>
-            @endif
+            @endif --}}
             
-            @if($cgstAmount > 0)
+            {{-- @if($cgstAmount > 0)
                 <tr class="tax-row">
                     <td class="label-col">CGST:</td>
                     <td class="amount-col">₹{{ number_format($cgstAmount, 2) }}</td>
@@ -561,12 +563,12 @@
                     <td class="label-col">Delivery Charge:</td>
                     <td class="amount-col">₹{{ number_format($deliveryCharge, 2) }}</td>
                 </tr>
-            @endif
+            @endif --}}
             
-            <tr class="total-row">
+            {{-- <tr class="total-row">
                 <td class="label-col">Total Amount:</td>
                 <td class="amount-col">₹{{ number_format($totalAmount, 2) }}</td>
-            </tr>
+            </tr> --}}
         </table>
     </div>
 

@@ -40,11 +40,11 @@
         @endif
 
         <!-- Download Invoice -->
-        <a href="{{ route('admin.orders.download-invoice', $order) }}?format={{ $defaultBillFormat }}" 
+        {{-- <a href="{{ route('admin.orders.download-invoice', $order) }}?format={{ $defaultBillFormat }}" 
            class="btn btn-info"
            title="Download {{ $formatLabel }}">
             <i class="fas fa-download"></i> Download {{ $formatLabel }}
-        </a>
+        </a> --}}
 
         <!-- Send via WhatsApp -->
         @if ($order->customer_mobile)
@@ -470,7 +470,7 @@
                                         {{-- <td>{{ $item->tax_percentage }}%</td>
                                         <td>₹{{ number_format($item->tax_amount, 2) }}</td> --}}
                                         <td class="text-end">
-                                            <strong class="text-success">₹{{ number_format($item->total, 2) }}</strong>
+                                            <strong class="text-success">₹{{ number_format($item->price, 2) }}</strong>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -493,14 +493,14 @@
                                             <td class="text-end text-success">-₹{{ number_format($order->discount, 2) }}</td>
                                         </tr>
                                     @endif
-                                    <tr>
+                                    {{-- <tr>
                                         <td class="text-end fw-semibold">CGST:</td>
                                         <td class="text-end">₹{{ number_format($order->cgst_amount, 2) }}</td>
                                     </tr>
                                     <tr>
                                         <td class="text-end fw-semibold">SGST:</td>
                                         <td class="text-end">₹{{ number_format($order->sgst_amount, 2) }}</td>
-                                    </tr>
+                                    </tr> --}}
                                     {{-- <tr>
                                         <td class="text-end fw-semibold">Delivery:</td>
                                         <td class="text-end">
@@ -513,7 +513,7 @@
                                     </tr> --}}
                                     <tr class="table-success">
                                         <td class="text-end fw-bold">Total:</td>
-                                        <td class="text-end fw-bold fs-5">₹{{ number_format($order->total-($order->cgst_amount+$order->sgst_amount), 2) }}</td>
+                                        <td class="text-end fw-bold fs-5">₹{{ number_format($order->subtotal, 2) }}</td>
                                     </tr>
                                 </table>
                             </div>

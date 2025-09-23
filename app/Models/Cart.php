@@ -12,7 +12,11 @@ class Cart extends Model
     use HasFactory, BelongsToTenantEnhanced;
 
     protected $fillable = [
-        'session_id', 'product_id', 'quantity', 'price', 'company_id'
+        'session_id',
+        'product_id',
+        'quantity',
+        'price',
+        'company_id'
     ];
 
     protected $casts = [
@@ -32,21 +36,23 @@ class Cart extends Model
     public static function getCartItems($sessionId)
     {
         return self::with('product')
-                  ->where('session_id', $sessionId)
-                  ->get();
+            ->where('session_id', $sessionId)
+            ->get();
     }
 
     public static function addToCart($sessionId, $productId, $quantity = 1)
     {
         $product = Product::findOrFail($productId);
-        
+
         if (!$product->isInStock($quantity)) {
             return false;
         }
 
         $cartItem = self::where('session_id', $sessionId)
-                       ->where('product_id', $productId)
-                       ->first();
+            ->where('product_id', $productId)
+            ->first();
+
+        $offerDetails = $product->getOfferDetails();
 
         if ($cartItem) {
             $newQuantity = $cartItem->quantity + $quantity;
@@ -59,7 +65,7 @@ class Cart extends Model
                 'session_id' => $sessionId,
                 'product_id' => $productId,
                 'quantity' => $quantity,
-                'price' => $product->final_price,
+                'price' => $offerDetails['discounted_price'] ?? $offerDetails['original_price'],
             ]);
         }
 
@@ -69,8 +75,8 @@ class Cart extends Model
     public static function updateQuantity($sessionId, $productId, $quantity)
     {
         $cartItem = self::where('session_id', $sessionId)
-                       ->where('product_id', $productId)
-                       ->first();
+            ->where('product_id', $productId)
+            ->first();
 
         if (!$cartItem) {
             return false;
@@ -92,8 +98,8 @@ class Cart extends Model
     public static function removeFromCart($sessionId, $productId)
     {
         return self::where('session_id', $sessionId)
-                  ->where('product_id', $productId)
-                  ->delete();
+            ->where('product_id', $productId)
+            ->delete();
     }
 
     public static function clearCart($sessionId)
@@ -110,7 +116,7 @@ class Cart extends Model
     {
         return self::where('session_id', $sessionId)->count(); // Count distinct products, not total quantity
     }
-    
+
     public static function getCartTotalQuantity($sessionId)
     {
         return self::where('session_id', $sessionId)->sum('quantity'); // For total quantity if needed
