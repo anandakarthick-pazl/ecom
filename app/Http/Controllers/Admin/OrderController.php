@@ -905,7 +905,7 @@ class OrderController extends Controller
             $companySettings = $this->getCompanySettings($order->company_id);
             
             // Return print view based on format
-            $requestedFormat='thermal';
+            // $requestedFormat='thermal';
             if ($requestedFormat === 'thermal') {
                 return view('admin.orders.print-thermal', compact('order', 'companySettings'));
             } else {
