@@ -1,5 +1,5 @@
 @extends('layouts.app')
-
+<?php //echo "<pre>";print_R($product->getOfferDetails());exit;?>
 @section('title', $product->meta_title ?: $product->name . ' - Herbal Bliss')
 @section('meta_description', $product->meta_description ?: Str::limit(strip_tags($product->description), 160))
 @section('meta_keywords', $product->meta_keywords)
@@ -61,12 +61,12 @@
 
                 <!-- Price -->
                 <div class="price-section mb-4">
-                    @if($product->discount_price)
-                        <h3 class="text-primary d-inline">₹{{ number_format($product->discount_price, 2) }}</h3>
-                        <span class="h5 text-muted text-decoration-line-through ms-2">₹{{ number_format($product->price, 2) }}</span>
-                        <span class="badge bg-danger ms-2">{{ $product->discount_percentage }}% OFF</span>
+                    @if($product->getOfferDetails()['discounted_price'])
+                        <h3 class="text-primary d-inline">₹{{ number_format($product->getOfferDetails()['discounted_price'], 2) }}</h3>
+                        <span class="h5 text-muted text-decoration-line-through ms-2">₹{{ number_format($product->getOfferDetails()['original_price'], 2) }}</span>
+                        <span class="badge bg-danger ms-2">{{ $product->getOfferDetails()['discount_percentage'] }}% OFF</span>
                     @else
-                        <h3 class="text-primary">₹{{ number_format($product->price, 2) }}</h3>
+                        <h3 class="text-primary">₹{{ number_format($product->getOfferDetails()['price'], 2) }}</h3>
                     @endif
                 </div>
 
