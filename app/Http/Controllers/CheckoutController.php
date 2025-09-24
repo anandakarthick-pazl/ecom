@@ -16,7 +16,7 @@ use App\Events\OrderPlaced;
 use App\Services\OrderItemPricingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+use App\Models\Notification;
 class CheckoutController extends Controller
 {
     private function getSessionId()
@@ -27,36 +27,36 @@ class CheckoutController extends Controller
     public function index()
     {
         $cartItems = Cart::getCartItems($this->getSessionId());
-        
+
         if ($cartItems->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Your cart is empty!');
         }
 
         $subtotal = Cart::getCartTotal($this->getSessionId());
-        
+
         // Get minimum order validation settings
         $minOrderValidationSettings = DeliveryService::getMinOrderValidationSettings();
-        
+
         $deliveryCharge = DeliveryService::calculateDeliveryCharge($subtotal);
         $deliveryInfo = DeliveryService::getDeliveryInfo($subtotal);
-        
+
         // Get coupon discount
         $discount = CouponService::getCurrentDiscount();
         $appliedCoupon = CouponService::getAppliedCoupon();
-        
+
         $total = $subtotal + $deliveryCharge - $discount;
-        
+
         // Get active payment methods using the service
         $paymentMethods = PaymentMethodService::getActiveForCheckout($total);
 
         return view('checkout', compact(
-            'cartItems', 
-            'subtotal', 
-            'deliveryCharge', 
-            'deliveryInfo', 
+            'cartItems',
+            'subtotal',
+            'deliveryCharge',
+            'deliveryInfo',
             'discount',
             'appliedCoupon',
-            'total', 
+            'total',
             'paymentMethods',
             'minOrderValidationSettings'
         ));
@@ -79,7 +79,7 @@ class CheckoutController extends Controller
             'state' => 'nullable|string|max:255',
             'pincode' => 'required|string|size:6',
             'notes' => 'nullable|string|max:500',
-            'payment_method' => 'required|exists:payment_methods,id',
+            // 'payment_method' => 'required|exists:payment_methods,id',
             'formatted_mobile' => 'nullable|string', // Optional formatted mobile with +91
             // Commission fields
             'commission_enabled' => 'nullable|boolean',
@@ -95,7 +95,7 @@ class CheckoutController extends Controller
             // Auto-add +91 if not provided
             $whatsappMobile = '+91' . $request->customer_mobile;
         }
-        
+
         \Log::info('Mobile number processing', [
             'original_mobile' => $request->customer_mobile,
             'formatted_mobile' => $request->formatted_mobile,
@@ -103,7 +103,7 @@ class CheckoutController extends Controller
         ]);
 
         $cartItems = Cart::getCartItems($this->getSessionId());
-        
+
         if ($cartItems->isEmpty()) {
             \Log::warning('Checkout attempted with empty cart', ['session_id' => $this->getSessionId()]);
             return redirect()->route('cart.index')->with('error', 'Your cart is empty!');
@@ -124,7 +124,7 @@ class CheckoutController extends Controller
         // Validate minimum order amount for online orders using DeliveryService
         $subtotalForValidation = Cart::getCartTotal($this->getSessionId());
         $validationResult = DeliveryService::validateMinimumOrderAmount($subtotalForValidation);
-        
+
         if (!$validationResult['valid']) {
             \Log::warning('Order below minimum amount', [
                 'subtotal' => $validationResult['current_amount'],
@@ -133,8 +133,8 @@ class CheckoutController extends Controller
                 'session_id' => $this->getSessionId()
             ]);
             return redirect()->route('cart.index')
-                           ->with('error', $validationResult['message'])
-                           ->with('min_order_validation', $validationResult);
+                ->with('error', $validationResult['message'])
+                ->with('min_order_validation', $validationResult);
         }
 
         try {
@@ -148,12 +148,12 @@ class CheckoutController extends Controller
                 'state' => $request->state,
                 'pincode' => $request->pincode,
             ];
-            
+
             // Add email to customer data if provided
             if ($request->customer_email) {
                 $customerData['email'] = $request->customer_email;
             }
-            
+
             // Use WhatsApp formatted mobile for customer lookup/creation
             $customer = Customer::findOrCreateByMobile($whatsappMobile, $customerData);
             \Log::info('Customer found/created', [
@@ -163,32 +163,32 @@ class CheckoutController extends Controller
 
             // Calculate totals
             $subtotal = Cart::getCartTotal($this->getSessionId());
-            
+
             // Calculate tax amounts
             $totalTax = 0;
             $cgstAmount = 0;
             $sgstAmount = 0;
-            
+
             foreach ($cartItems as $item) {
                 $itemTax = $item->product->getTaxAmount($item->price) * $item->quantity;
                 $totalTax += $itemTax;
                 $cgstAmount += ($itemTax / 2);
                 $sgstAmount += ($itemTax / 2);
             }
-            
+
             $deliveryCharge = DeliveryService::calculateDeliveryCharge($subtotal);
             $discount = CouponService::getCurrentDiscount(); // Get coupon discount
             $appliedCoupon = CouponService::getAppliedCoupon();
-            
+
             // Get payment method and calculate charges
-            $paymentMethod = PaymentMethod::findOrFail($request->payment_method);
+            $paymentMethod = PaymentMethod::findOrFail($request->payment_method ?? '1');
             $paymentCharge = 0;
-            
+
             if ($paymentMethod->extra_charge > 0 || $paymentMethod->extra_charge_percentage > 0) {
                 $baseTotal = $subtotal + $totalTax + $deliveryCharge - $discount;
                 $paymentCharge = $paymentMethod->extra_charge + ($baseTotal * $paymentMethod->extra_charge_percentage / 100);
             }
-            
+
             $total = $subtotal + $totalTax + $deliveryCharge + $paymentCharge - $discount;
 
             // Create order
@@ -259,7 +259,7 @@ class CheckoutController extends Controller
 
             // Update customer statistics
             $customer->updateOrderStats();
-            
+
             // Increment coupon usage count if coupon was applied
             if ($appliedCoupon) {
                 CouponService::incrementUsageCount($appliedCoupon['code']);
@@ -276,6 +276,22 @@ class CheckoutController extends Controller
             // Fire order placed event
             event(new OrderPlaced($order));
 
+            $notification = Notification::create([
+                'company_id' => $order->company_id,
+                'type' => 'order_placed',
+                'title' => 'New Order Received',
+                'message' => "Order #{$order->order_number} placed by {$order->customer_name} for ₹{$order->total}",
+                'data' => [
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'customer_name' => $order->customer_name,
+                    'total' => $order->total,
+                    'status' => $order->status
+                ],
+                'user_id' => null,
+                'is_read' => false
+            ]);
+
             // Store order details in session for success page
             session()->flash('order_success', [
                 'order_number' => $order->order_number,
@@ -289,28 +305,27 @@ class CheckoutController extends Controller
                 'order_number' => $order->order_number,
                 'payment_method' => $paymentMethod->type
             ]);
-            
+
             // Clear the cart and coupon one more time to be absolutely sure
             Cart::clearCart($this->getSessionId());
             CouponService::removeCoupon();
-            
+
             // Handle payment method specific redirects
             if ($paymentMethod->type === 'razorpay') {
                 // For Razorpay, store order ID and redirect to payment page
                 session(['razorpay_order_id' => $order->id]);
                 return redirect()->route('order.success', $order->order_number)
-                               ->with('initiate_payment', true)
-                               ->with('payment_method', 'razorpay');
+                    ->with('initiate_payment', true)
+                    ->with('payment_method', 'razorpay');
             } else {
                 // For other payment methods, redirect to success page
                 $successUrl = route('order.success', $order->order_number);
                 \Log::info('Success URL generated', ['url' => $successUrl]);
-                
-                return redirect($successUrl)
-                               ->with('success', 'Order placed successfully!')
-                               ->with('order_number', $order->order_number);
-            }
 
+                return redirect($successUrl)
+                    ->with('success', 'Order placed successfully!')
+                    ->with('order_number', $order->order_number);
+            }
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Checkout error: ' . $e->getMessage(), [
@@ -326,21 +341,21 @@ class CheckoutController extends Controller
     public function success($orderNumber)
     {
         \Log::info('Order success page accessed', ['order_number' => $orderNumber]);
-        
+
         try {
             $order = Order::where('order_number', $orderNumber)
-                         ->with('items.product')
-                         ->firstOrFail();
-            
+                ->with('items.product')
+                ->firstOrFail();
+
             \Log::info('Order found for success page', ['order_id' => $order->id]);
-            
+
             return view('order-success', compact('order'));
         } catch (\Exception $e) {
             \Log::error('Order success page error', [
                 'order_number' => $orderNumber,
                 'error' => $e->getMessage()
             ]);
-            
+
             return redirect()->route('shop')->with('error', 'Order not found. Please contact support if you believe this is an error.');
         }
     }

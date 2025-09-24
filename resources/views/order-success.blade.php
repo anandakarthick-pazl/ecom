@@ -118,7 +118,7 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6 class="text-primary"><i class="fas fa-shipping-fast"></i> Delivery Information</h6>
+                            <h6 class="text-primary"><i class="fas fa-shipping-fast"></i> Contact Information</h6>
                             <div class="border-start border-primary border-3 ps-3">
                                 <p class="mb-1"><strong>{{ $order->customer_name }}</strong></p>
                                 <p class="mb-1"><i class="fas fa-phone text-muted"></i> {{ $order->customer_mobile }}</p>

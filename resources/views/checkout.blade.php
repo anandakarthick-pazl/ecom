@@ -115,7 +115,7 @@
                     </div>
                 </div>
                 
-                <div class="card mb-4">
+                {{-- <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">Payment Method</h5>
                     </div>
@@ -224,14 +224,14 @@
                             </div>
                         @endif
                     </div>
-                </div>
+                </div> --}}
             </form>
         </div>
         
         <div class="col-md-4">
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Order Summary</h5>
+                    <h5 class="mb-0">Estimate Summary</h5>
                 </div>
                 <div class="card-body">
                     @foreach($cartItems as $item)
@@ -344,7 +344,7 @@
                         <span>₹{{ number_format($totalTax, 2) }}</span>
                     </div>
                     
-                    @if($deliveryInfo['enabled'])
+                    {{-- @if($deliveryInfo['enabled'])
                     <div class="d-flex justify-content-between mb-2">
                         <span>Delivery Charge:</span>
                         <span>
@@ -362,7 +362,7 @@
                             <i class="fas fa-gift"></i> 
                             Add ₹{{ number_format($deliveryInfo['amount_needed_for_free'], 2) }} more for <strong>FREE delivery!</strong>
                         </div>
-                    @endif
+                    @endif --}}
                     
                     @if($discount > 0)
                     <div class="d-flex justify-content-between mb-2">
@@ -371,10 +371,10 @@
                     </div>
                     @endif
                     
-                    <div class="d-flex justify-content-between mb-2" id="payment-charge-row" style="display: none;">
+                    {{-- <div class="d-flex justify-content-between mb-2" id="payment-charge-row" style="display: none;">
                         <span>Payment Charge:</span>
                         <span id="payment-charge">+₹0.00</span>
-                    </div>
+                    </div> --}}
                     
                     <hr>
                     
@@ -383,7 +383,7 @@
                         <strong id="grand-total">₹{{ number_format($grandTotal, 2) }}</strong>
                     </div>
                     
-                    @if($deliveryInfo['enabled'] && $deliveryCharge == 0 && $deliveryInfo['free_delivery_enabled'])
+                    {{-- @if($deliveryInfo['enabled'] && $deliveryCharge == 0 && $deliveryInfo['free_delivery_enabled'])
                         <div class="alert alert-success py-2">
                             <small><i class="fas fa-check"></i> You're getting FREE delivery!</small>
                         </div>
@@ -405,21 +405,21 @@
                                 {{ $deliveryInfo['description'] }}
                             </small>
                         </div>
-                    @endif
+                    @endif --}}
                     
                     <button type="submit" form="checkoutForm" class="btn btn-primary btn-lg w-100">
-                        <i class="fas fa-lock"></i> Place Order
+                        <i class="fas fa-lock"></i> Place Estimate
                     </button>
                     
-                    <div class="text-center mt-3">
+                    {{-- <div class="text-center mt-3">
                         <small class="text-muted">
                             <i class="fas fa-shield-alt"></i> Secure checkout with 256-bit SSL encryption
                         </small>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
             
-            <div class="card">
+            {{-- <div class="card">
                 <div class="card-body text-center">
                     <h6>Need Help?</h6>
                     <p class="mb-2">
@@ -429,7 +429,7 @@
                         <i class="fas fa-envelope text-primary"></i> support@herbalbliss.com
                     </p>
                 </div>
-            </div>
+            </div> --}}
         </div>
     </div>
 </div>
@@ -675,11 +675,11 @@ $('#checkoutForm').on('submit', function(e) {
     }
     
     // Check if payment method is selected
-    if ($('input[name="payment_method"]:checked').length === 0) {
-        e.preventDefault();
-        showToast('Please select a payment method', 'error');
-        return false;
-    }
+    // if ($('input[name="payment_method"]:checked').length === 0) {
+    //     e.preventDefault();
+    //     showToast('Please select a payment method', 'error');
+    //     return false;
+    // }
     
     // Validate commission fields if enabled
     // Commission functionality removed for online orders

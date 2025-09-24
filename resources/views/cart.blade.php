@@ -329,7 +329,7 @@
                 <div class="col-md-4">
                     <div class="card" id="order-summary-card" style="display: block !important;">
                         <div class="card-header" style="background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
-                            <h5 class="mb-0"><i class="fas fa-receipt me-2"></i>Order Summary</h5>
+                            <h5 class="mb-0"><i class="fas fa-receipt me-2"></i>Estimate Summary</h5>
                         </div>
                         <div class="order-totals" style="
     padding: 10px;
@@ -425,7 +425,7 @@
                                 </div>
                             @endif
 
-                            @if(isset($deliveryInfo) && $deliveryInfo['enabled'])
+                            {{-- @if(isset($deliveryInfo) && $deliveryInfo['enabled'])
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Delivery Charge:</span>
                                 <span id="delivery-charge">
@@ -441,7 +441,7 @@
                             <div class="d-flex justify-content-between mb-2">
                                 <span>Payment Charge:</span>
                                 <span id="payment-charge">+₹<span id="payment-charge-amount">0.00</span></span>
-                            </div>
+                            </div> --}}
 
                             <hr>
 
