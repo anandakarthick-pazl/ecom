@@ -95,7 +95,7 @@
         </div>
 
         <!-- Enhanced Pagination -->
-        <div class="pagination-container">
+        {{-- <div class="pagination-container">
             <div class="pagination-info">
                 <p class="small text-muted mb-0">
                     Showing <span class="fw-semibold text-primary">{{ $customers->firstItem() }}</span>
@@ -107,7 +107,7 @@
             <div class="pagination-nav">
                 {{ $customers->withQueryString()->links() }}
             </div>
-        </div>
+        </div> --}}
         @else
         <div class="text-center py-4">
             <i class="fas fa-users fa-3x text-muted mb-3"></i>
