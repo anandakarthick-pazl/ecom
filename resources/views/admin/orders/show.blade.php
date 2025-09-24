@@ -498,7 +498,7 @@
                                         <td class="text-end fw-semibold">SGST:</td>
                                         <td class="text-end">₹{{ number_format($order->sgst_amount, 2) }}</td>
                                     </tr>
-                                    <tr>
+                                    {{-- <tr>
                                         <td class="text-end fw-semibold">Delivery:</td>
                                         <td class="text-end">
                                             @if ($order->delivery_charge == 0)
@@ -507,7 +507,7 @@
                                                 ₹{{ number_format($order->delivery_charge, 2) }}
                                             @endif
                                         </td>
-                                    </tr>
+                                    </tr> --}}
                                     <tr class="table-success">
                                         <td class="text-end fw-bold">Total:</td>
                                         <td class="text-end fw-bold fs-5">₹{{ number_format($order->total, 2) }}</td>

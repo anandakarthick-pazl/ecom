@@ -54,24 +54,24 @@
                         </div>
                     </div>
                     
-                    <h2 class="text-success mb-3 fw-bold">🎉 Order Placed Successfully!</h2>
-                    <p class="lead mb-4">Thank you for your order! We'll start preparing it right away and will notify you once it's shipped.</p>
+                    <h2 class="text-success mb-3 fw-bold">🎉 Estimate Placed Successfully!</h2>
+                    <p class="lead mb-4">Thank you for your Estimate.</p>
                     
                     <div class="alert alert-success border-0 shadow-sm">
                         <div class="row align-items-center">
                             <div class="col-md-6 text-md-start">
-                                <strong class="text-success">📋 Order Number:</strong><br>
+                                <strong class="text-success">📋 Estimate Number:</strong><br>
                                 <span class="h4 text-primary fw-bold">{{ $order->order_number }}</span>
                             </div>
                             <div class="col-md-6 text-md-end">
-                                <strong class="text-success">📅 Order Date:</strong><br>
+                                <strong class="text-success">📅 Estimate Date:</strong><br>
                                 <span class="h6">{{ $order->created_at->format('M d, Y h:i A') }}</span>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Order Status Timeline -->
-                    <div class="mt-4">
+                    {{-- <div class="mt-4">
                         <div class="row">
                             <div class="col-3 text-center">
                                 <div class="timeline-step active">
@@ -106,14 +106,14 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
             
             <!-- Order Details Card -->
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-receipt"></i> Order Details</h5>
+                    <h5 class="mb-0"><i class="fas fa-receipt"></i> Estimate Details</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -140,7 +140,7 @@
                         </div>
                         
                         <div class="col-md-6">
-                            <h6 class="text-primary"><i class="fas fa-shopping-bag"></i> Order Items</h6>
+                            <h6 class="text-primary"><i class="fas fa-shopping-bag"></i> Estimate Items</h6>
                             <div class="order-items">
                                 @foreach($order->items as $item)
                                 <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
@@ -209,12 +209,12 @@
                 </div>
             </div>
             
-            <div class="row mt-4">
+            {{-- <div class="row mt-4">
                 <div class="col-md-4">
                     <div class="card text-center">
                         <div class="card-body">
                             <i class="fas fa-clock fa-2x text-warning mb-2"></i>
-                            <h6>Order Status</h6>
+                            <h6>Estimate Status</h6>
                             <span class="badge bg-warning">{{ ucfirst($order->status) }}</span>
                         </div>
                     </div>
@@ -271,12 +271,12 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> --}}
             
             <!-- Invoice Download Section -->
             <div class="card bg-light border-0 shadow-sm mt-4">
                 <div class="card-body text-center">
-                    <h5 class="mb-3"><i class="fas fa-download text-primary"></i> Download Your Invoice</h5>
+                    <h5 class="mb-3"><i class="fas fa-download text-primary"></i> Download Your Estimate</h5>
                     <div class="d-flex justify-content-center gap-3">
                         @php
                             $companyId = $order->company_id ?? session('selected_company_id');
@@ -288,26 +288,26 @@
                         @if($defaultFormat === 'thermal' || $thermalEnabled)
                             <a href="{{ route('invoice.download', ['orderNumber' => $order->order_number, 'format' => 'thermal']) }}" 
                                class="btn btn-success btn-lg" target="_blank">
-                                <i class="fas fa-receipt"></i> Thermal Invoice
+                                <i class="fas fa-receipt"></i> Thermal Estimate
                             </a>
                         @endif
                         
                         @if($defaultFormat === 'a4_sheet' || $a4Enabled)
                             <a href="{{ route('invoice.download', ['orderNumber' => $order->order_number, 'format' => 'a4_sheet']) }}" 
                                class="btn btn-info btn-lg" target="_blank">
-                                <i class="fas fa-file-pdf"></i> PDF Invoice
+                                <i class="fas fa-file-pdf"></i> PDF Estimate
                             </a>
                         @endif
                     </div>
                     <p class="text-muted small mt-2 mb-0">
-                        <i class="fas fa-info-circle"></i> Keep this invoice for your records and warranty claims
+                        <i class="fas fa-info-circle"></i> Keep this Estimate for your records and warranty claims
                     </p>
                 </div>
             </div>
             
             <div class="text-center mt-4">
                 <a href="{{ route('track.order') }}" class="btn btn-primary btn-lg me-2">
-                    <i class="fas fa-search"></i> Track Your Order
+                    <i class="fas fa-search"></i> Track Your Estimate
                 </a>
                 <a href="{{ route('shop') }}" class="btn btn-outline-primary btn-lg">
                     <i class="fas fa-home"></i> Continue Shopping
