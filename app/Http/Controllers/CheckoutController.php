@@ -123,7 +123,7 @@ class CheckoutController extends Controller
 
         // Validate minimum order amount for online orders using DeliveryService
         $subtotalForValidation = Cart::getCartTotal($this->getSessionId());
-        echo "<pre>";print_R($subtotalForValidation);exit;
+        
         $validationResult = DeliveryService::validateMinimumOrderAmount($subtotalForValidation);
 
         if (!$validationResult['valid']) {

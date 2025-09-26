@@ -553,7 +553,7 @@
 
                         <td class="text-center">
 
-                            {{ $company['currency'] ?? '₹' }}{{ number_format($item->price, 2) }}
+                            {{ $company['currency'] ?? '₹' }}{{ number_format($item->originalPrice, 2) }}
 
                         </td>
 
