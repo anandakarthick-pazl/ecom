@@ -473,7 +473,13 @@
                                 -
                             @endif
                         </td> --}}
-                        <td class="text-right">₹{{ number_format($item->total_price, 2) }}</td>
+                        <td class="text-right">
+                             @if ($item->mrp_price && $item->mrp_price > $item->offer_price)
+                                ₹{{ number_format($item->offer_price*$item->quantity, 2) }}
+                            @else
+                            ₹{{ number_format($item->total_price, 2) }}
+                         @endif
+                        </td>
                         {{-- <td class="text-right">
                             <strong>₹{{ number_format($item->line_total_with_tax ?? $item->total_price, 2) }}</strong>
                         </td> --}}
@@ -511,7 +517,7 @@
                     @endif
                     <tr class="subtotal-row">
                         <td>Subtotal (After Discounts)</td>
-                        <td>₹{{ number_format($estimate->subtotal, 2) }}</td>
+                        <td>₹{{ number_format($totalMrpValue-$totalDiscountAmount, 2) }}</td>
                     </tr>
                     {{-- @if ($totalTaxAmount > 0)
                         <tr>
@@ -521,7 +527,7 @@
                     @endif --}}
                     <tr class="total-row">
                         <td>Grand Total</td>
-                        <td>₹{{ number_format($estimate->total_amount, 2) }}</td>
+                        <td>₹{{ number_format($totalMrpValue-$totalDiscountAmount, 2) }}</td>
                     </tr>
                 </table>
             </div>
