@@ -361,22 +361,22 @@
         <div class="invoice-header">
             <div class="company-header">
                 <div class="company-logo">
-                    @if(!empty($company['logo']))
-    @php
-        $logoPath = public_path('storage/logos/' . basename($company['logo']));
-        $logoBase64 = null;
+                    @if (!empty($company['logo']))
+                        @php
+                            $logoPath = public_path('storage/logos/' . basename($company['logo']));
+                            $logoBase64 = null;
 
-        if (file_exists($logoPath)) {
-            $logoBase64 = base64_encode(file_get_contents($logoPath));
-        }
-    @endphp
+                            if (file_exists($logoPath)) {
+                                $logoBase64 = base64_encode(file_get_contents($logoPath));
+                            }
+                        @endphp
 
-    @if($logoBase64)
-        <img src="data:image/png;base64,{{ $logoBase64 }}" alt="{{ $company['name'] }}">
-    @else
-        <img src="{{ $company['logo'] }}" alt="{{ $company['name'] }}">
-    @endif
-@endif
+                        @if ($logoBase64)
+                            <img src="data:image/png;base64,{{ $logoBase64 }}" alt="{{ $company['name'] }}">
+                        @else
+                            <img src="{{ $company['logo'] }}" alt="{{ $company['name'] }}">
+                        @endif
+                    @endif
 
 
                 </div>
@@ -460,8 +460,9 @@
                     <th style="width: 5%;">S.No</th>
                     <th style="width: 30%;">Item Description</th>
                     <th style="width: 10%;" class="text-center">Qty</th>
+                    <th style="width: 20%;" class="text-center">MRP</th>
                     <th style="width: 20%;" class="text-center">Offer price</th>
-                    <th style="width: 20%;" class="text-center">Rate</th>
+                    
                     <th style="width: 10%;" class="text-center">Total</th>
                 </tr>
             </thead>
@@ -473,6 +474,8 @@
                     $totalOriginalAmount = 0;
                     $totalSavings = 0;
                     $total = 0;
+                    $beforeDiscountTotal = 0;
+                    $afterDiscountTotal = 0;
                 @endphp
 
                 @foreach ($order->items as $index => $item)
@@ -531,6 +534,8 @@
                         } else {
                             $total += $item->price * $item->quantity;
                         }
+                        $beforeDiscountTotal += $item->mrp_price * $item->quantity;
+                        $afterDiscountTotal += $item->effectivePrice * $item->quantity;
                     @endphp
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
@@ -542,6 +547,11 @@
 
                         <td class="text-center">{{ $item->quantity }}</td>
                         <td class="text-center">
+
+                            {{ $company['currency'] ?? '₹' }}{{ number_format($item->mrp_price, 2) }}
+
+                        </td>
+                        <td class="text-center">
                             @if ($hasOffer)
                                 <div style="color: green; font-weight: bold;">
                                     {{ $company['currency'] ?? '₹' }}{{ number_format($effectivePrice, 2) }}
@@ -551,11 +561,7 @@
                             @endif
                         </td>
 
-                        <td class="text-center">
-
-                            {{ $company['currency'] ?? '₹' }}{{ number_format($item->mrp_price, 2) }}
-
-                        </td>
+                        
 
                         <td class="text-center">
                             @if ($hasOffer)
@@ -577,6 +583,23 @@
 
 
 
+                <div class="summary-row">
+                    <div class="summary-label">Sub Total (Before Discount):</div>
+                    <div class="summary-value">
+                        {{ $company['currency'] ?? '₹' }}{{ number_format($beforeDiscountTotal, 2) }}
+                    </div>
+                </div>
+                <div class="summary-row">
+                    <div class="summary-label">Product Discount:</div>
+                    <div class="summary-value">{{ $company['currency'] ?? '₹' }}{{ number_format($beforeDiscountTotal-$afterDiscountTotal, 2) }}
+                    </div>
+                </div>
+                <div class="summary-row">
+                    <div class="summary-label">Sub Total (After Discount):</div>
+                    <div class="summary-value">
+                        {{ $company['currency'] ?? '₹' }}{{ number_format($afterDiscountTotal, 2) }}
+                    </div>
+                </div>
                 <div class="summary-row total-row">
                     <div class="summary-label">Grand Total:</div>
                     <div class="summary-value">{{ $company['currency'] ?? '₹' }}{{ number_format($total, 2) }}</div>
@@ -585,23 +608,7 @@
         </div>
 
         <!-- Footer Section -->
-        <div class="invoice-footer">
-
-
-            <!-- Signature Section -->
-            <div class="signature-section">
-                <div class="customer-signature">
-                    <div class="signature-line">Customer Signature</div>
-                </div>
-                <div style="display: table-cell; width: 10%;"></div>
-                <div class="authorized-signature">
-                    <div class="signature-line">Authorized Signature</div>
-                </div>
-            </div>
-
-            <!-- Thank You Message -->
-
-        </div>
+        
     </div>
 </body>
 
