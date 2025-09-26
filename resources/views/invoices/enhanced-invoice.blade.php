@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <?php #333
-//echo"<pre>";print_R($company);exit;
+// echo"<pre>";print_R($order);exit;
 ?>
 <html lang="en">
 
@@ -553,7 +553,7 @@
 
                         <td class="text-center">
 
-                            {{ $company['currency'] ?? '₹' }}{{ number_format($item->originalPrice, 2) }}
+                            {{ $company['currency'] ?? '₹' }}{{ number_format($item->mrp_price, 2) }}
 
                         </td>
 
@@ -561,7 +561,7 @@
                             @if ($hasOffer)
                                 {{ $company['currency'] ?? '₹' }}{{ number_format($effectivePrice * $item->quantity, 2) }}
                             @else
-                                {{ $company['currency'] ?? '₹' }}{{ number_format($item->price * $item->quantity, 2) }}
+                                {{ $company['currency'] ?? '₹' }}{{ number_format($item->mrp_price * $item->quantity, 2) }}
                             @endif
 
                         </td>
