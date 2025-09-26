@@ -549,15 +549,7 @@ class BillPDFService
 
             if ($type === 'order') {
                 $viewData['order'] = $model;
-                // Use modern invoice template for A4 format, fallback to original if not exists
-                if ($format === self::FORMAT_THERMAL) {
-                    $viewName = 'admin.orders.bill-thermal';
-                } else {
-                    // Try modern template first, fallback to original
-                    $viewName = View::exists('admin.orders.invoice-pdf-modern') 
-                        ? 'admin.orders.invoice-pdf-modern' 
-                        : 'admin.orders.invoice-pdf';
-                }
+                $viewName = ($format === self::FORMAT_THERMAL) ? 'admin.orders.bill-thermal' : 'admin.orders.invoice-pdf';
             } else {
                 // POS sale
                 $viewData['sale'] = $model;

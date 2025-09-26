@@ -1,5 +1,9 @@
 @extends('admin.layouts.app')
+<?php
+//echo "<pre>";print_R($estimate);exit;
 
+
+?>
 @section('title', 'Estimate Details - #' . $estimate->estimate_number)
 
 @section('content')
@@ -18,9 +22,9 @@
                     <i class="fas fa-edit me-2"></i>Edit
                 </a>
             @endif
-            <button onclick="window.print()" class="btn btn-info">
+            {{-- <button onclick="window.print()" class="btn btn-info">
                 <i class="fas fa-print me-2"></i>Print
-            </button>
+            </button> --}}
             <a href="{{ route('admin.estimates.download', $estimate) }}" class="btn btn-success">
                 <i class="fas fa-download me-2"></i>Download PDF
             </a>
@@ -40,18 +44,18 @@
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <h5 class="text-primary">From:</h5>
-                            <p class="mb-1"><strong>{{ $estimate->company->company_name ?? 'Company Name' }}</strong></p>
+                            <p class="mb-1"><strong>{{ $estimate->customer_name ?? 'Company Name' }}</strong></p>
                             @if($estimate->company->company_address ?? null)
                                 <p class="mb-1">{{ $estimate->company->company_address }}</p>
                             @endif
-                            @if($estimate->company->company_phone ?? null)
-                                <p class="mb-1">Phone: {{ $estimate->company->company_phone }}</p>
+                            @if($estimate->customer_phone ?? null)
+                                <p class="mb-1">Phone: {{ $estimate->customer_phone }}</p>
                             @endif
-                            @if($estimate->company->company_email ?? null)
-                                <p class="mb-1">Email: {{ $estimate->company->company_email }}</p>
+                            @if($estimate->customer_email ?? null)
+                                <p class="mb-1">Email: {{ $estimate->customer_email }}</p>
                             @endif
                         </div>
-                        <div class="col-md-6">
+                        {{-- <div class="col-md-6">
                             <h5 class="text-primary">To:</h5>
                             @if($estimate->supplier ?? null)
                                 <p class="mb-1"><strong>{{ $estimate->supplier->name }}</strong></p>
@@ -67,7 +71,7 @@
                             @else
                                 <p class="text-muted">No supplier information</p>
                             @endif
-                        </div>
+                        </div> --}}
                     </div>
 
                     <div class="row mb-4">
@@ -239,9 +243,21 @@
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         @if($estimate->status === 'accepted')
-                            <a href="{{ route('admin.purchase-orders.create', ['estimate' => $estimate->id]) }}" class="btn btn-primary btn-sm">
+                            <button onclick="convertToSale()" class="btn btn-primary btn-sm">
+                                <i class="fas fa-cash-register me-2"></i>Convert to POS Sale
+                            </button>
+                            <a href="{{ route('admin.purchase-orders.create', ['estimate' => $estimate->id]) }}" class="btn btn-info btn-sm">
                                 <i class="fas fa-shopping-cart me-2"></i>Create Purchase Order
                             </a>
+                        @elseif($estimate->status === 'converted')
+                            <div class="alert alert-info mb-2">
+                                <i class="fas fa-info-circle me-2"></i>This estimate has been converted to a sale.
+                            </div>
+                            @if($estimate->convertedSale)
+                                <a href="{{ route('admin.pos.show', $estimate->converted_to_sale_id) }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-receipt me-2"></i>View POS Sale
+                                </a>
+                            @endif
                         @endif
                         <button onclick="duplicateEstimate()" class="btn btn-secondary btn-sm">
                             <i class="fas fa-copy me-2"></i>Duplicate Estimate
@@ -408,6 +424,23 @@
 
         const modal = bootstrap.Modal.getInstance(document.getElementById('statusModal'));
         modal.hide();
+    }
+
+    function convertToSale() {
+        if (confirm('Are you sure you want to convert this estimate to a POS sale? This action cannot be undone.')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `{{ route('admin.estimates.convert-to-sale', $estimate) }}`;
+            
+            const csrfToken = document.createElement('input');
+            csrfToken.type = 'hidden';
+            csrfToken.name = '_token';
+            csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            form.appendChild(csrfToken);
+            document.body.appendChild(form);
+            form.submit();
+        }
     }
 
     function duplicateEstimate() {

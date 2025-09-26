@@ -1,35 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Estimate #{{ $estimate->estimate_number }}</title>
     <style>
+        /* Reset */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        /* Base Styles - Optimized for PDF */
         body {
             font-family: 'DejaVu Sans', Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
+            font-size: 10pt;
+            line-height: 1.3;
             color: #333;
+            margin: 0;
+            padding: 0;
         }
 
+        /* Container for A4 PDF */
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            width: 100%;
+            max-width: 100%;
+            padding: 20px 25px;
+            margin: 0;
         }
 
+        /* Header Section */
         .header {
-            display: table;
             width: 100%;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
             border-bottom: 2px solid #2563eb;
-            padding-bottom: 20px;
+        }
+
+        .header-content {
+            width: 100%;
+        }
+
+        .header-top {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .header-bottom {
+            width: 100%;
+            display: table;
         }
 
         .header-left {
@@ -40,383 +61,483 @@
 
         .header-right {
             display: table-cell;
-            width: 40%;
-            vertical-align: top;
+            width: 30%;
             text-align: right;
+            vertical-align: top;
         }
 
+        /* Logo and Company Info */
         .company-logo {
-            max-height: 80px;
-            max-width: 200px;
-            margin-bottom: 10px;
+            max-height: 60px;
+            max-width: 150px;
+            margin-bottom: 8px;
+            display: block;
         }
 
         .company-name {
-            font-size: 24px;
+            font-size: 20pt;
             font-weight: bold;
             color: #2563eb;
             margin-bottom: 5px;
         }
 
         .company-details {
-            font-size: 11px;
-            color: #666;
-            line-height: 1.3;
-        }
-
-        .estimate-title {
-            font-size: 28px;
-            font-weight: bold;
-            color: #2563eb;
-            margin-bottom: 10px;
-        }
-
-        .estimate-number {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .estimate-dates {
-            font-size: 11px;
-            color: #666;
-        }
-
-        .billing-section {
-            display: table;
-            width: 100%;
-            margin: 30px 0;
-        }
-
-        .billing-left {
-            display: table-cell;
-            width: 50%;
-            vertical-align: top;
-            padding-right: 20px;
-        }
-
-        .billing-right {
-            display: table-cell;
-            width: 50%;
-            vertical-align: top;
-            padding-left: 20px;
-        }
-
-        .billing-header {
-            font-size: 14px;
-            font-weight: bold;
-            color: #2563eb;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 5px;
-        }
-
-        .billing-details {
-            font-size: 11px;
+            font-size: 9pt;
+            color: #555;
             line-height: 1.4;
         }
 
-        .billing-details p {
-            margin-bottom: 3px;
+        .company-details p {
+            margin: 2px 0;
         }
 
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 30px 0;
-            font-size: 11px;
-        }
-
-        .items-table th {
-            background-color: #2563eb;
-            color: white;
-            padding: 12px 8px;
-            text-align: left;
+        /* Estimate Details */
+        .estimate-title {
+            font-size: 18pt;
             font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 8px;
         }
 
-        .items-table td {
-            padding: 10px 8px;
-            border-bottom: 1px solid #e5e7eb;
+        .estimate-number {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .estimate-info {
+            font-size: 10pt;
+            line-height: 1.5;
+        }
+
+        .estimate-info p {
+            margin: 3px 0;
+        }
+
+        .estimate-info strong {
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Billing Section */
+        .billing-section {
+            width: 100%;
+            margin: 20px 0;
+            display: table;
+        }
+
+        .billing-from,
+        .billing-to {
+            display: table-cell;
+            width: 48%;
             vertical-align: top;
         }
 
-        .items-table tr:nth-child(even) {
-            background-color: #f9fafb;
+        .billing-from {
+            padding-right: 15px;
         }
 
-        .text-right {
-            text-align: right;
+        .billing-to {
+            padding-left: 15px;
+        }
+
+        .billing-title {
+
+            border-bottom: 1px solid #ddd;
+            /* text-align: right; */
+            /* width: 100%; */
+        }
+
+        .billing-details {
+            font-size: 10pt;
+            line-height: 1.5;
+        }
+
+        .billing-details p {
+            margin: 3px 0;
+        }
+
+        .billing-details strong {
+            font-weight: bold;
+            color: #111;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        /* Items Table */
+        .items-table {
+            width: 97%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 9pt;
+        }
+
+        .items-table thead {
+            background-color: #2563eb;
+        }
+
+        .items-table th {
+            color: white;
+            font-weight: bold;
+            padding: 8px 5px;
+            text-align: center;
+            border: 1px solid #2563eb;
+            font-size: 9pt;
+        }
+
+        .items-table tbody tr {
+            border-bottom: 1px solid #ddd;
+        }
+
+        .items-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .items-table td {
+            padding: 6px 5px;
+            border-left: 1px solid #ddd;
+            border-right: 1px solid #ddd;
+            font-size: 9pt;
+        }
+
+        .text-left {
+            text-align: left;
         }
 
         .text-center {
             text-align: center;
         }
 
-        .totals-section {
-            margin-top: 30px;
-            display: table;
-            width: 100%;
+        .text-right {
+            text-align: right;
         }
 
-        .totals-left {
+        /* Column Widths */
+        .col-sno {
+            width: 5%;
+        }
+
+        .col-item {
+            width: 35%;
+        }
+
+        .col-qty {
+            width: 8%;
+        }
+
+        .col-mrp {
+            width: 12%;
+        }
+
+        .col-offer {
+            width: 12%;
+        }
+
+        .col-tax {
+            width: 10%;
+        }
+
+        .col-line {
+            width: 9%;
+        }
+
+        .col-total {
+            width: 9%;
+        }
+
+        /* Totals Section */
+        .totals-section {
+            width: 98%;
+            margin-top: 20px;
+            display: table;
+        }
+
+        .notes-area {
             display: table-cell;
-            width: 60%;
+            width: 55%;
+            padding-right: 20px;
             vertical-align: top;
         }
 
-        .totals-right {
+        .totals-area {
             display: table-cell;
-            width: 40%;
+            width: 45%;
             vertical-align: top;
         }
 
         .totals-table {
             width: 100%;
-            font-size: 12px;
+            font-size: 10pt;
+        }
+
+        .totals-table tr {
+            border-bottom: 1px solid #f0f0f0;
         }
 
         .totals-table td {
-            padding: 8px 0;
-            border-bottom: 1px solid #e5e7eb;
+            padding: 6px 8px;
+        }
+
+        .totals-table td:first-child {
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .totals-table td:last-child {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .totals-table .subtotal-row {
+            background-color: #f8f9fa;
+        }
+
+        .totals-table .discount-row td:last-child {
+            color: #28a745;
         }
 
         .totals-table .total-row {
+            background-color: #2563eb;
+            color: white;
+            font-size: 12pt;
             font-weight: bold;
-            font-size: 14px;
-            border-top: 2px solid #2563eb;
-            border-bottom: 2px solid #2563eb;
-            background-color: #f3f4f6;
         }
 
-        .notes-section {
-            margin-top: 30px;
+        .totals-table .total-row td {
+            padding: 10px 8px;
         }
 
-        .notes-header {
-            font-size: 14px;
+        /* Notes and Terms */
+        .notes-box,
+        .terms-box {
+            margin-bottom: 15px;
+        }
+
+        .notes-title,
+        .terms-title {
+            font-size: 11pt;
             font-weight: bold;
             color: #2563eb;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 8px;
             padding-bottom: 5px;
+            border-bottom: 1px solid #ddd;
         }
 
-        .notes-content {
-            font-size: 11px;
+        .notes-content,
+        .terms-content {
+            font-size: 9pt;
             line-height: 1.5;
-            padding: 15px;
-            background-color: #f9fafb;
-            border-left: 4px solid #2563eb;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-left: 3px solid #2563eb;
             white-space: pre-wrap;
+            word-wrap: break-word;
         }
 
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .status-draft {
-            background-color: #f3f4f6;
-            color: #374151;
-        }
-
-        .status-sent {
-            background-color: #dbeafe;
-            color: #1d4ed8;
-        }
-
-        .status-accepted {
-            background-color: #d1fae5;
-            color: #065f46;
-        }
-
-        .status-rejected {
-            background-color: #fee2e2;
-            color: #991b1b;
-        }
-
-        .status-expired {
-            background-color: #fef3c7;
-            color: #92400e;
-        }
-
+        /* Footer */
         .footer {
-            margin-top: 50px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
-            font-size: 10px;
-            color: #666;
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
             text-align: center;
+            font-size: 9pt;
+            color: #666;
         }
 
+        /* Print and PDF Optimization */
         @media print {
-            .container {
+            body {
+                margin: 0;
                 padding: 0;
             }
-            
-            body {
-                font-size: 11px;
+
+            .container {
+                padding: 15px 20px;
             }
+
+            .items-table {
+                page-break-inside: avoid;
+            }
+
+            .totals-section {
+                page-break-inside: avoid;
+            }
+
+            .notes-box,
+            .terms-box {
+                page-break-inside: avoid;
+            }
+        }
+
+        @page {
+            size: A4;
+            margin: 10mm;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <!-- Header Section -->
-        <div class="header">
-            <div class="header-left">
-                @if($globalCompany->company_logo)
-                    <img src="{{ asset('storage/' . $globalCompany->company_logo) }}" alt="Company Logo" class="company-logo">
-                @endif
-                <div class="company-name">{{ $globalCompany->company_name }}</div>
-                <div class="company-details">
-                    @if($globalCompany->full_address)
-                        <p>{{ $globalCompany->full_address }}</p>
-                    @endif
-                    @if($globalCompany->contact_info)
-                        <p>{{ $globalCompany->contact_info }}</p>
-                    @endif
-                    @if($globalCompany->gst_number)
-                        <p><strong>GST:</strong> {{ $globalCompany->gst_number }}</p>
-                    @endif
-                </div>
-            </div>
-            <div class="header-right">
-                <div class="estimate-title">ESTIMATE</div>
-                <div class="estimate-number">#{{ $estimate->estimate_number }}</div>
-                <div class="estimate-dates">
-                    <p><strong>Date:</strong> {{ $estimate->estimate_date->format('F d, Y') }}</p>
-                    <p><strong>Valid Until:</strong> {{ $estimate->valid_until->format('F d, Y') }}</p>
-                    <p><strong>Status:</strong> 
-                        <span class="status-badge status-{{ $estimate->status }}">{{ ucfirst($estimate->status) }}</span>
-                    </p>
-                </div>
-            </div>
-        </div>
 
-        <!-- Billing Information -->
+
+        <!-- BILLING INFORMATION -->
         <div class="billing-section">
-            <div class="billing-left">
-                <div class="billing-header">From:</div>
+            <div class="billing-from">
+                {{-- <div class="billing-title">From</div> --}}
                 <div class="billing-details">
-                    <p><strong>{{ $globalCompany->company_name }}</strong></p>
-                    @if($globalCompany->full_address)
-                        <p>{{ $globalCompany->full_address }}</p>
+                    @if ($globalCompany->company_logo)
+                        @php
+                            $logoPath = public_path('storage/' . $globalCompany->company_logo);
+                            if (file_exists($logoPath)) {
+                                $logoData = base64_encode(file_get_contents($logoPath));
+                                $logoMime = mime_content_type($logoPath);
+                            }
+                        @endphp
+                        @if (isset($logoData))
+                            <img src="data:{{ $logoMime }};base64,{{ $logoData }}" class="company-logo"
+                                alt="Logo">
+                        @endif
                     @endif
-                    @if($globalCompany->company_phone)
+                    <strong>{{ $globalCompany->company_name ?? 'Your Company' }}</strong>
+                    @if ($globalCompany->company_address)
+                        <p>{{ $globalCompany->company_address }}</p>
+                    @endif
+                    @if ($globalCompany->company_phone)
                         <p>Phone: {{ $globalCompany->company_phone }}</p>
                     @endif
-                    @if($globalCompany->company_email)
+                    @if ($globalCompany->company_email)
                         <p>Email: {{ $globalCompany->company_email }}</p>
                     @endif
+                    {{-- <div class="estimate-number">#{{ $estimate->estimate_number }}</div>
+                    <div class="estimate-info">
+                        <p><strong>Date:</strong> {{ $estimate->estimate_date->format('d M, Y') }}</p>
+                        <p><strong>Valid Until:</strong> {{ $estimate->valid_until->format('d M, Y') }}</p>
+                        <p><strong>Status:</strong> {{ ucfirst($estimate->status) }}</p>
+                    </div> --}}
                 </div>
             </div>
-            <div class="billing-right">
-                <div class="billing-header">To:</div>
+            <div class="billing-to">
+                <div class="billing-title">#{{ $estimate->estimate_number }}
+                    <p><strong>Date:</strong> {{ $estimate->estimate_date->format('d M, Y') }}</p>
+                </div>
                 <div class="billing-details">
-                    <p><strong>{{ $estimate->customer_name }}</strong></p>
-                    @if($estimate->customer_address)
+                    <strong>{{ $estimate->customer_name }}</strong>
+                    @if ($estimate->customer_address)
                         <p>{{ $estimate->customer_address }}</p>
                     @endif
-                    @if($estimate->customer_phone)
+                    @if ($estimate->customer_phone)
                         <p>Phone: {{ $estimate->customer_phone }}</p>
                     @endif
-                    @if($estimate->customer_email)
+                    @if ($estimate->customer_email)
                         <p>Email: {{ $estimate->customer_email }}</p>
                     @endif
                 </div>
             </div>
         </div>
 
-        <!-- Items Table -->
+        <!-- ITEMS TABLE -->
         <table class="items-table">
             <thead>
                 <tr>
-                    <th style="width: 5%;">#</th>
-                    <th style="width: 45%;">Item Description</th>
-                    <th style="width: 10%;" class="text-center">Qty</th>
-                    <th style="width: 15%;" class="text-right">Unit Price</th>
-                    <th style="width: 25%;" class="text-right">Total</th>
+                    <th class="col-sno">#</th>
+                    <th class="col-item text-left">Item</th>
+                    <th class="col-qty">Qty</th>
+                    <th class="col-mrp">MRP</th>
+                    <th class="col-offer">Offer Price</th>
+                    {{-- <th class="col-tax">Tax</th> --}}
+                    {{-- <th class="col-line">Line Total</th> --}}
+                    <th class="col-total">Total</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($estimate->items as $index => $item)
-                <tr>
-                    <td class="text-center">{{ $index + 1 }}</td>
-                    <td>
-                        <strong>{{ $item->product->name ?? 'Product' }}</strong>
-                        @if($item->description)
-                            <br><small style="color: #666;">{{ $item->description }}</small>
-                        @endif
-                        @if($item->product && $item->product->sku)
-                            <br><small style="color: #666;">SKU: {{ $item->product->sku }}</small>
-                        @endif
-                    </td>
-                    <td class="text-center">{{ number_format($item->quantity, 0) }}</td>
-                    <td class="text-right">₹{{ number_format($item->unit_price, 2) }}</td>
-                    <td class="text-right">₹{{ number_format($item->total_price, 2) }}</td>
-                </tr>
+                @foreach ($estimate->items as $index => $item)
+                    <tr>
+                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td class="text-left">{{ $item->product->name ?? 'Product' }}</td>
+                        <td class="text-center">{{ number_format($item->quantity, 0) }}</td>
+                        <td class="text-right">₹{{ number_format($item->mrp_price, 2) }}</td>
+                        <td class="text-right" @if ($item->mrp_price && $item->mrp_price > $item->offer_price) style="color: #28a745;" @endif>
+                            @if ($item->mrp_price && $item->mrp_price > $item->offer_price)
+                                ₹{{ number_format($item->offer_price, 2) }}
+                            @else
+                                -
+                            @endif
+                        </td>
+
+
+                        {{-- <td class="text-center">
+                            @if ($item->product && $item->product->item_tax_percentage > 0)
+                                {{ number_format($item->product->item_tax_percentage, 0) }}%
+                            @else
+                                -
+                            @endif
+                        </td> --}}
+                        <td class="text-right">₹{{ number_format($item->total_price, 2) }}</td>
+                        {{-- <td class="text-right">
+                            <strong>₹{{ number_format($item->line_total_with_tax ?? $item->total_price, 2) }}</strong>
+                        </td> --}}
+                    </tr>
                 @endforeach
             </tbody>
         </table>
 
-        <!-- Totals Section -->
+        <!-- TOTALS AND NOTES -->
         <div class="totals-section">
-            <div class="totals-left">
-                @if($estimate->notes)
-                <div class="notes-section">
-                    <div class="notes-header">Notes:</div>
-                    <div class="notes-content">{{ $estimate->notes }}</div>
-                </div>
+            <div class="notes-area">
+                @if ($estimate->notes)
+                    <div class="notes-box">
+                        <div class="notes-title">Notes</div>
+                        <div class="notes-content">{{ $estimate->notes }}</div>
+                    </div>
                 @endif
             </div>
-            <div class="totals-right">
+            <div class="totals-area">
+                @php
+                    $totalMrpValue = $estimate->items->sum(fn($i) => ($i->mrp_price ?? $i->unit_price) * $i->quantity);
+                    $totalDiscountAmount = $estimate->items->sum(fn($i) => ($i->discount_amount ?? 0) * $i->quantity);
+                    $totalTaxAmount = $estimate->items->sum('tax_amount') ?? 0;
+                @endphp
                 <table class="totals-table">
-                    <tr>
-                        <td><strong>Subtotal:</strong></td>
-                        <td class="text-right">₹{{ number_format($estimate->subtotal, 2) }}</td>
+                    <tr class="subtotal-row">
+                        <td>Subtotal (Before Discounts)</td>
+                        <td>₹{{ number_format($totalMrpValue, 2) }}</td>
                     </tr>
-                    @if($estimate->tax_amount > 0)
-                    <tr>
-                        <td><strong>Tax:</strong></td>
-                        <td class="text-right">₹{{ number_format($estimate->tax_amount, 2) }}</td>
-                    </tr>
+                    @if ($totalDiscountAmount > 0)
+                        <tr class="discount-row">
+                            <td>Product Discounts</td>
+                            <td>-₹{{ number_format($totalDiscountAmount, 2) }}</td>
+                        </tr>
                     @endif
-                    @if($estimate->discount > 0)
-                    <tr>
-                        <td><strong>Discount:</strong></td>
-                        <td class="text-right">-₹{{ number_format($estimate->discount, 2) }}</td>
+                    <tr class="subtotal-row">
+                        <td>Subtotal (After Discounts)</td>
+                        <td>₹{{ number_format($estimate->subtotal, 2) }}</td>
                     </tr>
-                    @endif
+                    {{-- @if ($totalTaxAmount > 0)
+                        <tr>
+                            <td>Total Tax (GST)</td>
+                            <td>₹{{ number_format($totalTaxAmount, 2) }}</td>
+                        </tr>
+                    @endif --}}
                     <tr class="total-row">
-                        <td><strong>Total Amount:</strong></td>
-                        <td class="text-right"><strong>₹{{ number_format($estimate->total_amount, 2) }}</strong></td>
+                        <td>Grand Total</td>
+                        <td>₹{{ number_format($estimate->total_amount, 2) }}</td>
                     </tr>
                 </table>
             </div>
         </div>
 
-        <!-- Terms and Conditions -->
-        @if($estimate->terms_conditions)
-        <div class="notes-section">
-            <div class="notes-header">Terms & Conditions:</div>
-            <div class="notes-content">{{ $estimate->terms_conditions }}</div>
-        </div>
+        <!-- TERMS & CONDITIONS -->
+        @if ($estimate->terms_conditions)
+            <div class="terms-box">
+                <div class="terms-title">Terms & Conditions</div>
+                <div class="terms-content">{{ $estimate->terms_conditions }}</div>
+            </div>
         @endif
 
-        <!-- Footer -->
-        <div class="footer">
-            <p>This estimate is valid until {{ $estimate->valid_until->format('F d, Y') }}</p>
-            <p>Generated on {{ now()->format('F d, Y \a\t g:i A') }}</p>
-            @if($globalCompany->website)
-                <p>{{ $globalCompany->website }}</p>
-            @endif
-        </div>
+        <!-- FOOTER -->
+
     </div>
 </body>
+
 </html>

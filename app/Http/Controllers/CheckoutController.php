@@ -123,6 +123,7 @@ class CheckoutController extends Controller
 
         // Validate minimum order amount for online orders using DeliveryService
         $subtotalForValidation = Cart::getCartTotal($this->getSessionId());
+        echo "<pre>";print_R($subtotalForValidation);exit;
         $validationResult = DeliveryService::validateMinimumOrderAmount($subtotalForValidation);
 
         if (!$validationResult['valid']) {
@@ -274,9 +275,9 @@ class CheckoutController extends Controller
             \Log::info('Order transaction committed successfully');
 
             // Fire order placed event
-            event(new OrderPlaced($order));
+            //event(new OrderPlaced($order));
 
-            $notification = Notification::create([
+            Notification::create([
                 'company_id' => $order->company_id,
                 'type' => 'order_placed',
                 'title' => 'New Order Received',

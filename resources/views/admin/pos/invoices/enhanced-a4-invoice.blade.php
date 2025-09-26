@@ -1,386 +1,515 @@
-<?php
-// echo "<pre>";print_r($globalCompany);exit;
-$logo = '';
-
-if (!empty($globalCompany->company_logo)) {
-    // Build absolute storage path
-    $logoPath = storage_path('app/public/' . $globalCompany->company_logo);
-
-    if (file_exists($logoPath)) {
-        if (file_exists($logoPath)) {
-            $logoUrl = asset('storage/' . $globalCompany->company_logo);
-            $logo = '<img src="' . $logoUrl . '" style="height:50px; width:auto;">';
-        }
-        //$logoSrc = 'data:image/' . $logoType . ';base64,' . $logoData;
-
-        
-    }
-}
-
-?>
-
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Invoice - {{ $sale->invoice_number }}</title>
     <style>
         @page {
-            margin: 12mm;
+            margin: 15mm;
             size: A4;
         }
-
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
-            font-size: 11px;
+            font-size: 12px;
             line-height: 1.4;
             color: #333;
-            background: #fff;
+            background: #ffffff;
         }
-
+        
         .invoice-container {
             max-width: 800px;
-            margin: auto;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
         }
-
-        /* Header */
+        
+        /* Header Section */
         .invoice-header {
             display: table;
             width: 100%;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #2d5016;
-            padding-bottom: 8px;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #2d5016;
+            padding-bottom: 15px;
         }
-
+        
         .company-section {
             display: table-cell;
             width: 60%;
             vertical-align: top;
         }
-
+        
         .invoice-section {
             display: table-cell;
             width: 40%;
             vertical-align: top;
             text-align: right;
         }
-
+        
         .company-logo {
-            max-height: 60px;
-            margin-bottom: 6px;
+            max-height: 80px;
+            max-width: 200px;
+            margin-bottom: 10px;
+            object-fit: contain;
         }
-
+        
         .company-name {
-            font-size: 18px;
+            font-size: 24px;
             font-weight: bold;
             color: #2d5016;
-            margin-bottom: 4px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-
-        .company-address,
-        .company-contact {
-            font-size: 10px;
+        
+        .company-address {
             color: #666;
-            line-height: 1.3;
+            line-height: 1.5;
+            margin-bottom: 5px;
         }
-
-        .gst-number {
+        
+        .company-contact {
+            color: #666;
             font-size: 11px;
-            font-weight: bold;
-            color: #2d5016;
-            margin-top: 3px;
         }
-
+        
+        .gst-number {
+            color: #2d5016;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
         .invoice-title {
-            font-size: 20px;
+            font-size: 28px;
             font-weight: bold;
             color: #2d5016;
-            margin-bottom: 6px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-
+        
         .invoice-details {
             background: #f8f9fa;
-            padding: 8px;
-            border-left: 3px solid #2d5016;
-            border-radius: 4px;
-            font-size: 10px;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #2d5016;
         }
-
+        
+        .invoice-details table {
+            width: 100%;
+        }
+        
         .invoice-details td {
-            padding: 2px 0;
+            padding: 3px 0;
+            vertical-align: top;
         }
-
-        /* Customer + Payment */
+        
+        .invoice-details .label {
+            font-weight: bold;
+            color: #2d5016;
+            width: 40%;
+        }
+        
+        /* Customer Section */
         .customer-section {
-            margin: 12px 0;
+            margin: 20px 0;
             display: table;
             width: 100%;
         }
-
-        .bill-to,
-        .payment-info {
+        
+        .bill-to {
             display: table-cell;
             width: 50%;
             vertical-align: top;
         }
-
+        
         .payment-info {
-            padding-left: 20px;
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-left: 30px;
         }
-
+        
         .section-title {
-            font-size: 12px;
+            font-size: 14px;
             font-weight: bold;
             color: #2d5016;
-            margin-bottom: 5px;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 2px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 3px;
         }
-
-        .customer-info,
-        .payment-details {
-            padding: 8px;
-            border-radius: 4px;
-            font-size: 11px;
-        }
-
+        
         .customer-info {
             background: #f8f9fa;
+            padding: 12px;
+            border-radius: 5px;
             border-left: 3px solid #28a745;
         }
-
+        
         .payment-details {
             background: #fff3cd;
+            padding: 12px;
+            border-radius: 5px;
             border-left: 3px solid #ffc107;
         }
-
-        /* Items */
+        
+        /* Items Table */
         .items-section {
-            margin: 15px 0;
+            margin: 25px 0;
         }
-
+        
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 10px;
+            margin-top: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-
+        
+        .items-table thead {
+            background: linear-gradient(135deg, #2d5016, #3e6b21);
+            color: white;
+        }
+        
         .items-table th {
-            padding: 6px;
-            background: #2d5016;
-            color: #fff;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 11px;
             text-transform: uppercase;
-            font-size: 10px;
+            border-right: 1px solid rgba(255,255,255,0.2);
         }
-
+        
+        .items-table th:last-child {
+            border-right: none;
+        }
+        
         .items-table td {
-            padding: 6px;
+            padding: 10px 8px;
             border-bottom: 1px solid #e0e0e0;
+            border-right: 1px solid #f0f0f0;
+            vertical-align: top;
         }
-
+        
+        .items-table td:last-child {
+            border-right: none;
+        }
+        
         .items-table tbody tr:nth-child(even) {
             background: #f8f9fa;
         }
-
+        
+        .items-table tbody tr:hover {
+            background: #e8f5e8;
+        }
+        
         .text-right {
             text-align: right;
         }
-
+        
         .text-center {
             text-align: center;
         }
-
+        
         .product-name {
             font-weight: 600;
             color: #2d5016;
         }
-
-        /* Totals */
+        
+        .product-sku {
+            font-size: 10px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        /* Totals Section */
         .totals-section {
+            margin-top: 30px;
             display: table;
             width: 100%;
-            margin-top: 15px;
         }
-
+        
         .totals-left {
             display: table-cell;
             width: 60%;
+            vertical-align: top;
         }
-
+        
         .totals-right {
             display: table-cell;
             width: 40%;
+            vertical-align: top;
         }
-
+        
         .totals-table {
             width: 100%;
-            font-size: 11px;
+            margin-left: auto;
         }
-
+        
         .totals-table td {
-            padding: 6px;
+            padding: 8px 12px;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: middle;
         }
-
-        .total-row {
-            background: #2d5016;
-            color: #fff;
+        
+        .totals-table .label {
+            text-align: right;
+            font-weight: 500;
+            color: #555;
+            width: 60%;
+        }
+        
+        .totals-table .amount {
+            text-align: right;
             font-weight: bold;
+            width: 40%;
         }
-
+        
+        .total-row {
+            background: linear-gradient(135deg, #2d5016, #3e6b21);
+            color: white;
+            font-size: 14px;
+        }
+        
         .total-row td {
-            padding: 8px;
+            border-bottom: none;
+            padding: 12px;
         }
-
-        /* Notes */
+        
+        /* Payment Information */
+        .payment-summary {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .payment-method {
+            display: inline-block;
+            background: #2d5016;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        /* Notes Section */
         .notes-section {
-            margin-top: 8px;
+            margin-top: 25px;
             background: #f8f9fa;
-            padding: 8px;
-            border-left: 3px solid #6c757d;
-            font-size: 10px;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #6c757d;
         }
-
+        
         /* Footer */
         .invoice-footer {
-            margin-top: 20px;
-            padding-top: 12px;
-            border-top: 1px solid #2d5016;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #2d5016;
             text-align: center;
-            font-size: 10px;
+            color: #666;
         }
-
+        
         .thank-you {
-            font-size: 14px;
+            font-size: 18px;
             font-weight: bold;
             color: #2d5016;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
-
-        /* Page break */
+        
+        .footer-note {
+            font-size: 11px;
+            line-height: 1.5;
+        }
+        
+        /* Tax Details */
+        .tax-details {
+            font-size: 11px;
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        /* Discount highlighting */
+        .discount-amount {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .tax-amount {
+            color: #17a2b8;
+            font-weight: bold;
+        }
+        
+        /* Page break for long tables */
         .page-break {
             page-break-after: always;
         }
-
+        
+        /* Print specific styles */
         @media print {
             body {
                 -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .invoice-container {
+                max-width: none;
+                margin: 0;
             }
         }
     </style>
 </head>
-
 <body>
     <div class="invoice-container">
-        <!-- Header -->
+        <!-- Header Section -->
         <div class="invoice-header">
             <div class="company-section">
-                @if ($globalCompany->company_logo)
-                  <?php echo $logo;?>
+                @if(isset($globalCompany->company_logo_pdf) && $globalCompany->company_logo_pdf)
+                    <img src="{{ $globalCompany->company_logo_pdf }}" class="company-logo" alt="{{ $globalCompany->company_name }} Logo">
                 @endif
+                
                 <div class="company-name">{{ $globalCompany->company_name ?? 'Your Store' }}</div>
-                <div class="company-address">{{ $globalCompany->company_address ?? '' }}</div>
-                <div class="company-contact">{{ $globalCompany->mobile_number ?? '' }}</div>
-                <div class="company-contact">What's App : {{ $globalCompany->whatsapp_number ?? '' }}</div>
-                <div class="company-contact">G Pay : {{ $globalCompany->gpay_number ?? '' }}</div>
-                @if ($globalCompany->gst_number)
+                
+                @if(isset($globalCompany->full_address) && $globalCompany->full_address)
+                    <div class="company-address">{{ $globalCompany->full_address }}</div>
+                @endif
+                
+                @if(isset($globalCompany->contact_info) && $globalCompany->contact_info)
+                    <div class="company-contact">{{ $globalCompany->contact_info }}</div>
+                @endif
+                
+                @if(isset($globalCompany->gst_number) && $globalCompany->gst_number)
                     <div class="gst-number">GST: {{ $globalCompany->gst_number }}</div>
                 @endif
             </div>
+            
             <div class="invoice-section">
                 <div class="invoice-title">Invoice</div>
                 <div class="invoice-details">
                     <table>
                         <tr>
-                            <td>Invoice #:</td>
-                            <td><b>{{ $sale->invoice_number }}</b></td>
+                            <td class="label">Invoice #:</td>
+                            <td><strong>{{ $sale->invoice_number }}</strong></td>
                         </tr>
                         <tr>
-                            <td>Date:</td>
+                            <td class="label">Date:</td>
                             <td>{{ $sale->created_at->format('d M, Y') }}</td>
                         </tr>
                         <tr>
-                            <td>Time:</td>
+                            <td class="label">Time:</td>
                             <td>{{ $sale->created_at->format('h:i A') }}</td>
                         </tr>
                         <tr>
-                            <td>Status:</td>
-                            <td><b
-                                    style="color:{{ $sale->status === 'completed' ? '#28a745' : '#dc3545' }}">{{ ucfirst($sale->status) }}</b>
-                            </td>
+                            <td class="label">Status:</td>
+                            <td><span style="color: {{ $sale->status === 'completed' ? '#28a745' : '#dc3545' }}; font-weight: bold;">{{ ucfirst($sale->status) }}</span></td>
                         </tr>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- Customer + Payment -->
+        <!-- Customer Section -->
         <div class="customer-section">
             <div class="bill-to">
                 <div class="section-title">Bill To</div>
                 <div class="customer-info">
-                    <b>{{ $sale->customer_name ?? 'Walk-in Customer' }}</b>
-                    @if ($sale->customer_phone)
-                        <div>📞 {{ $sale->customer_phone }}</div>
+                    @if($sale->customer_name)
+                        <div style="font-weight: bold; font-size: 14px; color: #2d5016;">{{ $sale->customer_name }}</div>
+                        @if($sale->customer_phone)
+                            <div style="margin-top: 5px;">📞 {{ $sale->customer_phone }}</div>
+                        @endif
+                    @else
+                        <div style="font-weight: bold; color: #666;">Walk-in Customer</div>
+                        <div style="font-size: 11px; color: #888; margin-top: 5px;">No customer details provided</div>
                     @endif
                 </div>
             </div>
+            
             <div class="payment-info">
-                <div class="section-title">Payment</div>
+                <div class="section-title">Payment Details</div>
                 <div class="payment-details">
-                    <div><b>Method:</b> {{ ucfirst(str_replace('_', ' ', $sale->payment_method)) }}</div>
-                    <div><b>Paid:</b> ₹{{ number_format($sale->paid_amount, 2) }}</div>
-                    @if ($sale->change_amount > 0)
-                        <div><b>Change:</b> ₹{{ number_format($sale->change_amount, 2) }}</div>
+                    <div><strong>Method:</strong> <span class="payment-method">{{ ucfirst(str_replace('_', ' ', $sale->payment_method)) }}</span></div>
+                    <div style="margin-top: 8px;"><strong>Paid Amount:</strong> ₹{{ number_format($sale->paid_amount, 2) }}</div>
+                    @if($sale->change_amount > 0)
+                        <div><strong>Change Given:</strong> ₹{{ number_format($sale->change_amount, 2) }}</div>
                     @endif
+                    <div style="margin-top: 5px; font-size: 11px; color: #666;">
+                        Cashier: {{ $sale->cashier->name ?? 'N/A' }}
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Items -->
+        <!-- Items Section -->
         <div class="items-section">
             <div class="section-title">Items Purchased</div>
-            @foreach ($sale->items->chunk(20) as $chunkIndex => $chunk)
-                @if ($chunkIndex > 0)
+            
+            @foreach($sale->items->chunk(15) as $chunkIndex => $chunk)
+                @if($chunkIndex > 0)
                     <div class="page-break"></div>
                 @endif
+                
                 <table class="items-table">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>Product</th>
-                            <th>Qty</th>
-                            <th>Unit Price</th>
-                            <th>Discount</th>
-                            <th>Tax %</th>
-                            <th>Tax Amt</th>
-                            <th>Total</th>
+                            <th style="width: 5%;">#</th>
+                            <th style="width: 35%;">Product Details</th>
+                            <th style="width: 8%;">Qty</th>
+                            <th style="width: 12%;">Unit Price</th>
+                            <th style="width: 10%;">Discount</th>
+                            <th style="width: 8%;">Tax %</th>
+                            <th style="width: 10%;">Tax Amt</th>
+                            <th style="width: 12%;">Total</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($chunk as $index => $item)
+                        @foreach($chunk as $index => $item)
                             @php
-                                $num = $chunkIndex * 20 + $index + 1;
+                                $itemNumber = ($chunkIndex * 15) + $index + 1;
                                 $gross = $item->quantity * $item->unit_price;
-                                $disc = $item->discount_amount ?? 0;
+                                $discount = $item->discount_amount ?? 0;
                                 $tax = $item->tax_amount ?? 0;
-                                $total = $gross - $disc + $tax;
+                                $total = $gross - $discount + $tax;
                             @endphp
                             <tr>
-                                <td class="text-center">{{ $num }}</td>
+                                <td class="text-center">{{ $itemNumber }}</td>
                                 <td>
                                     <div class="product-name">{{ $item->product->name ?? $item->product_name }}</div>
-                                    @if ($item->product && $item->product->sku)
-                                        <small>SKU: {{ $item->product->sku }}</small>
+                                    @if($item->product && $item->product->sku)
+                                        <div class="product-sku">SKU: {{ $item->product->sku }}</div>
                                     @endif
                                 </td>
                                 <td class="text-center">{{ $item->quantity }}</td>
                                 <td class="text-right">₹{{ number_format($item->unit_price, 2) }}</td>
-                                <td class="text-right">{{ $disc > 0 ? '-₹' . number_format($disc, 2) : '-' }}</td>
+                                <td class="text-right">
+                                    @if($discount > 0)
+                                        <span class="discount-amount">-₹{{ number_format($discount, 2) }}</span>
+                                        @if($item->discount_percentage)
+                                            <br><small>({{ number_format($item->discount_percentage, 1) }}%)</small>
+                                        @endif
+                                    @else
+                                        <span style="color: #ccc;">-</span>
+                                    @endif
+                                </td>
                                 <td class="text-center">{{ $item->tax_percentage ?? 0 }}%</td>
-                                <td class="text-right">{{ $tax > 0 ? '₹' . number_format($tax, 2) : '-' }}</td>
-                                <td class="text-right"><b>₹{{ number_format($total, 2) }}</b></td>
+                                <td class="text-right">
+                                    @if($tax > 0)
+                                        <span class="tax-amount">₹{{ number_format($tax, 2) }}</span>
+                                    @else
+                                        <span style="color: #ccc;">-</span>
+                                    @endif
+                                </td>
+                                <td class="text-right"><strong>₹{{ number_format($total, 2) }}</strong></td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -388,45 +517,89 @@ if (!empty($globalCompany->company_logo)) {
             @endforeach
         </div>
 
-        <!-- Totals -->
+        <!-- Totals Section -->
         <div class="totals-section">
             <div class="totals-left">
-                @if ($sale->notes)
-                    <div class="notes-section"><b>Notes:</b> {{ $sale->notes }}</div>
+                @if($sale->notes)
+                    <div class="notes-section">
+                        <div class="section-title">Notes</div>
+                        <p>{{ $sale->notes }}</p>
+                    </div>
+                @endif
+                
+                @if($sale->custom_tax_enabled && $sale->tax_notes)
+                    <div class="tax-details">
+                        <strong>Tax Notes:</strong> {{ $sale->tax_notes }}
+                    </div>
                 @endif
             </div>
+            
             <div class="totals-right">
                 <table class="totals-table">
                     <tr>
-                        <td>Subtotal:</td>
-                        <td class="text-right">₹{{ number_format($sale->subtotal, 2) }}</td>
+                        <td class="label">Subtotal:</td>
+                        <td class="amount">₹{{ number_format($sale->subtotal, 2) }}</td>
                     </tr>
-                    @if ($sale->discount_amount > 0)
+                    
+                    @if($sale->discount_amount > 0)
                         <tr>
-                            <td>Discount:</td>
-                            <td class="text-right">-₹{{ number_format($sale->discount_amount, 2) }}</td>
+                            <td class="label">Discount:</td>
+                            <td class="amount discount-amount">-₹{{ number_format($sale->discount_amount, 2) }}</td>
                         </tr>
                     @endif
-                    @if ($sale->tax_amount > 0)
+                    
+                    @if($sale->cgst_amount > 0 || $sale->sgst_amount > 0)
+                        @if($sale->cgst_amount > 0)
+                            <tr>
+                                <td class="label">CGST:</td>
+                                <td class="amount tax-amount">₹{{ number_format($sale->cgst_amount, 2) }}</td>
+                            </tr>
+                        @endif
+                        @if($sale->sgst_amount > 0)
+                            <tr>
+                                <td class="label">SGST:</td>
+                                <td class="amount tax-amount">₹{{ number_format($sale->sgst_amount, 2) }}</td>
+                            </tr>
+                        @endif
+                    @elseif($sale->tax_amount > 0)
                         <tr>
-                            <td>Tax:</td>
-                            <td class="text-right">₹{{ number_format($sale->tax_amount, 2) }}</td>
+                            <td class="label">Tax:</td>
+                            <td class="amount tax-amount">₹{{ number_format($sale->tax_amount, 2) }}</td>
                         </tr>
                     @endif
+                    
                     <tr class="total-row">
-                        <td>Total:</td>
-                        <td class="text-right">₹{{ number_format($sale->total_amount, 2) }}</td>
+                        <td class="label">TOTAL AMOUNT:</td>
+                        <td class="amount">₹{{ number_format($sale->total_amount, 2) }}</td>
                     </tr>
                 </table>
+                
+                <div class="payment-summary" style="margin-top: 15px;">
+                    <div><strong>Amount Paid:</strong> ₹{{ number_format($sale->paid_amount, 2) }}</div>
+                    @if($sale->change_amount > 0)
+                        <div><strong>Change Returned:</strong> ₹{{ number_format($sale->change_amount, 2) }}</div>
+                    @endif
+                    <div style="margin-top: 5px; font-size: 11px;">
+                        Payment via {{ ucfirst(str_replace('_', ' ', $sale->payment_method)) }}
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Footer -->
         <div class="invoice-footer">
             <div class="thank-you">Thank you for shopping with {{ $globalCompany->company_name ?? 'us' }}!</div>
-            <div>This invoice was generated on {{ now()->format('d/m/Y h:i A') }}</div>
+            <div class="footer-note">
+                This invoice was generated on {{ now()->format('d/m/Y \a\t h:i A') }}<br>
+                For any queries, please contact us at {{ (isset($globalCompany->company_phone) && $globalCompany->company_phone) ? $globalCompany->company_phone : ((isset($globalCompany->company_email) && $globalCompany->company_email) ? $globalCompany->company_email : 'our store') }}
+            </div>
+            
+            @if(isset($globalCompany->gst_number) && $globalCompany->gst_number)
+                <div style="margin-top: 10px; font-size: 10px; color: #888;">
+                    This is a computer generated invoice. GST compliance ensured.
+                </div>
+            @endif
         </div>
     </div>
 </body>
-
 </html>

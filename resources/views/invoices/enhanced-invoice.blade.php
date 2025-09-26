@@ -1,693 +1,608 @@
 <!DOCTYPE html>
+
+<?php #333
+//echo"<pre>";print_R($company);exit;
+?>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice - {{ $order->order_number }}</title>
     <style>
-        /* Reset and Base Styles */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
-        @page {
-            margin: 15mm;
-            size: A4;
-        }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Arial', 'DejaVu Sans', sans-serif;
+            font-family: 'DejaVu Sans', Arial, sans-serif;
             font-size: 12px;
             line-height: 1.6;
-            color: #2c3e50;
-            background: white;
+            color: #333;
         }
-        
-        /* Container */
+
         .invoice-container {
             max-width: 800px;
             margin: 0 auto;
-            background: white;
+            padding: 20px;
+            background: #fff;
         }
-        
+
         /* Header Section */
         .invoice-header {
-            position: relative;
-            padding: 30px 0;
-            border-bottom: 3px solid #2d5016;
-            margin-bottom: 30px;
+            border-bottom: 3px solid {{ $company['primary_color'] ?? '#2d5016' }};
+            padding-bottom: 20px;
+            margin-bottom: 20px;
         }
-        
-        .header-content {
+
+        .company-header {
             display: table;
             width: 100%;
         }
-        
-        .company-section, .invoice-section {
+
+        .company-logo {
             display: table-cell;
+            width: 30%;
             vertical-align: top;
         }
-        
-        .company-section {
-            width: 60%;
+
+        .company-logo img {
+            max-width: 150px;
+            max-height: 80px;
         }
-        
-        .invoice-section {
-            width: 40%;
+
+        .company-details {
+            display: table-cell;
+            width: 70%;
             text-align: right;
+            vertical-align: top;
         }
-        
-        .company-logo {
-            max-height: 60px;
-            max-width: 180px;
-            margin-bottom: 15px;
-        }
-        
+
         .company-name {
             font-size: 24px;
-            font-weight: 700;
-            color: #2d5016;
-            margin-bottom: 8px;
-        }
-        
-        .company-details {
-            font-size: 11px;
-            color: #6c757d;
-            line-height: 1.5;
-        }
-        
-        .company-details div {
-            margin: 2px 0;
-        }
-        
-        .invoice-badge {
-            display: inline-block;
-            background: #2d5016;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 25px;
-            font-size: 14px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            margin-bottom: 15px;
-        }
-        
-        .invoice-number {
-            font-size: 18px;
-            font-weight: 700;
-            color: #2d5016;
+            font-weight: bold;
+            color: {{ $company['primary_color'] ?? '#2d5016' }};
             margin-bottom: 5px;
         }
-        
-        .invoice-date {
-            font-size: 12px;
-            color: #6c757d;
+
+        .company-address {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.4;
         }
-        
-        /* Customer & Order Info */
-        .info-section {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 25px;
+
+        /* Invoice Title */
+        .invoice-title {
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            background: {{ $company['primary_color'] ?? '#2d5016' }};
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        
-        .info-grid {
+
+        /* Invoice Info Section */
+        .invoice-info {
             display: table;
             width: 100%;
+            margin-bottom: 20px;
         }
-        
-        .info-column {
+
+        .invoice-details,
+        .customer-details {
             display: table-cell;
-            width: 50%;
+            width: 48%;
             vertical-align: top;
-            padding: 0 15px;
+            padding: 15px;
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
         }
-        
-        .info-column:first-child {
-            padding-left: 0;
-            border-right: 1px solid #e9ecef;
+
+        .invoice-details {
+            margin-right: 2%;
         }
-        
-        .info-column:last-child {
-            padding-right: 0;
-        }
-        
+
         .info-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: #2d5016;
+            font-size: 14px;
+            font-weight: bold;
+            color: {{ $company['primary_color'] ?? '#2d5016' }};
             margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            border-bottom: 2px solid {{ $company['primary_color'] ?? '#2d5016' }};
+            padding-bottom: 5px;
         }
-        
-        .info-content {
+
+        .info-row {
+            display: table;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        .info-label {
+            display: table-cell;
+            width: 40%;
+            font-weight: bold;
+            color: #555;
             font-size: 11px;
-            color: #495057;
-            line-height: 1.6;
         }
-        
-        .info-content strong {
-            color: #2c3e50;
-            display: inline-block;
-            min-width: 90px;
+
+        .info-value {
+            display: table-cell;
+            width: 60%;
+            color: #333;
+            font-size: 11px;
         }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 15px;
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-top: 5px;
-        }
-        
-        .status-pending { background: #fff3cd; color: #856404; }
-        .status-processing { background: #cce5ff; color: #004085; }
-        .status-shipped { background: #d4edda; color: #155724; }
-        .status-delivered { background: #d1ecf1; color: #0c5460; }
-        .status-cancelled { background: #f8d7da; color: #721c24; }
-        .status-paid { background: #d4edda; color: #155724; }
-        
+
         /* Items Table */
-        .items-section {
-            margin-bottom: 25px;
-        }
-        
         .items-table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-collapse: collapse;
+            margin-bottom: 20px;
         }
-        
+
         .items-table thead {
-            background: #2d5016;
+            background: {{ $company['primary_color'] ?? '#2d5016' }};
+            color: white;
         }
-        
+
         .items-table th {
-            color: white;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 12px 10px;
+            padding: 10px;
             text-align: left;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid {{ $company['primary_color'] ?? '#2d5016' }};
         }
-        
-        .items-table tbody tr {
-            border-bottom: 1px solid #e9ecef;
-        }
-        
-        .items-table tbody tr:last-child {
-            border-bottom: none;
-        }
-        
+
         .items-table td {
-            padding: 12px 10px;
+            /* padding: 8px 10px; */
+            border: 1px solid #ddd;
             font-size: 11px;
-            color: #495057;
-            vertical-align: top;
         }
-        
-        .product-name {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 2px;
+
+        .items-table tbody tr:nth-child(even) {
+            background: #f9f9f9;
         }
-        
-        .product-meta {
-            font-size: 10px;
-            color: #6c757d;
+
+        .items-table tbody tr:hover {
+            background: #f0f0f0;
         }
-        
-        .offer-tag {
-            display: inline-block;
-            background: #ff6b6b;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 9px;
-            font-weight: 600;
-            margin-top: 3px;
-        }
-        
-        .price-original {
-            text-decoration: line-through;
-            color: #adb5bd;
-            font-size: 10px;
-        }
-        
-        .price-offer {
-            color: #28a745;
-            font-weight: 600;
-        }
-        
-        .discount-badge {
-            background: #ffedcc;
-            color: #ff8800;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 9px;
-            font-weight: 600;
-        }
-        
-        .text-right {
-            text-align: right;
-        }
-        
+
         .text-center {
             text-align: center;
         }
-        
+
+        .text-right {
+            text-align: right;
+        }
+
+        .item-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .item-code {
+            font-size: 10px;
+            color: #666;
+            font-style: italic;
+        }
+
         /* Summary Section */
         .summary-section {
+            margin-top: 20px;
+            border-top: 2px solid {{ $company['primary_color'] ?? '#2d5016' }};
+            padding-top: 15px;
+        }
+
+        .summary-table {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .summary-row {
             display: table;
             width: 100%;
-            margin-bottom: 30px;
-        }
-        
-        .summary-notes {
-            display: table-cell;
-            width: 50%;
-            padding-right: 30px;
-            vertical-align: top;
-        }
-        
-        .summary-totals {
-            display: table-cell;
-            width: 50%;
-            vertical-align: top;
-        }
-        
-        .notes-box {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 15px;
-        }
-        
-        .notes-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: #2d5016;
             margin-bottom: 8px;
         }
-        
-        .notes-content {
-            font-size: 10px;
-            color: #6c757d;
-            line-height: 1.5;
-        }
-        
-        .totals-table {
-            width: 100%;
-            font-size: 11px;
-        }
-        
-        .totals-table tr {
-            border-bottom: 1px solid #f1f3f4;
-        }
-        
-        .totals-table td {
-            padding: 8px 10px;
-        }
-        
-        .totals-table .total-label {
-            color: #6c757d;
-            font-weight: 500;
-        }
-        
-        .totals-table .total-value {
+
+        .summary-label {
+            display: table-cell;
+            width: 70%;
             text-align: right;
-            color: #495057;
-            font-weight: 600;
+            padding-right: 20px;
+            font-size: 12px;
+            color: #555;
         }
-        
-        .totals-table .grand-total {
-            background: #2d5016;
-            color: white;
-            font-size: 14px;
-            font-weight: 700;
+
+        .summary-value {
+            display: table-cell;
+            width: 30%;
+            text-align: right;
+            font-size: 12px;
+            color: #333;
+            font-weight: bold;
         }
-        
-        .totals-table .grand-total td {
-            padding: 12px 10px;
-            border: none;
+
+        .total-row {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px solid {{ $company['primary_color'] ?? '#2d5016' }};
         }
-        
-        .savings-highlight {
-            color: #28a745;
-            font-weight: 600;
+
+        .total-row .summary-label {
+            font-size: 16px;
+            font-weight: bold;
+            color: {{ $company['primary_color'] ?? '#2d5016' }};
         }
-        
+
+        .total-row .summary-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: {{ $company['primary_color'] ?? '#2d5016' }};
+        }
+
         /* Footer Section */
         .invoice-footer {
-            border-top: 2px solid #e9ecef;
+            margin-top: 40px;
             padding-top: 20px;
-            margin-top: 30px;
+            border-top: 2px solid #ddd;
         }
-        
+
+        .footer-section {
+            display: table;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .bank-details,
+        .terms-conditions {
+            display: table-cell;
+            width: 48%;
+            vertical-align: top;
+        }
+
+        .bank-details {
+            padding-right: 20px;
+        }
+
+        .footer-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: {{ $company['primary_color'] ?? '#2d5016' }};
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+
         .footer-content {
+            font-size: 10px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .signature-section {
+            margin-top: 40px;
             display: table;
             width: 100%;
         }
-        
-        .footer-column {
+
+        .customer-signature,
+        .authorized-signature {
             display: table-cell;
-            width: 33.33%;
-            padding: 0 15px;
-            vertical-align: top;
-        }
-        
-        .footer-title {
-            font-size: 11px;
-            font-weight: 600;
-            color: #2d5016;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-        }
-        
-        .footer-text {
-            font-size: 10px;
-            color: #6c757d;
-            line-height: 1.5;
-        }
-        
-        .signature-line {
-            border-top: 1px solid #dee2e6;
-            margin-top: 40px;
-            padding-top: 5px;
+            width: 45%;
             text-align: center;
-            font-size: 10px;
-            color: #6c757d;
+            vertical-align: bottom;
         }
-        
+
+        .signature-line {
+            border-top: 1px solid #333;
+            margin-top: 50px;
+            padding-top: 5px;
+            font-size: 11px;
+            color: #555;
+        }
+
         /* Thank You Message */
         .thank-you {
             text-align: center;
-            margin: 30px 0;
-            padding: 20px;
-            background: #f0f8f0;
-            border-radius: 8px;
+            margin-top: 30px;
+            padding: 15px;
+            background: #f0f8ff;
+            border: 1px solid #b0d4ff;
+            border-radius: 5px;
         }
-        
-        .thank-you-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #2d5016;
+
+        .thank-you h3 {
+            color: {{ $company['primary_color'] ?? '#2d5016' }};
             margin-bottom: 5px;
+            font-size: 16px;
         }
-        
-        .thank-you-message {
+
+        .thank-you p {
+            color: #666;
             font-size: 11px;
-            color: #6c757d;
         }
-        
-        /* Print Styles */
+
+        /* Watermark */
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 100px;
+            color: rgba(0, 0, 0, 0.05);
+            font-weight: bold;
+            z-index: -1;
+        }
+
         @media print {
-            body {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            
             .invoice-container {
-                width: 100%;
-                max-width: none;
+                padding: 0;
             }
-            
-            .no-print {
-                display: none !important;
+
+            .items-table {
+                page-break-inside: avoid;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="invoice-container">
+        <!-- Watermark -->
+        @if ($order->payment_status !== 'paid')
+            <div class="watermark">UNPAID</div>
+        @endif
+
         <!-- Header Section -->
         <div class="invoice-header">
-            <div class="header-content">
-                <div class="company-section">
-                    @if(isset($company['logo']) && $company['logo'])
-                        <img src="{{ $company['logo'] }}" alt="{{ $company['name'] }}" class="company-logo">
-                    @endif
-                    <div class="company-name">{{ $company['name'] ?? 'Your Company' }}</div>
-                    <div class="company-details">
-                        @if(isset($company['address']) && $company['address'])
+            <div class="company-header">
+                <div class="company-logo">
+                    @if(!empty($company['logo']))
+    @php
+        $logoPath = public_path('storage/logos/' . basename($company['logo']));
+        $logoBase64 = null;
+
+        if (file_exists($logoPath)) {
+            $logoBase64 = base64_encode(file_get_contents($logoPath));
+        }
+    @endphp
+
+    @if($logoBase64)
+        <img src="data:image/png;base64,{{ $logoBase64 }}" alt="{{ $company['name'] }}">
+    @else
+        <img src="{{ $company['logo'] }}" alt="{{ $company['name'] }}">
+    @endif
+@endif
+
+
+                </div>
+                <div class="company-details">
+                    <div class="company-name">{{ $company['name'] }}</div>
+                    <div class="company-address">
+                        @if (!empty($company['address']))
                             <div>{{ $company['address'] }}</div>
                         @endif
-                        @if(isset($company['phone']) && $company['phone'])
-                            <div>📞 {{ $company['phone'] }}</div>
+                        @if (!empty($company['phone']))
+                            <div>Phone: {{ $company['phone'] }}</div>
                         @endif
-                        @if(isset($company['email']) && $company['email'])
-                            <div>✉️ {{ $company['email'] }}</div>
+                        @if (!empty($company['email']))
+                            <div>Email: {{ $company['email'] }}</div>
                         @endif
-                        @if(isset($company['gst_number']) && $company['gst_number'])
-                            <div><strong>GST:</strong> {{ $company['gst_number'] }}</div>
+                        @if (!empty($company['website']))
+                            <div>Website: {{ $company['website'] }}</div>
                         @endif
-                        @if(isset($company['website']) && $company['website'])
-                            <div>🌐 {{ $company['website'] }}</div>
-                        @endif
-                    </div>
-                </div>
-                <div class="invoice-section">
-                    <div class="invoice-badge">TAX INVOICE</div>
-                    <div class="invoice-number">{{ $order->order_number }}</div>
-                    <div class="invoice-date">Date: {{ $order->created_at->format('d M Y, h:i A') }}</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Customer & Order Information -->
-        <div class="info-section">
-            <div class="info-grid">
-                <div class="info-column">
-                    <div class="info-title">Bill To</div>
-                    <div class="info-content">
-                        <strong>{{ $order->customer_name }}</strong><br>
-                        📱 {{ $order->customer_mobile }}<br>
-                        @if($order->customer_email)
-                            ✉️ {{ $order->customer_email }}<br>
-                        @endif
-                        @if($order->delivery_address)
-                            📍 {{ $order->delivery_address }}<br>
-                            {{ $order->city }}, {{ $order->state }} - {{ $order->pincode }}
-                        @endif
-                    </div>
-                </div>
-                <div class="info-column">
-                    <div class="info-title">Order Details</div>
-                    <div class="info-content">
-                        <strong>Order Status:</strong> 
-                        <span class="status-badge status-{{ $order->status }}">{{ ucfirst($order->status) }}</span><br>
-                        <strong>Payment Method:</strong> {{ ucfirst(str_replace('_', ' ', $order->payment_method)) }}<br>
-                        <strong>Payment Status:</strong> 
-                        <span class="status-badge status-{{ $order->payment_status }}">{{ ucfirst($order->payment_status) }}</span><br>
-                        @if($order->transaction_id)
-                            <strong>Transaction ID:</strong> {{ $order->transaction_id }}<br>
-                        @endif
-                        @if($order->shipped_at)
-                            <strong>Shipped:</strong> {{ $order->shipped_at->format('d M Y') }}<br>
-                        @endif
-                        @if($order->delivered_at)
-                            <strong>Delivered:</strong> {{ $order->delivered_at->format('d M Y') }}<br>
+                        @if (!empty($company['gst_number']))
+                            <div><strong>GST No: {{ $company['gst_number'] }}</strong></div>
                         @endif
                     </div>
                 </div>
             </div>
         </div>
-        
+
+        <!-- Invoice Title -->
+        <div class="invoice-title">
+            Estimate INVOICE
+        </div>
+
+        <!-- Invoice Info Section -->
+        <div class="invoice-info">
+            <div class="invoice-details">
+                <div class="info-title">Estimate Details</div>
+                <div class="info-row">
+                    <div class="info-label">Estimate No:</div>
+                    <div class="info-value">{{ $order->order_number }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Date:</div>
+                    <div class="info-value">{{ $order->created_at->format('d/m/Y') }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Time:</div>
+                    <div class="info-value">{{ $order->created_at->format('h:i A') }}</div>
+                </div>
+
+            </div>
+
+            <div class="customer-details">
+                <div class="info-title">Bill To</div>
+                <div class="info-row">
+                    <div class="info-label">Name:</div>
+                    <div class="info-value"><strong>{{ $order->customer_name }}</strong></div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Mobile:</div>
+                    <div class="info-value">{{ $order->customer_mobile }}</div>
+                </div>
+                @if (!empty($order->customer_email))
+                    <div class="info-row">
+                        <div class="info-label">Email:</div>
+                        <div class="info-value">{{ $order->customer_email }}</div>
+                    </div>
+                @endif
+                <div class="info-row">
+                    <div class="info-label">Address:</div>
+                    <div class="info-value">
+                        {{ $order->delivery_address }}<br>
+                        {{ $order->city }}, {{ $order->state }} - {{ $order->pincode }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Items Table -->
-        <div class="items-section">
-            <table class="items-table">
-                <thead>
-                    <tr>
-                        <th style="width: 5%">#</th>
-                        <th style="width: 35%">Product Details</th>
-                        <th style="width: 10%" class="text-center">HSN</th>
-                        <th style="width: 10%" class="text-right">MRP</th>
-                        <th style="width: 10%" class="text-right">Price</th>
-                        <th style="width: 8%" class="text-center">Qty</th>
-                        <th style="width: 10%" class="text-center">Tax</th>
-                        <th style="width: 12%" class="text-right">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($order->items as $index => $item)
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">S.No</th>
+                    <th style="width: 30%;">Item Description</th>
+                    <th style="width: 10%;" class="text-center">Qty</th>
+                    <th style="width: 20%;" class="text-center">Offer price</th>
+                    <th style="width: 20%;" class="text-center">Rate</th>
+                    <th style="width: 10%;" class="text-center">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php
+                    $totalQuantity = 0;
+                    $totalTaxAmount = 0;
+                    $totalAmount = 0;
+                    $totalOriginalAmount = 0;
+                    $totalSavings = 0;
+                    $total = 0;
+                @endphp
+
+                @foreach ($order->items as $index => $item)
+                    @php
+                        // Get product for offer details (SAME LOGIC AS order-success page)
+                        $product = $item->product;
+                        $offerDetails = null;
+                        $hasOffer = false;
+                        $effectivePrice = $item->price;
+                        $originalPrice = $item->price;
+                        $discountPercentage = 0;
+                        $offerSource = null;
+                        $itemSavings = 0;
+
+                        // If product exists, get offer details
+                        if ($product) {
+                            $offerDetails = $product->getOfferDetails();
+                            $hasOffer = $offerDetails !== null;
+                            $originalPrice = $product->price;
+
+                            if ($hasOffer) {
+                                $effectivePrice = $offerDetails['discounted_price'];
+                                $discountPercentage = $offerDetails['discount_percentage'];
+                                $offerSource = $offerDetails['source'];
+                                $itemSavings = $offerDetails['savings'];
+                            } else {
+                                // Check if item price is different from product price (indicating a discount was applied)
+                                if ($item->price < $product->price) {
+                                    $hasOffer = true;
+                                    $effectivePrice = $item->price;
+                                    $originalPrice = $product->price;
+                                    $itemSavings = $originalPrice - $effectivePrice;
+                                    $discountPercentage = ($itemSavings / $originalPrice) * 100;
+                                }
+                            }
+                        } else {
+                            // If no product found, check for discount info in item
+                            if (isset($item->original_price) && $item->original_price > $item->price) {
+                                $hasOffer = true;
+                                $originalPrice = $item->original_price;
+                                $effectivePrice = $item->price;
+                                $itemSavings = $originalPrice - $effectivePrice;
+                                $discountPercentage = ($itemSavings / $originalPrice) * 100;
+                            }
+                        }
+
+                        $totalQuantity += $item->quantity;
+                        $itemTax = ($item->tax_amount ?? 0) * $item->quantity;
+                        $totalTaxAmount += $itemTax;
+                        $totalAmount += $item->total;
+                        $totalOriginalAmount += $originalPrice * $item->quantity;
+                        $totalSavings += $itemSavings * $item->quantity;
+
+                        if ($hasOffer) {
+                            $total += $effectivePrice * $item->quantity;
+                        } else {
+                            $total += $item->price * $item->quantity;
+                        }
+                    @endphp
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td>
-                            <div class="product-name">{{ $item->product_name }}</div>
-                            @if($item->product && $item->product->category)
-                                <div class="product-meta">Category: {{ $item->product->category->name }}</div>
-                            @endif
-                            @if($item->product && $item->product->sku)
-                                <div class="product-meta">SKU: {{ $item->product->sku }}</div>
-                            @endif
-                            @if($item->offer_name)
-                                <span class="offer-tag">🏷️ {{ $item->offer_name }}</span>
-                            @endif
+                            <div class="item-name">{{ $item->product_name }}</div>
+
+
                         </td>
-                        <td class="text-center">
-                            {{ $item->product->hsn_code ?? '-' }}
-                        </td>
-                        <td class="text-right">
-                            @if($item->mrp_price > 0 && $item->mrp_price > $item->price)
-                                <div class="price-original">₹{{ number_format($item->mrp_price, 2) }}</div>
-                            @else
-                                ₹{{ number_format($item->price, 2) }}
-                            @endif
-                        </td>
-                        <td class="text-right">
-                            @if($item->mrp_price > 0 && $item->mrp_price > $item->price)
-                                <div class="price-offer">₹{{ number_format($item->price, 2) }}</div>
-                                @if($item->effective_discount_percentage > 0)
-                                    <span class="discount-badge">{{ number_format($item->effective_discount_percentage, 0) }}% OFF</span>
-                                @endif
-                            @else
-                                ₹{{ number_format($item->price, 2) }}
-                            @endif
-                        </td>
+
                         <td class="text-center">{{ $item->quantity }}</td>
                         <td class="text-center">
-                            @if($item->tax_percentage > 0)
-                                {{ $item->tax_percentage }}%<br>
-                                <small>₹{{ number_format($item->tax_amount, 2) }}</small>
+                            @if ($hasOffer)
+                                <div style="color: green; font-weight: bold;">
+                                    {{ $company['currency'] ?? '₹' }}{{ number_format($effectivePrice, 2) }}
+                                </div>
                             @else
                                 -
                             @endif
                         </td>
-                        <td class="text-right">
-                            <strong>₹{{ number_format($item->total, 2) }}</strong>
+
+                        <td class="text-center">
+
+                            {{ $company['currency'] ?? '₹' }}{{ number_format($item->price, 2) }}
+
+                        </td>
+
+                        <td class="text-center">
+                            @if ($hasOffer)
+                                {{ $company['currency'] ?? '₹' }}{{ number_format($effectivePrice * $item->quantity, 2) }}
+                            @else
+                                {{ $company['currency'] ?? '₹' }}{{ number_format($item->price * $item->quantity, 2) }}
+                            @endif
+
                         </td>
                     </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-        
+                @endforeach
+            </tbody>
+
+        </table>
+
         <!-- Summary Section -->
         <div class="summary-section">
-            <div class="summary-notes">
-                @if($order->customer_notes || $order->admin_notes)
-                <div class="notes-box">
-                    <div class="notes-title">Notes</div>
-                    <div class="notes-content">
-                        @if($order->customer_notes)
-                            <strong>Customer Notes:</strong> {{ $order->customer_notes }}<br>
-                        @endif
-                        @if($order->admin_notes)
-                            <strong>Admin Notes:</strong> {{ $order->admin_notes }}
-                        @endif
-                    </div>
+            <div class="summary-table">
+
+
+
+                <div class="summary-row total-row">
+                    <div class="summary-label">Grand Total:</div>
+                    <div class="summary-value">{{ $company['currency'] ?? '₹' }}{{ number_format($total, 2) }}</div>
                 </div>
-                @endif
-            </div>
-            <div class="summary-totals">
-                <table class="totals-table">
-                    <tr>
-                        <td class="total-label">Subtotal</td>
-                        <td class="total-value">₹{{ number_format($order->subtotal, 2) }}</td>
-                    </tr>
-                    @php
-                        $totalSavings = 0;
-                        foreach($order->items as $item) {
-                            if(method_exists($item, 'getSavingsAttribute')) {
-                                $totalSavings += $item->savings;
-                            } elseif(isset($item->savings)) {
-                                $totalSavings += $item->savings;
-                            }
-                        }
-                    @endphp
-                    @if($totalSavings > 0)
-                    <tr>
-                        <td class="total-label">Total Savings</td>
-                        <td class="total-value savings-highlight">-₹{{ number_format($totalSavings, 2) }}</td>
-                    </tr>
-                    @endif
-                    @if($order->discount > 0)
-                    <tr>
-                        <td class="total-label">
-                            Discount
-                            @if($order->coupon_code)
-                                ({{ $order->coupon_code }})
-                            @endif
-                        </td>
-                        <td class="total-value savings-highlight">-₹{{ number_format($order->discount, 2) }}</td>
-                    </tr>
-                    @endif
-                    @if($order->tax > 0)
-                    <tr>
-                        <td class="total-label">Tax (GST)</td>
-                        <td class="total-value">₹{{ number_format($order->tax, 2) }}</td>
-                    </tr>
-                    @endif
-                    @if($order->shipping_charge > 0)
-                    <tr>
-                        <td class="total-label">Shipping Charge</td>
-                        <td class="total-value">₹{{ number_format($order->shipping_charge, 2) }}</td>
-                    </tr>
-                    @endif
-                    <tr class="grand-total">
-                        <td>Grand Total</td>
-                        <td class="text-right">₹{{ number_format($order->total, 2) }}</td>
-                    </tr>
-                </table>
             </div>
         </div>
-        
-        <!-- Thank You Message -->
-        <div class="thank-you">
-            <div class="thank-you-title">Thank You for Your Business!</div>
-            <div class="thank-you-message">
-                We appreciate your trust in us. If you have any questions about this invoice, please contact us.
-            </div>
-        </div>
-        
+
         <!-- Footer Section -->
         <div class="invoice-footer">
-            <div class="footer-content">
-                <div class="footer-column">
-                    <div class="footer-title">Terms & Conditions</div>
-                    <div class="footer-text">
-                        • All disputes are subject to local jurisdiction<br>
-                        • Goods once sold will not be taken back<br>
-                        • E & O.E.
-                    </div>
+
+
+            <!-- Signature Section -->
+            <div class="signature-section">
+                <div class="customer-signature">
+                    <div class="signature-line">Customer Signature</div>
                 </div>
-                <div class="footer-column">
-                    <div class="footer-title">Bank Details</div>
-                    <div class="footer-text">
-                        @if(isset($company['bank_name']))
-                            Bank: {{ $company['bank_name'] }}<br>
-                        @endif
-                        @if(isset($company['account_number']))
-                            A/C: {{ $company['account_number'] }}<br>
-                        @endif
-                        @if(isset($company['ifsc_code']))
-                            IFSC: {{ $company['ifsc_code'] }}
-                        @endif
-                    </div>
-                </div>
-                <div class="footer-column">
-                    <div class="footer-title">Authorized Signatory</div>
-                    <div class="footer-text">
-                        <br><br><br>
-                        <div class="signature-line">
-                            For {{ $company['name'] ?? 'Company Name' }}
-                        </div>
-                    </div>
+                <div style="display: table-cell; width: 10%;"></div>
+                <div class="authorized-signature">
+                    <div class="signature-line">Authorized Signature</div>
                 </div>
             </div>
+
+            <!-- Thank You Message -->
+
         </div>
     </div>
 </body>
+
 </html>

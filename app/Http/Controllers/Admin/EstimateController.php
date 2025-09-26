@@ -6,12 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Models\Estimate;
 use App\Models\EstimateItem;
 use App\Models\Product;
+use App\Models\PosSale;
+use App\Models\PosSaleItem;
+use App\Services\OfferService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class EstimateController extends Controller
 {
+    protected $offerService;
+
+    public function __construct(OfferService $offerService)
+    {
+        $this->offerService = $offerService;
+    }
     public function index(Request $request)
     {
         $query = Estimate::with('creator');
@@ -43,7 +52,30 @@ class EstimateController extends Controller
 
     public function create()
     {
-        $products = Product::active()->orderBy('name')->get();
+        $products = Product::active()
+            ->with(['category'])
+            ->orderBy('name')
+            ->get();
+        
+        // Apply offer details using Product model's getOfferDetails method
+        foreach ($products as $product) {
+            // Use the Product model's getOfferDetails() method which has the priority system
+            $offerDetails = $product->getOfferDetails();
+            
+            if ($offerDetails) {
+                $product->effective_price = $offerDetails['discounted_price'];
+                $product->has_offer = true;
+                $product->discount_percentage = $offerDetails['discount_percentage'];
+                $product->offer_details = $offerDetails;
+            } else {
+                // No offers, use regular price
+                $product->effective_price = $product->price;
+                $product->has_offer = false;
+                $product->discount_percentage = 0;
+                $product->offer_details = null;
+            }
+        }
+        
         return view('admin.estimates.create', compact('products'));
     }
 
@@ -135,7 +167,30 @@ class EstimateController extends Controller
                            ->with('error', 'Only draft estimates can be edited!');
         }
 
-        $products = Product::active()->orderBy('name')->get();
+        $products = Product::active()
+            ->with(['category'])
+            ->orderBy('name')
+            ->get();
+        
+        // Apply offer details using Product model's getOfferDetails method
+        foreach ($products as $product) {
+            // Use the Product model's getOfferDetails() method which has the priority system
+            $offerDetails = $product->getOfferDetails();
+            
+            if ($offerDetails) {
+                $product->effective_price = $offerDetails['discounted_price'];
+                $product->has_offer = true;
+                $product->discount_percentage = $offerDetails['discount_percentage'];
+                $product->offer_details = $offerDetails;
+            } else {
+                // No offers, use regular price
+                $product->effective_price = $product->price;
+                $product->has_offer = false;
+                $product->discount_percentage = 0;
+                $product->offer_details = null;
+            }
+        }
+        
         $estimate->load(['items.product']);
         
         return view('admin.estimates.edit', compact('estimate', 'products'));
@@ -221,24 +276,27 @@ class EstimateController extends Controller
     }
 
     public function updateStatus(Request $request, Estimate $estimate)
-    {
-        $request->validate([
-            'status' => 'required|in:draft,sent,accepted,rejected,expired'
-        ]);
+{
+    $request->validate([
+        'status' => 'required|in:draft,sent,accepted,rejected,expired'
+    ]);
 
-        $estimate->update(['status' => $request->status]);
+    $estimate->update(['status' => $request->status]);
 
-        if ($request->status === 'sent') {
-            $estimate->update(['sent_at' => now()]);
-        }
-
-        if ($request->status === 'accepted') {
-            $estimate->update(['accepted_at' => now()]);
-        }
-
-        return redirect()->back()
-                        ->with('success', 'Estimate status updated successfully!');
+    if ($request->status === 'sent') {
+        $estimate->update(['sent_at' => now()]);
     }
+
+    if ($request->status === 'accepted') {
+        $estimate->update(['accepted_at' => now()]);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Estimate status updated successfully!'
+    ]);
+}
+
 
     public function destroy(Estimate $estimate)
     {
@@ -291,12 +349,60 @@ class EstimateController extends Controller
     public function download(Estimate $estimate)
     {
         try {
-            // Load estimate with items and relationships
-            $estimate->load(['items.product', 'creator']);
+            // Load estimate with items, products, and their offer details
+            $estimate->load([
+                'items.product.category',
+                'items.product.offers' => function($query) {
+                    $query->active()->current();
+                },
+                'creator'
+            ]);
+            
+            // Apply offers to each product in estimate items
+            foreach ($estimate->items as $item) {
+                if ($item->product) {
+                    // Get offer details using Product model's method
+                    $offerDetails = $item->product->getOfferDetails();
+                    
+                    if ($offerDetails) {
+                        $item->product->effective_price = $offerDetails['discounted_price'];
+                        $item->product->has_offer = true;
+                        $item->product->discount_percentage = $offerDetails['discount_percentage'];
+                        $item->product->offer_details = $offerDetails;
+                    } else {
+                        $item->product->effective_price = $item->product->price;
+                        $item->product->has_offer = false;
+                        $item->product->discount_percentage = 0;
+                        $item->product->offer_details = null;
+                    }
+                    
+                    // Calculate tax amounts
+                    $item->product->item_tax_amount = $item->product->getTaxAmount($item->unit_price);
+                    $item->product->item_tax_percentage = $item->product->tax_percentage ?? 0;
+                    
+                    // Store pricing details for PDF
+                    $item->mrp_price = $item->product->price; // Original MRP
+                    $item->offer_price = $item->product->effective_price ?? $item->unit_price; // Discounted price
+                    $item->discount_amount = max(0, $item->mrp_price - $item->offer_price);
+                    $item->discount_percentage = $item->discount_amount > 0 
+                        ? round(($item->discount_amount / $item->mrp_price) * 100, 1)
+                        : 0;
+                    $item->tax_amount = ($item->unit_price * $item->quantity * $item->product->item_tax_percentage) / 100;
+                    $item->line_total_with_tax = $item->total_price + $item->tax_amount;
+                }
+            }
 
-            // Get company data
+            // Get company data with error handling
             $companyId = session('selected_company_id');
             $globalCompany = $this->getCompanyData($companyId);
+            
+            // Log company data for debugging
+            \Log::info('Company data for estimate PDF', [
+                'estimate_id' => $estimate->id,
+                'company_id' => $companyId,
+                'has_full_address' => isset($globalCompany->full_address),
+                'company_name' => $globalCompany->company_name ?? 'N/A'
+            ]);
 
             // Create PDF
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.estimates.pdf', [
@@ -324,7 +430,8 @@ class EstimateController extends Controller
         } catch (\Exception $e) {
             \Log::error('Estimate PDF download failed', [
                 'estimate_id' => $estimate->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return redirect()->back()
@@ -334,6 +441,7 @@ class EstimateController extends Controller
 
     /**
      * Get company data for PDF generation
+     * FIXED VERSION - properly handles null values and missing properties
      */
     private function getCompanyData($companyId = null)
     {
@@ -348,11 +456,36 @@ class EstimateController extends Controller
 
             // Get company from database
             $company = \App\Models\SuperAdmin\Company::find($companyId);
-
+            // echo "<pre>";print_r($company);exit;
             if (!$company) {
                 return $this->getFallbackCompanyData();
             }
 
+            // Build full address - properly handle null values
+            $addressParts = array_filter([
+                $company->address ?? '',
+                $company->city ?? '',
+                $company->state ?? '',
+                $company->postal_code ?? '',
+                $company->country ?? ''
+            ], function($value) {
+                return !empty(trim((string)$value));
+            });
+            
+            $fullAddress = !empty($addressParts) ? implode(', ', $addressParts) : 'Address not configured';
+
+            // Build contact info
+            $contactParts = [];
+            if (!empty($company->phone ?? '')) {
+                $contactParts[] = "Phone: {$company->phone}";
+            }
+            if (!empty($company->email ?? '')) {
+                $contactParts[] = "Email: {$company->email}";
+            }
+            $contactInfo = !empty($contactParts) ? implode(' | ', $contactParts) : 'Contact info not configured';
+
+            // Return properly structured object with all required properties
+            
             return (object) [
                 'company_name' => $company->name ?? 'Your Company',
                 'company_address' => $company->address ?? '',
@@ -363,15 +496,16 @@ class EstimateController extends Controller
                 'company_phone' => $company->phone ?? '',
                 'company_email' => $company->email ?? '',
                 'gst_number' => $company->gst_number ?? '',
-                'website' => $company->website ?? '',
+                'website' => '', // Company model doesn't have website field
                 'company_logo' => $company->logo ?? '',
-                'full_address' => $this->formatFullAddress($company),
-                'contact_info' => $this->formatContactInfo($company)
+                'full_address' => $fullAddress, // This is the key fix
+                'contact_info' => $contactInfo
             ];
         } catch (\Exception $e) {
             \Log::error('Error getting company data for estimate', [
                 'company_id' => $companyId,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return $this->getFallbackCompanyData();
@@ -409,15 +543,92 @@ class EstimateController extends Controller
             $contactParts[] = "Email: {$company->email}";
         }
 
-        if ($company->website) {
-            $contactParts[] = "Web: {$company->website}";
-        }
-
         return implode(' | ', $contactParts);
     }
 
     /**
+     * Convert accepted estimate to POS sale
+     */
+    public function convertToSale(Estimate $estimate)
+    {
+        // Check if estimate is accepted
+        if ($estimate->status !== 'accepted') {
+            return redirect()->back()
+                           ->with('error', 'Only accepted estimates can be converted to sales!');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Create POS sale from estimate
+            $posSale = PosSale::create([
+                'company_id' => $estimate->company_id,
+                'sale_date' => now(),
+                'customer_name' => $estimate->customer_name,
+                'customer_phone' => $estimate->customer_phone,
+                'subtotal' => $estimate->subtotal,
+                'tax_amount' => $estimate->tax_amount,
+                'discount_amount' => $estimate->discount ?? 0,
+                'total_amount' => $estimate->total_amount,
+                'paid_amount' => $estimate->total_amount, // Assume full payment
+                'change_amount' => 0,
+                'payment_method' => 'cash', // Default to cash, can be changed later
+                'status' => 'completed',
+                'notes' => 'Converted from Estimate #' . $estimate->estimate_number . ($estimate->notes ? "\n" . $estimate->notes : ''),
+                'cashier_id' => Auth::id()
+            ]);
+
+            // Create POS sale items from estimate items
+            foreach ($estimate->items as $item) {
+                PosSaleItem::create([
+                    'pos_sale_id' => $posSale->id,
+                    'product_id' => $item->product_id,
+                    'product_name' => $item->product ? $item->product->name : 'Product',
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'original_price' => $item->unit_price,
+                    'discount_amount' => 0,
+                    'discount_percentage' => 0,
+                    'tax_percentage' => 0,
+                    'tax_amount' => 0,
+                    'total_amount' => $item->quantity * $item->unit_price,
+                    'offer_applied' => false,
+                    'offer_savings' => 0,
+                    'notes' => $item->description,
+                    'company_id' => $estimate->company_id
+                ]);
+
+                // Update product stock if needed
+                if ($item->product) {
+                    $product = $item->product;
+                    $product->stock -= $item->quantity;
+                    $product->save();
+                }
+            }
+
+            // Mark estimate as converted
+            $estimate->update([
+                'status' => 'converted',
+                'converted_at' => now(),
+                'converted_to_sale_id' => $posSale->id
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('admin.pos.show', $posSale)
+                           ->with('success', 'Estimate successfully converted to sale! Invoice #' . $posSale->invoice_number);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error converting estimate to sale: ' . $e->getMessage());
+            return redirect()->back()
+                           ->with('error', 'Error converting estimate to sale: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Fallback company data when actual data is not available
+     * FIXED VERSION - includes all required properties with safe defaults
      */
     private function getFallbackCompanyData()
     {
@@ -433,8 +644,8 @@ class EstimateController extends Controller
             'gst_number' => '',
             'website' => '',
             'company_logo' => '',
-            'full_address' => '',
-            'contact_info' => '',
+            'full_address' => 'Please configure company address in settings',
+            'contact_info' => 'Please configure company contact information',
         ];
     }
 }
