@@ -126,6 +126,44 @@
             font-size: 13px;
         }
         .print-btn.secondary { background: #6c757d; }
+         @page {
+            size: A4;
+            margin: 10mm;
+        }
+        @media print {
+            body { margin: 0; padding: 0; font-size: 10px; line-height: 1.3; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .page-break { page-break-before: always; }
+        }
+        @media screen {
+            body { max-width: 210mm; margin: 10px auto; padding: 15px; box-shadow: 0 0 5px rgba(0,0,0,0.1); background: white; font-size: 11px; }
+            .print-only { display: none; }
+        }
+        body { font-family: 'Arial','DejaVu Sans',sans-serif; font-size: 10px; color: #333; background: white; }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid {{ $companySettings['primary_color'] ?? '#2d5016' }};
+        }
+        .header-left { flex: 0 0 auto; }
+        .header-right { flex: 1; text-align: right; }
+        .company-logo { max-height: 60px; max-width: 150px; margin-bottom: 5px; }
+        .company-name { font-size: 18px; font-weight: bold; color: {{ $companySettings['primary_color'] ?? '#2d5016' }}; margin: 3px 0; }
+        .company-details { font-size: 9px; color: #666; margin: 2px 0; }
+        .invoice-title { font-size: 14px; margin: 8px 0 0 0; font-weight: bold; color: #555; text-align: center; }
+        
+        /* keep rest styles same */
+        .invoice-info table { width: 100%; border-collapse: collapse; }
+        .invoice-info td { width: 50%; vertical-align: top; padding: 0 5px; }
+        .section-title { font-size: 11px; font-weight: bold; margin: 0 0 4px 0; border-bottom: 1px solid #eee; padding-bottom: 2px; color: {{ $companySettings['primary_color'] ?? '#2d5016' }}; }
+        .detail-line { margin: 2px 0; font-size: 9px; }
+        .detail-line strong { display: inline-block; width: 70px; }
+        /* ... rest of your CSS untouched ... */
     </style>
 </head>
 <body>
