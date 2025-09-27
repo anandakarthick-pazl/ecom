@@ -144,7 +144,12 @@ Route::middleware(['tenant'])->group(function () {
     
     // Order Success
     Route::get('/order/success/{orderNumber}', [CheckoutController::class, 'success'])->name('order.success');
-    
+    Route::prefix('invoice')->name('invoice.')->group(function () {
+        
+        Route::get('/downloads/{orderNumber}', [\App\Http\Controllers\CustomerInvoiceController::class, 'downloadInvoice'])->name('download');
+        Route::post('/download-tracked', [\App\Http\Controllers\CustomerInvoiceController::class, 'downloadTrackedInvoice'])->name('download.tracked');
+        Route::get('/formats', [\App\Http\Controllers\CustomerInvoiceController::class, 'getAvailableFormats'])->name('formats');
+    });
     // Razorpay Payment Routes
     Route::prefix('razorpay')->name('razorpay.')->group(function () {
         Route::post('/create-order', [\App\Http\Controllers\RazorpayController::class, 'createOrder'])->name('create-order');

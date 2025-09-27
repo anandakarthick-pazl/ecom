@@ -80,7 +80,7 @@ class CheckoutController extends Controller
             'state' => 'nullable|string|max:255',
             'pincode' => 'required|string|size:6',
             'notes' => 'nullable|string|max:500',
-            'payment_method' => 'required|exists:payment_methods,id',
+            // 'payment_method' => 'required|exists:payment_methods,id',
             'formatted_mobile' => 'nullable|string', // Optional formatted mobile with +91
             // Commission fields
             'commission_enabled' => 'nullable|boolean',
@@ -182,7 +182,7 @@ class CheckoutController extends Controller
             $appliedCoupon = CouponService::getAppliedCoupon();
 
             // Get payment method and calculate charges
-            $paymentMethod = PaymentMethod::findOrFail($request->payment_method);
+            $paymentMethod = PaymentMethod::findOrFail($request->payment_method ?? '1');
             $paymentCharge = 0;
 
             if ($paymentMethod->extra_charge > 0 || $paymentMethod->extra_charge_percentage > 0) {

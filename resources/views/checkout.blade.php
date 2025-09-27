@@ -231,7 +231,7 @@
         <div class="col-md-4">
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Order Summary</h5>
+                    <h5 class="mb-0">Estimate Summary</h5>
                 </div>
                 <div class="card-body">
                     @foreach($cartItems as $item)
@@ -327,7 +327,7 @@
                         $grandTotal = $subtotal + $totalTax + $deliveryCharge - $discount;
                     @endphp
                     
-                    <div class="d-flex justify-content-between mb-2">
+                    {{-- <div class="d-flex justify-content-between mb-2">
                         <span>CGST:</span>
                         <span>₹{{ number_format($cgstAmount, 2) }}</span>
                     </div>
@@ -340,7 +340,7 @@
                     <div class="d-flex justify-content-between mb-2">
                         <span>Total Tax:</span>
                         <span>₹{{ number_format($totalTax, 2) }}</span>
-                    </div>
+                    </div> --}}
                     
                     {{-- <div class="d-flex justify-content-between mb-2">
                         <span>Delivery Charge:</span>
@@ -353,7 +353,7 @@
                         </span>
                     </div> --}}
                     
-                    @if($deliveryInfo['enabled'] && $deliveryInfo['free_delivery_enabled'] && $deliveryInfo['amount_needed_for_free'] > 0)
+                    {{-- @if($deliveryInfo['enabled'] && $deliveryInfo['free_delivery_enabled'] && $deliveryInfo['amount_needed_for_free'] > 0)
                         <div class="alert alert-info py-2 small">
                             <i class="fas fa-gift"></i> 
                             Add ₹{{ number_format($deliveryInfo['amount_needed_for_free'], 2) }} more for <strong>FREE delivery!</strong>
@@ -372,50 +372,50 @@
                         <span id="payment-charge">+₹0.00</span>
                     </div>
                     
-                    <hr>
+                    <hr> --}}
                     
                     <div class="d-flex justify-content-between mb-3">
                         <strong>Total:</strong>
                         <strong id="grand-total">₹{{ number_format($grandTotal, 2) }}</strong>
                     </div>
                     
-                    @if($deliveryCharge == 0 && $subtotal >= 500)
+                    {{-- @if($deliveryCharge == 0 && $subtotal >= 500)
                         <div class="alert alert-success py-2">
                             <small><i class="fas fa-check"></i> You're getting FREE delivery!</small>
                         </div>
-                    @endif
+                    @endif --}}
                     
-                    @if($deliveryInfo['enabled'] && $deliveryInfo['time_estimate'])
+                    {{-- @if($deliveryInfo['enabled'] && $deliveryInfo['time_estimate'])
                         <div class="alert alert-light py-2">
                             <small>
                                 <i class="fas fa-clock text-primary"></i> 
                                 <strong>Estimated Delivery:</strong> {{ $deliveryInfo['time_estimate'] }}
                             </small>
                         </div>
-                    @endif
+                    @endif --}}
                     
-                    @if($deliveryInfo['enabled'] && $deliveryInfo['description'])
+                    {{-- @if($deliveryInfo['enabled'] && $deliveryInfo['description'])
                         <div class="alert alert-light py-2">
                             <small>
                                 <i class="fas fa-info-circle text-info"></i> 
                                 {{ $deliveryInfo['description'] }}
                             </small>
                         </div>
-                    @endif
+                    @endif --}}
                     
                     <button type="submit" form="checkoutForm" class="btn btn-primary btn-lg w-100">
-                        <i class="fas fa-lock"></i> Place Order
+                        <i class="fas fa-lock"></i> Place Estimate
                     </button>
                     
-                    <div class="text-center mt-3">
+                    {{-- <div class="text-center mt-3">
                         <small class="text-muted">
                             <i class="fas fa-shield-alt"></i> Secure checkout with 256-bit SSL encryption
                         </small>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
             
-            <div class="card">
+            {{-- <div class="card">
                 <div class="card-body text-center">
                     <h6>Need Help?</h6>
                     <p class="mb-2">
@@ -425,7 +425,7 @@
                         <i class="fas fa-envelope text-primary"></i> support@herbalbliss.com
                     </p>
                 </div>
-            </div>
+            </div> --}}
         </div>
     </div>
 </div>
@@ -671,11 +671,11 @@ $('#checkoutForm').on('submit', function(e) {
     }
     
     // Check if payment method is selected
-    if ($('input[name="payment_method"]:checked').length === 0) {
-        e.preventDefault();
-        showToast('Please select a payment method', 'error');
-        return false;
-    }
+    // if ($('input[name="payment_method"]:checked').length === 0) {
+    //     e.preventDefault();
+    //     showToast('Please select a payment method', 'error');
+    //     return false;
+    // }
     
     // Validate commission fields if enabled
     // Commission functionality removed for online orders
