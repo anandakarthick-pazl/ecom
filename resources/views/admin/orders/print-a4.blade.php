@@ -575,7 +575,7 @@
     <div style="clear: both;"></div>
 
     <!-- Order Notes -->
-    @if(!empty($order->notes) || !empty($order->admin_notes))
+    {{-- @if(!empty($order->notes) || !empty($order->admin_notes))
         <div class="notes-section">
             @if(!empty($order->notes))
                 <div class="notes-title">Invoice Notes:</div>
@@ -586,7 +586,7 @@
                 <div>{{ $order->admin_notes }}</div>
             @endif
         </div>
-    @endif
+    @endif --}}
 
     <!-- Terms & Conditions -->
     
