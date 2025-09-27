@@ -444,10 +444,10 @@
                     <th class="col-item text-left">Item</th>
                     <th class="col-qty">Qty</th>
                     <th class="col-mrp">MRP</th>
-                    <th class="col-offer">Offer</th>
-                    <th class="col-tax">Tax</th>
-                    <th class="col-line">Line Total</th>
-                    <th class="col-total">Total+Tax</th>
+                    <th class="col-offer">Offer Price</th>
+                    {{-- <th class="col-tax">Tax</th> --}}
+                    {{-- <th class="col-line">Line Total</th> --}}
+                    <th class="col-total">Total</th>
                 </tr>
             </thead>
             <tbody>
@@ -459,24 +459,24 @@
                         <td class="text-right">₹{{ number_format($item->mrp_price, 2) }}</td>
                         <td class="text-right" @if ($item->mrp_price && $item->mrp_price > $item->offer_price) style="color: #28a745;" @endif>
                             @if ($item->mrp_price && $item->mrp_price > $item->offer_price)
-                                ₹{{ number_format($item->mrp_price - $item->offer_price, 2) }}
+                                ₹{{ number_format($item->offer_price, 2) }}
                             @else
                                 -
                             @endif
                         </td>
 
 
-                        <td class="text-center">
+                        {{-- <td class="text-center">
                             @if ($item->product && $item->product->item_tax_percentage > 0)
                                 {{ number_format($item->product->item_tax_percentage, 0) }}%
                             @else
                                 -
                             @endif
-                        </td>
+                        </td> --}}
                         <td class="text-right">₹{{ number_format($item->total_price, 2) }}</td>
-                        <td class="text-right">
+                        {{-- <td class="text-right">
                             <strong>₹{{ number_format($item->line_total_with_tax ?? $item->total_price, 2) }}</strong>
-                        </td>
+                        </td> --}}
                     </tr>
                 @endforeach
             </tbody>
@@ -513,12 +513,12 @@
                         <td>Subtotal (After Discounts)</td>
                         <td>₹{{ number_format($estimate->subtotal, 2) }}</td>
                     </tr>
-                    @if ($totalTaxAmount > 0)
+                    {{-- @if ($totalTaxAmount > 0)
                         <tr>
                             <td>Total Tax (GST)</td>
                             <td>₹{{ number_format($totalTaxAmount, 2) }}</td>
                         </tr>
-                    @endif
+                    @endif --}}
                     <tr class="total-row">
                         <td>Grand Total</td>
                         <td>₹{{ number_format($estimate->total_amount, 2) }}</td>
