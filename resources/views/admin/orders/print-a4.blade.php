@@ -450,15 +450,15 @@
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td>
                         <div class="product-name">{{ $item->product_name ?? 'Product' }}</div>
-                        @if($item->product && !empty($item->product->sku))
+                        {{-- @if($item->product && !empty($item->product->sku))
                             <div class="product-sku">SKU: {{ $item->product->sku }}</div>
-                        @endif
-                        @if(!empty($item->offer_name))
+                        @endif --}}
+                        {{-- @if(!empty($item->offer_name))
                             <div class="product-sku" style="color: #e74c3c; font-weight: bold;">🏷️ {{ $item->offer_name }}</div>
                         @endif
                         @if(!empty($item->product_description))
                             <div class="product-sku">{{ $item->product_description }}</div>
-                        @endif
+                        @endif --}}
                     </td>
                     <td class="text-center">{{ number_format($quantity) }}</td>
                     <td class="text-right">
@@ -589,42 +589,10 @@
     @endif
 
     <!-- Terms & Conditions -->
-    <div class="notes-section" style="margin-top: 20px;">
-        <div class="notes-title">Terms & Conditions:</div>
-        <div style="font-size: 9px; line-height: 1.3;">
-            1. Payment is due within 30 days of invoice date.<br>
-            2. Goods once sold cannot be returned without prior approval.<br>
-            3. All disputes are subject to local jurisdiction.<br>
-            4. This is a computer-generated invoice and does not require a physical signature.
-        </div>
-    </div>
+    
 
     <!-- Footer -->
-    <div class="footer">
-        <div style="margin-bottom: 10px;">
-            <strong>{{ $companySettings['name'] ?? 'Your Company' }}</strong>
-        </div>
-        @if(!empty($companySettings['address']))
-            <div>{{ $companySettings['address'] }}</div>
-        @endif
-        <div>
-            @if(!empty($companySettings['email']))
-                Email: {{ $companySettings['email'] }}
-            @endif
-            @if(!empty($companySettings['email']) && !empty($companySettings['phone']))
-                &nbsp;|&nbsp;
-            @endif
-            @if(!empty($companySettings['phone']))
-                Phone: {{ $companySettings['phone'] }}
-            @endif
-        </div>
-        @if(!empty($companySettings['gst_number']))
-            <div>GST No: {{ $companySettings['gst_number'] }}</div>
-        @endif
-        <div style="margin-top: 15px; font-size: 9px;">
-            Thank you for your business! | Generated on {{ now()->format('d M Y, h:i A') }}
-        </div>
-    </div>
+    
 
     <script>
         // Auto-print when page loads (only if opened in new window)
