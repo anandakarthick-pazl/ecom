@@ -525,7 +525,7 @@
                 </tr>
                 <tr class="discount">
                     <td class="label-col">Sub Total (After Discount):</td>
-                    <td class="amount-col">-₹{{ number_format($totalSavings, 2) }}</td>
+                    <td class="amount-col">₹{{ number_format($subtotal, 2) }}</td>
                 </tr>
             @endif
             
