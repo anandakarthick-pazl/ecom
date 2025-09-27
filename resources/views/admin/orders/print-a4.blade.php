@@ -6,289 +6,126 @@
     <style>
         @page {
             size: A4;
-            margin: 15mm;
+            margin: 10mm; /* reduced margin */
         }
         
         @media print {
             body { 
                 margin: 0; 
                 padding: 0;
-                font-size: 12px;
-                line-height: 1.4;
+                font-size: 10px; /* smaller font */
+                line-height: 1.3; /* tighter lines */
             }
-            .no-print { 
-                display: none !important; 
-            }
-            .print-only {
-                display: block !important;
-            }
-            .page-break {
-                page-break-before: always;
-            }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .page-break { page-break-before: always; }
         }
         
         @media screen {
             body {
                 max-width: 210mm;
-                margin: 20px auto;
-                padding: 20px;
-                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                margin: 10px auto;
+                padding: 15px;
+                box-shadow: 0 0 5px rgba(0,0,0,0.1);
                 background: white;
+                font-size: 11px;
             }
-            .print-only {
-                display: none;
-            }
+            .print-only { display: none; }
         }
         
         body {
             font-family: 'Arial', 'DejaVu Sans', sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
+            font-size: 10px;
             color: #333;
             background: white;
         }
         
         .header {
             text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
             border-bottom: 2px solid {{ $companySettings['primary_color'] ?? '#2d5016' }};
         }
+        .company-logo { max-height: 60px; max-width: 150px; margin-bottom: 5px; }
+        .company-name { font-size: 18px; font-weight: bold; color: {{ $companySettings['primary_color'] ?? '#2d5016' }}; margin: 3px 0; }
+        .company-details { font-size: 9px; color: #666; margin: 2px 0; }
+        .invoice-title { font-size: 14px; margin: 8px 0 0 0; font-weight: bold; color: #555; }
         
-        .company-logo {
-            max-height: 80px;
-            max-width: 200px;
-            margin-bottom: 10px;
-        }
-        
-        .company-name {
-            font-size: 24px;
-            font-weight: bold;
-            color: {{ $companySettings['primary_color'] ?? '#2d5016' }};
-            margin: 5px 0;
-        }
-        
-        .company-details {
-            font-size: 11px;
-            color: #666;
-            margin: 5px 0;
-        }
-        
-        .invoice-title {
-            font-size: 20px;
-            color: #666;
-            margin: 15px 0 0 0;
-            font-weight: bold;
-        }
-        
-        .invoice-info {
-            width: 100%;
-            margin-bottom: 25px;
-        }
-        
-        .invoice-info table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .invoice-info td {
-            width: 50%;
-            vertical-align: top;
-            padding: 0 10px;
-        }
-        
-        .section-title {
-            font-size: 14px;
-            font-weight: bold;
-            color: {{ $companySettings['primary_color'] ?? '#2d5016' }};
-            margin: 0 0 8px 0;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 3px;
-        }
-        
-        .detail-line {
-            margin: 3px 0;
-            font-size: 11px;
-        }
-        
-        .detail-line strong {
-            display: inline-block;
-            width: 80px;
-            font-weight: bold;
-        }
+        .invoice-info { margin-bottom: 15px; }
+        .invoice-info table { width: 100%; border-collapse: collapse; }
+        .invoice-info td { width: 50%; vertical-align: top; padding: 0 5px; }
+        .section-title { font-size: 11px; font-weight: bold; margin: 0 0 4px 0; border-bottom: 1px solid #eee; padding-bottom: 2px; color: {{ $companySettings['primary_color'] ?? '#2d5016' }}; }
+        .detail-line { margin: 2px 0; font-size: 9px; }
+        .detail-line strong { display: inline-block; width: 70px; }
         
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
-            font-size: 10px;
+            margin-bottom: 10px;
+            font-size: 9px;
         }
-        
-        .items-table th,
-        .items-table td {
-            border: 1px solid #ddd;
-            padding: 6px;
-            text-align: left;
+        .items-table th, .items-table td {
+            border: 1px solid #ccc;
+            padding: 3px 5px; /* reduced padding */
         }
-        
         .items-table th {
             background-color: {{ $companySettings['primary_color'] ?? '#2d5016' }};
-            color: white;
+            color: #fff;
             font-weight: bold;
-            font-size: 9px;
-        }
-        
-        .items-table .text-right {
-            text-align: right;
-        }
-        
-        .items-table .text-center {
-            text-align: center;
-        }
-        
-        .product-name {
-            font-weight: bold;
-            font-size: 10px;
-        }
-        
-        .product-sku {
             font-size: 8px;
-            color: #666;
-            font-style: italic;
         }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .product-name { font-weight: bold; font-size: 9px; }
+        .product-sku { font-size: 7px; color: #666; font-style: italic; }
         
-        .totals-section {
-            float: right;
-            width: 350px;
-            margin-top: 15px;
-        }
+        .totals-section { float: right; width: 280px; margin-top: 10px; }
+        .totals-table { width: 100%; border-collapse: collapse; font-size: 9px; }
+        .totals-table td { padding: 4px 6px; border-bottom: 1px solid #eee; }
+        .totals-table .label-col { text-align: left; font-weight: bold; }
+        .totals-table .amount-col { text-align: right; min-width: 60px; }
+        .totals-table .subtotal-row td { border-top: 1px solid #ccc; font-weight: bold; }
+        .totals-table .total-row td { background-color: {{ $companySettings['primary_color'] ?? '#2d5016' }}; color: white; font-weight: bold; font-size: 11px; }
         
-        .totals-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 11px;
-        }
+        .footer { margin-top: 20px; padding-top: 8px; border-top: 1px solid #ddd; text-align: center; font-size: 8px; color: #666; clear: both; }
         
-        .totals-table td {
-            padding: 6px 10px;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .totals-table .label-col {
-            text-align: left;
-            font-weight: bold;
-        }
-        
-        .totals-table .amount-col {
-            text-align: right;
-            min-width: 80px;
-        }
-        
-        .totals-table .subtotal-row td {
-            border-top: 1px solid #ccc;
-            font-weight: bold;
-        }
-        
-        .totals-table .discount-row td {
-            color: #d63384;
-        }
-        
-        .totals-table .tax-row td {
-            color: #0d6efd;
-        }
-        
-        .totals-table .total-row td {
-            background-color: {{ $companySettings['primary_color'] ?? '#2d5016' }};
-            color: white;
-            font-weight: bold;
-            font-size: 13px;
-            border-top: 2px solid {{ $companySettings['primary_color'] ?? '#2d5016' }};
-        }
-        
-        .footer {
-            margin-top: 40px;
-            padding-top: 15px;
-            border-top: 1px solid #ddd;
-            text-align: center;
-            color: #666;
-            font-size: 10px;
-            clear: both;
-        }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 9px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        
+        .status-badge { padding: 2px 5px; border-radius: 8px; font-size: 8px; font-weight: bold; text-transform: uppercase; }
         .status-pending { background: #fff3cd; color: #856404; }
         .status-processing { background: #d1ecf1; color: #0c5460; }
         .status-shipped { background: #cce5ff; color: #004085; }
         .status-delivered { background: #d4edda; color: #155724; }
         .status-cancelled { background: #f8d7da; color: #721c24; }
         
-        .notes-section {
-            margin-top: 25px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-left: 4px solid {{ $companySettings['primary_color'] ?? '#2d5016' }};
-        }
-        
-        .notes-title {
-            font-weight: bold;
-            color: {{ $companySettings['primary_color'] ?? '#2d5016' }};
-            margin-bottom: 8px;
-        }
+        .notes-section { margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-left: 3px solid {{ $companySettings['primary_color'] ?? '#2d5016' }}; font-size: 9px; }
+        .notes-title { font-weight: bold; margin-bottom: 5px; color: {{ $companySettings['primary_color'] ?? '#2d5016' }}; font-size: 9px; }
         
         .watermark {
-            position: fixed;
-            top: 50%;
-            left: 50%;
+            position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%) rotate(-45deg);
-            font-size: 120px;
+            font-size: 80px; /* smaller watermark */
             color: rgba(0,0,0,0.05);
             z-index: -1;
             font-weight: bold;
         }
         
-        /* Print controls for screen view */
         .print-controls {
             text-align: center;
-            margin: 20px 0;
-            padding: 20px;
+            margin: 10px 0;
+            padding: 10px;
             background: #f0f0f0;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 6px;
         }
-        
         .print-btn {
             background: #007bff;
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
+            padding: 8px 18px;
+            border-radius: 4px;
             cursor: pointer;
-            margin: 0 10px;
-            font-size: 16px;
-            font-weight: 500;
-            transition: all 0.3s ease;
+            margin: 0 5px;
+            font-size: 13px;
         }
-        
-        .print-btn:hover {
-            background: #0056b3;
-            transform: translateY(-2px);
-        }
-        
-        .print-btn.secondary {
-            background: #6c757d;
-        }
-        
-        .print-btn.secondary:hover {
-            background: #545b62;
-        }
+        .print-btn.secondary { background: #6c757d; }
     </style>
 </head>
 <body>
