@@ -514,19 +514,23 @@
                 $totalSavings = $order->items->sum('savings');
             @endphp
             
-            {{-- @if($totalSavings > 0)
+            @if($totalSavings > 0)
                 <tr>
-                    <td class="label-col">Total MRP:</td>
+                    <td class="label-col">Sub Total (Before Discount):</td>
                     <td class="amount-col">₹{{ number_format($totalMrp, 2) }}</td>
                 </tr>
-                <tr class="discount-row">
-                    <td class="label-col">You Saved (Offers):</td>
+                <tr class="discount">
+                    <td class="label-col">Product Discount:</td>
                     <td class="amount-col">-₹{{ number_format($totalSavings, 2) }}</td>
                 </tr>
-            @endif --}}
+                <tr class="discount">
+                    <td class="label-col">Sub Total (After Discount):</td>
+                    <td class="amount-col">-₹{{ number_format($totalSavings, 2) }}</td>
+                </tr>
+            @endif
             
             <tr class="subtotal-row">
-                <td class="label-col">Total Amount:</td>
+                <td class="label-col">Grand Total:</td>
                 <td class="amount-col">₹{{ number_format($subtotal, 2) }}</td>
             </tr>
             
