@@ -1165,6 +1165,9 @@
                             <li><a href="{{ route('track.order') }}" class="footer-link">Track Order</a></li>
                             <li><a href="#" class="footer-link">About Us</a></li>
                             <li><a href="#" class="footer-link">Contact</a></li>
+                             <li><a href="{{ route('price-list.download') }}" class="footer-link price-list-link" 
+                               onclick="trackPriceListDownload()"
+                               title="Download our complete price list PDF">📋 Price List</a></li>
                         </ul>
                     </div>
                 </div>
@@ -1496,6 +1499,22 @@
                     window.triggerCrackers();
                 }
             };
+        }
+        function trackPriceListDownload() {
+            // Analytics tracking (if available)
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'download', {
+                    'event_category': 'price_list',
+                    'event_label': 'footer_link'
+                });
+            }
+            
+            // Show a brief loading message
+            if (typeof showToast !== 'undefined' && window.showToast) {
+                showToast('Preparing price list download...', 'info');
+            } else {
+                console.log('Price list download initiated');
+            }
         }
     </script>
     @endif

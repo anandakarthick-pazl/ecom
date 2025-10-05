@@ -1,5 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+<?php
+
+// echo "<pre>";print($estimate->discount);exit;
+?>
 
 <head>
     <meta charset="UTF-8">
@@ -513,12 +517,19 @@
                         <td>Subtotal (After Discounts)</td>
                         <td>₹{{ number_format($estimate->subtotal, 2) }}</td>
                     </tr>
+                    @if ($estimate->discount > 0)
+                        <tr class="discount-row">
+                            <td>Additional Discount</td>
+                            <td>-₹{{ number_format($estimate->discount ?? 0.0, 2) }}</td>
+                        </tr>
+                    @endif
                     {{-- @if ($totalTaxAmount > 0)
                         <tr>
                             <td>Total Tax (GST)</td>
                             <td>₹{{ number_format($totalTaxAmount, 2) }}</td>
                         </tr>
                     @endif --}}
+
                     <tr class="total-row">
                         <td>Grand Total</td>
                         <td>₹{{ number_format($estimate->total_amount, 2) }}</td>

@@ -150,10 +150,10 @@
                                     <td class="text-end">₹{{ number_format($estimate->tax_amount, 2) }}</td>
                                 </tr>
                                 @endif
-                                @if(($estimate->discount_amount ?? 0) > 0)
+                                @if(($estimate->discount ?? 0) > 0)
                                 <tr>
-                                    <td colspan="5" class="text-end">Discount:</td>
-                                    <td class="text-end text-danger">-₹{{ number_format($estimate->discount_amount, 2) }}</td>
+                                    <td colspan="5" class="text-end">Additional Discount:</td>
+                                    <td class="text-end text-danger">-₹{{ number_format($estimate->discount, 2) }}</td>
                                 </tr>
                                 @endif
                                 <tr class="table-dark">

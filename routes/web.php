@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\SocialMediaController;
+use App\Http\Controllers\PriceListController;
 
 /*
 |--------------------------------------------------------------------------
@@ -118,7 +119,8 @@ Route::middleware(['tenant'])->group(function () {
     
     // Order Tracking
     Route::match(['get', 'post'], '/track-order', [HomeController::class, 'trackOrder'])->name('track.order');
-    
+    Route::get('/price-list/download', [PriceListController::class, 'downloadPdf'])->name('price-list.download');
+    Route::get('/price-list/view', [PriceListController::class, 'viewPdf'])->name('price-list.view');
     // Cart Routes
     Route::prefix('cart')->name('cart.')->group(function () {
         Route::get('/', [CartController::class, 'index'])->name('index');
