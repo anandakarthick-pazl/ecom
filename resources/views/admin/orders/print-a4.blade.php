@@ -365,12 +365,15 @@
 </head>
 
 <body>
+    @if ($type === 'print')
+        <div class="print-controls no-print">
+            <h3 style="margin-bottom: 15px; color: #333;">📄 Invoice Preview</h3>
+            <button class="print-btn" onclick="window.print()">🖨️ Print Invoice</button>
+            <button class="print-btn secondary" onclick="window.close()">✕ Close Window</button>
+        </div>
+    @endif
     <!-- Print Controls (visible only on screen) -->
-    <div class="print-controls no-print">
-        <h3 style="margin-bottom: 15px; color: #333;">📄 Invoice Preview</h3>
-        <button class="print-btn" onclick="window.print()">🖨️ Print Invoice</button>
-        <button class="print-btn secondary" onclick="window.close()">✕ Close Window</button>
-    </div>
+
 
     @if ($order->status === 'cancelled')
         <div class="watermark">CANCELLED</div>
@@ -430,7 +433,9 @@
             @endif
         </div>
     </div>
-<b><h2 class="invoice-title" style="text-align: center">TAX INVOICE</h2></b>
+    <b>
+        <h2 class="invoice-title" style="text-align: center">TAX INVOICE</h2>
+    </b>
     <!-- Invoice Information -->
     <div class="invoice-info">
         <table>
