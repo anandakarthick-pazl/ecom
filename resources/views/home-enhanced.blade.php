@@ -1,5 +1,7 @@
 @extends('layouts.app')
-
+<?php
+// echo  $announcement_text;exit;
+?>
 @section('title')
     Home - {{ $globalCompany->company_name ?? 'Your Store' }}
 @endsection
@@ -57,6 +59,19 @@
     </div>
 </section>
 @else
+@if ($announcement_text)
+  <marquee 
+    style="font-size:20px; font-weight:bold; color:white; padding:10px; border-radius:8px; background:linear-gradient(90deg, #ff7e5f, #feb47b);" 
+    behavior="scroll" 
+    direction="left" 
+    scrollamount="5" 
+    onmouseover="this.stop();" 
+    onmouseout="this.start();">
+    {{ $announcement_text }}
+</marquee>  
+@endif
+
+
 <!-- No Banners Fallback -->
 <section class="hero-section-compact">
     <div class="hero-container-compact">

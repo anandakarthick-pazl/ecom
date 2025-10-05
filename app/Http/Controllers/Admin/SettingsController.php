@@ -246,6 +246,7 @@ class SettingsController extends Controller
 
     public function updateCompany(Request $request)
     {
+        //echo"<pre>";print_R($request->all());exit;
         // Debug: Log all request data to identify any issues
         \Log::info('Company update request data', [
             'all_data' => $request->all(),
@@ -293,6 +294,7 @@ class SettingsController extends Controller
         $company->state = $request->company_state;
         $company->postal_code = $request->company_postal_code;
         $company->gst_number = $request->gst_number;
+         $company->announcement_text = $request->announcement_text;
         $company->save();
 
         // Clear cache

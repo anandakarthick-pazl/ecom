@@ -12,20 +12,44 @@ use Illuminate\Http\Request;
 use App\Traits\HasPagination;
 use App\Services\OfferService;
 use Illuminate\Support\Facades\DB;
+use App\Models\SuperAdmin\Company;
 
 class HomeController extends Controller
 {
     use HasPagination;
-    
+
     protected $offerService;
-    
+
     public function __construct(OfferService $offerService)
     {
         $this->offerService = $offerService;
     }
-    
+    private function getCurrentTenantId()
+    {
+        // Try multiple sources for company_id
+        if (app()->has('current_tenant')) {
+            return app('current_tenant')->id;
+        } elseif (request()->has('current_company_id')) {
+            return request()->get('current_company_id');
+        } elseif (session()->has('selected_company_id')) {
+            return session('selected_company_id');
+        } elseif (auth()->check() && auth()->user()->company_id) {
+            return auth()->user()->company_id;
+        }
+
+        return null;
+    }
+    public function getCurrentCompany()
+    {
+        $companyId = $this->getCurrentTenantId();
+        return $companyId ? Company::find($companyId) : null;
+    }
     public function index(Request $request)
     {
+        $company = $this->getCurrentCompany();
+
+
+
         $banners = Banner::active()
             ->current()
             ->byPosition('top')
@@ -40,7 +64,7 @@ class HomeController extends Controller
                 'current_banners' => Banner::active()->current()->count(),
                 'top_position_banners' => Banner::active()->current()->byPosition('top')->count(),
                 'fetched_banners' => $banners->count(),
-                'banner_details' => $banners->map(function($banner) {
+                'banner_details' => $banners->map(function ($banner) {
                     return [
                         'id' => $banner->id,
                         'title' => $banner->title,
@@ -72,9 +96,9 @@ class HomeController extends Controller
             ->map(function ($category) {
                 // Use the relationship method which will apply proper scopes
                 $productCount = $category->activeProducts()->count();
-                    
+
                 $category->products_count = $productCount;
-                
+
                 // Debug logging
                 if (config('app.debug')) {
                     \Log::info('Category Product Count Debug', [
@@ -87,7 +111,7 @@ class HomeController extends Controller
                         'current_company_id' => \App\Models\Category::getCurrentCompanyId() ?? 'not_set'
                     ]);
                 }
-                
+
                 return $category;
             });
 
@@ -124,9 +148,10 @@ class HomeController extends Controller
             ->where('show_popup', true)
             ->orderBy('created_at', 'desc')
             ->first();
-
+        $announcement_text = $company->announcement_text ?? '';
         return view('home-enhanced', compact(
             'banners',
+            'announcement_text',
             'featuredProducts',
             'categories',
             'products',
@@ -150,11 +175,11 @@ class HomeController extends Controller
 
         // Order by stock status (in-stock first) then by sort order
         $query->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END')
-              ->orderBy('sort_order');
+            ->orderBy('sort_order');
 
         // Apply frontend pagination using the trait
         $products = $this->applyFrontendPagination($query, $request, '50');
-        
+
         // Apply offers to products using the OfferService
         if (method_exists($products, 'getCollection')) {
             // For paginated results
@@ -178,7 +203,7 @@ class HomeController extends Controller
             ->filter(function ($category) {
                 return Product::where('category_id', $category->id)->active()->count() > 0;
             });
-        
+
         // Get category-specific offers if filtering by category
         $categoryOffers = collect();
         if ($request->has('category') && $request->category != 'all') {
@@ -242,30 +267,30 @@ class HomeController extends Controller
         // Start with products that have manual discount_price OR products with category/product offers
         $query = Product::active()
             ->with('category')
-            ->where(function($q) {
+            ->where(function ($q) {
                 // Products with manual discount_price
                 $q->whereNotNull('discount_price')
-                  ->where('discount_price', '>', 0);
-                
+                    ->where('discount_price', '>', 0);
+
                 // OR products that have category-specific offers
-                $q->orWhereHas('category', function($categoryQuery) {
-                    $categoryQuery->whereHas('offers', function($offerQuery) {
+                $q->orWhereHas('category', function ($categoryQuery) {
+                    $categoryQuery->whereHas('offers', function ($offerQuery) {
                         $offerQuery->where('type', 'category')
-                                  ->where('is_active', true)
-                                  ->where('start_date', '<=', now())
-                                  ->where('end_date', '>=', now());
+                            ->where('is_active', true)
+                            ->where('start_date', '<=', now())
+                            ->where('end_date', '>=', now());
                     });
                 });
-                
+
                 // OR products that have product-specific offers
-                $q->orWhereExists(function($productOfferQuery) {
+                $q->orWhereExists(function ($productOfferQuery) {
                     $productOfferQuery->select(DB::raw(1))
-                                     ->from('offers')
-                                     ->where('type', 'product')
-                                     ->whereColumn('offers.product_id', 'products.id')
-                                     ->where('is_active', true)
-                                     ->where('start_date', '<=', now())
-                                     ->where('end_date', '>=', now());
+                        ->from('offers')
+                        ->where('type', 'product')
+                        ->whereColumn('offers.product_id', 'products.id')
+                        ->where('is_active', true)
+                        ->where('start_date', '<=', now())
+                        ->where('end_date', '>=', now());
                 });
             });
 
@@ -278,11 +303,11 @@ class HomeController extends Controller
 
         // Order by stock status (in-stock first) then by sort order
         $query->orderByRaw('CASE WHEN stock > 0 THEN 0 ELSE 1 END')
-              ->orderBy('sort_order');
+            ->orderBy('sort_order');
 
         // Apply frontend pagination using the trait
         $products = $this->applyFrontendPagination($query, $request, '50');
-        
+
         // Apply offers to products using the OfferService
         if (method_exists($products, 'getCollection')) {
             // For paginated results
@@ -303,14 +328,14 @@ class HomeController extends Controller
             ->parent()
             ->orderBy('sort_order')
             ->get()
-            ->filter(function($category) {
+            ->filter(function ($category) {
                 // Check if category has products with manual discount_price
                 $hasDiscountProducts = Product::where('category_id', $category->id)
                     ->active()
                     ->whereNotNull('discount_price')
                     ->where('discount_price', '>', 0)
                     ->count() > 0;
-                
+
                 // Check if category has category-specific offers
                 $hasCategoryOffers = $category->offers()
                     ->where('type', 'category')
@@ -318,7 +343,7 @@ class HomeController extends Controller
                     ->where('start_date', '<=', now())
                     ->where('end_date', '>=', now())
                     ->count() > 0;
-                
+
                 return $hasDiscountProducts || $hasCategoryOffers;
             });
 
@@ -384,7 +409,7 @@ class HomeController extends Controller
 
         // Apply frontend pagination using the trait
         $products = $this->applyFrontendPagination($query, request(), '12');
-        
+
         // Apply offers to products using the OfferService
         if (method_exists($products, 'getCollection')) {
             // For paginated results
@@ -399,7 +424,7 @@ class HomeController extends Controller
         // Get frontend pagination settings and controls
         $frontendPaginationSettings = $this->getFrontendPaginationSettings(request(), '12');
         $frontendPaginationControls = $this->getPaginationControlsData(request(), 'frontend');
-        
+
         // Get category-specific offers for display
         $categoryOffers = $this->offerService->getCategoryOffers($category);
 
@@ -482,7 +507,7 @@ class HomeController extends Controller
 
         return view('track-order');
     }
-    
+
     /**
      * Animation test page
      */
